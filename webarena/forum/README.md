@@ -7,6 +7,8 @@ wget http://metis.lti.cs.cmu.edu/webarena-images/postmill-populated-exposed-with
 docker load < postmill-populated-exposed-withimg.tar
 ```
 
+Locally-hosted copies of the image are also available [here](https://microsoft-my.sharepoint.com/:f:/p/adamfo/IgBrTH551q7cRZOEdsoBCL_XASH4WMxp4DAymXZbu0McIBg?e=btI5cE).
+
 #### Run the image (assiging the nick-name `forum`):
 
 ```
@@ -33,9 +35,9 @@ bash install_python.bash
 
 ### Dump the necessary tables to JSON: 
 
-*Within the docker intractive terminal,* run the following:
+This step can take a while to run. Pre-computed dumps are available [here](https://microsoft-my.sharepoint.com/:f:/p/adamfo/IgDFkqI9GfLdT6dTnuCNB26mAVGNWhnk0NHxDsQxl1etFf0?e=KrnVdf).
 
-(This will take a while)
+*Within the docker intractive terminal,* run the following:
 
 ```
 python3 dump_table.py submissions > submissions.jsonl
