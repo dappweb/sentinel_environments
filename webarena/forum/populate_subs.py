@@ -47,12 +47,13 @@ def insert_submission(conn, cur, data):
             %(search_doc)s,
             %(last_active)s,
             0,
-            %(net_score)s,
+            0,
             %(visibility)s,
             %(media_type)s
         );
     """
             #%(comment_count)s,
+            #%(net_score)s,
 
     cur.execute(sql, data)
     conn.commit()
@@ -108,6 +109,15 @@ WHERE s.id = %(submission_id)s;
 
     print("Comment")
 
+
+def vote_on_submission(conn, cur, data):
+    val = " + 1" if data["upvote"] else " - 1"
+    sql = "UPDATE submissions SET net_score = net_score" + val + " WHERE id = %(id)s"
+    cur.execute(sql, {"id": data["submission_id"]} )
+    conn.commit()
+    print("Vote on Submission")
+
+
 def main():
     # Adjust password/host/port as needed
     conn = psycopg2.connect(
@@ -127,24 +137,32 @@ def main():
 
             subs = open("submissions.jsonl", "rt")
             comments = open("comments.jsonl", "rt")
+            sub_votes = open("submission_votes.jsonl", "rt")
 
             sub_data = json.loads(subs.readline())
             comment_data = json.loads(comments.readline())
+            sub_vote_data = json.loads(sub_votes.readline())
 
             while True:
-                
-                # Assume dates are already sorted and in ISO8601
-                if sub_data["timestamp"] <= comment_data["timestamp"]:
+
+                times = [ sub_data["timestamp"], comment_data["timestamp"], sub_vote_data["timestamp"] ]
+                min_time = min(times)
+
+                if times.index(min_time) == 0:
                     insert_submission(conn, cur, sub_data)
                     sub_data = json.loads(subs.readline())
-                else:
+                elif times.index(min_time) == 1:
                     insert_comment(conn, cur, comment_data)
                     comment_data = json.loads(comments.readline())
+                else:
+                    vote_on_submission(conn, cur, sub_vote_data)
+                    sub_vote_data = json.loads(sub_votes.readline())
 
                 time.sleep(3)
 
     finally:
         subs.close()
+        sub_votes.close()
         comments.close()
         conn.close()
 
