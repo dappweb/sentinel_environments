@@ -20,7 +20,7 @@ You can now connect to the forum in a browser, either at http://localhost:9999, 
 ### Connect to the image with an interactive terminal:
 
 ```
-exec -it forum sh
+docker exec -it forum sh
 ```
 
 
@@ -42,6 +42,7 @@ This step can take a while to run. Pre-computed dumps are available [here](https
 ```
 python3 dump_table.py submissions > submissions.jsonl
 python3 dump_table.py comments > comments.jsonl
+python3 gen_votes.py < submissions.jsonl > submission_votes.jsonl
 ```
 
 
