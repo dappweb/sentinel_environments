@@ -13,7 +13,7 @@ def main(table_name):
 
     try:
         with conn.cursor() as cur:
-            cur.execute(f"SELECT * FROM {table_name} ORDER BY timestamp ASC;")
+            cur.execute(f"SELECT * FROM {table_name} WHERE timestamp >= '2023-02-19 00:00:00' ORDER BY timestamp ASC;")
             colnames = [desc[0] for desc in cur.description]
             record = {} 
             for row in cur.fetchall():
