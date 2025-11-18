@@ -9,52 +9,19 @@ docker load < postmill-populated-exposed-withimg.tar
 
 Locally-hosted copies of the image are also available [here](https://microsoft-my.sharepoint.com/:f:/p/adamfo/IgBrTH551q7cRZOEdsoBCL_XASH4WMxp4DAymXZbu0McIBg?e=btI5cE).
 
-#### Run the image (assiging the nick-name `forum`):
+#### Build and Run the Sentinel Image:
 
 ```
-docker run --name forum -p 9999:80 -v $(pwd):/mnt/workspace -d postmill-populated-exposed-withimg
+cd docker_env
+bash rebuild.bash start 
 ```
 
 You can now connect to the forum in a browser, either at http://localhost:9999, or use the hostname of the GCR machine (if applicable).
 
-### Connect to the image with an interactive terminal:
+Likewise, you can also march the events forwards or reset, using the api by fetching (via http GET):
 
-```
-docker exec -it forum sh
-```
+http://localhost:8000/next
 
+and
 
-### Install Python in the container:
-
-*Within the docker intractive terminal,* run the following:
-
-```
-cd /mnt/workspace
-bash install_python.bash
-```
-
-### Dump the necessary tables to JSON: 
-
-This step can take a while to run. Pre-computed dumps are available [here](https://microsoft-my.sharepoint.com/:f:/p/adamfo/IgDFkqI9GfLdT6dTnuCNB26mAVGNWhnk0NHxDsQxl1etFf0?e=KrnVdf).
-
-*Within the docker intractive terminal,* run the following:
-
-```
-python3 dump_table.py submissions > submissions.jsonl
-python3 dump_table.py comments > comments.jsonl
-python3 gen_votes.py < submissions.jsonl > submission_votes.jsonl
-```
-
-
-### Run the script to populate the data over time:
-
-*Within the docker intractive terminal,* run the following:
- 
-
-```
-python3 populate_subs.py
-```
-
-Refreshing the postmill site in the browser will then show the data getting populated.
-
-E.g., http://localhost:9999/all/active
+http://localhost:8000/reset
