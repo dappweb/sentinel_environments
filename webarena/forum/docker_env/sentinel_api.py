@@ -12,6 +12,7 @@ file_handle = None
 file_lock = asyncio.Lock()
 
 reference_time = datetime.fromisoformat("2023-02-19T00:00:00+00:00")
+db_reference_time = "2023-02-19 00:00:00"
 
 @app.on_event("startup")
 async def startup_event():
@@ -43,9 +44,16 @@ async def reset():
     global file_handle
     global time_offset
 
+    # Delete new rows in the database
+    cur.execute("TRUNCATE comment_votes")
+    cur.execute("TRUNCATE submission_votes")
+    cur.execute("DELETE FROM comments WHERE timestamp >= '" + db_reference_time + "'")
+    cur.execute("DELETE FROM submissions WHERE timestamp >= '" + db_reference_time + "'")
+    conn.commit()
+
     if file_handle:
         file_handle.close()
-    file_handle = open("submissions.jsonl", "rt")
+    file_handle = open("/var/www/html/submissions.jsonl", "rt")
     time_offset = 0
     return {"time_offset": time_offset, "type": "reset" }
 

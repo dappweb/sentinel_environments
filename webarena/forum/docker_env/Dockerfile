@@ -29,3 +29,4 @@ COPY SubmissionPage.php /var/www/html/src/Pagination/SubmissionPage.php
 
 # Copy the sentinel server
 COPY sentinel_api.py /var/www/html/sentinel_api.py
+COPY fastapi.ini /etc/supervisor.d/fastapi.ini
