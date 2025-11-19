@@ -46,12 +46,12 @@ Example Request Body:
     {
       "time": "2024-06-01T12:10:00Z",
       "type": "custom_event_type_1",
-      "payload":  ... # Arbirary JSON data
+      "payload":  "... Arbitrary JSON data"
     },
     {
       "time": "2024-06-01T12:15:00Z",
       "type": "custom_event_type_2",
-      "payload":  ... # Arbirary JSON data
+      "payload":  "... Arbitrary JSON data"
     }
   ]
 }
@@ -92,12 +92,12 @@ Example Successful Response (200 OK):
     {
       "time": "2024-06-01T12:05:00Z",
       "type": "default_event_type_1",
-      "payload":  ... # Arbirary JSON data
+      "payload":  "... Arbitrary JSON data"
     },
     {
       "time": "2024-06-01T12:10:00Z",
       "type": "custom_event_type_1",
-      "payload":  ... # Arbirary JSON data
+      "payload":  "... Arbitrary JSON data"
     }
   ],
   "next_event_time": "2024-06-01T12:15:00Z"
@@ -106,6 +106,7 @@ Example Successful Response (200 OK):
 
 ## Other Considerations
 
+- Above: "... Arbitrary JSON data" indicates that any valid JSON data can be placed in the payload. It isn't necessarily a string, and should not be double-encoded.
 - All responses include `success`, `simulation_time`, and `next_event_time` fields.
 - Calling `/status` does not modify the state of the environment and can be use to learn the simulaiton time
 - All timestamps must be in ISO 8601 format with Zulu timezone (e.g., "2024-06-01T12:00:00Z").
