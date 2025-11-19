@@ -111,6 +111,8 @@ Example Successful Response (200 OK):
 
 ## Other Considerations
 
+- Resetting the environment is outside the scope of this protocol. It is assumed that the docker container
+  will be discarded and re-created from the base image to reset the environment.
 - All responses include `success`, `simulation_time`, and `next_event_time` fields.
 - Calling `/status` does not modify the state of the environment and can be use to learn the simulaiton time
 - All timestamps must be in ISO 8601 format with Zulu timezone (e.g., "2024-06-01T12:00:00Z").
