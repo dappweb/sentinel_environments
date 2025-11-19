@@ -1,7 +1,7 @@
 # Docker Protocol for Advancing Events
 
 This document outlines the minimal REST api protocol, to be hosted in the Docker sentinal environment
-container, for advancing schedule events.
+container, for advancing scheduled events.
 
 ## Endpoints
 
@@ -60,8 +60,10 @@ Example Request Body:
 **NOTE 1**: The `/init` endpoint can only be called when the environment is in state `preinit`.
 Calls outside this state will return an error.
 
-**NOTE 2**: Times must be in ISO 8601 format with Zulu timezone (e.g., "2024-06-01T12:00:00Z").
+**NOTE 2**: Times must be in ISO 8601 format with date and time to the second, with Zulu timezone (e.g., "2024-06-01T12:00:00Z").
 Times can then be sorted lexicographically. 
+
+**NOTE 3**: "... Arbitrary JSON data" indicates that any valid JSON data can be placed in the payload. It isn't necessarily a string, and should not be double-encoded.
 
 
 Example Successful Response (200 OK):
@@ -73,7 +75,7 @@ Example Successful Response (200 OK):
 }
 ```
 
-### GET /advance?=time=\<ISO8601\_TIMESTAMP\_WITH\_ZULU\_TIMEZONE\>
+### GET /advance?time=\<ISO8601\_TIMESTAMP\_WITH\_ZULU\_TIMEZONE\>
 
 Advances the simulation time to the specified timestamp, processing all events scheduled up to, 
 and including, that time. The `time` parameter must be in ISO 8601 format with Zulu timezone.
@@ -104,9 +106,11 @@ Example Successful Response (200 OK):
 }
 ```
 
+**NOTE 1**: If there are no more scheduled events after processing, the `next_event_time` field will be `null`.
+**NOTE 2**: If the specified `time` is earlier than the current simulation time, an error will be returned.
+
 ## Other Considerations
 
-- Above: "... Arbitrary JSON data" indicates that any valid JSON data can be placed in the payload. It isn't necessarily a string, and should not be double-encoded.
 - All responses include `success`, `simulation_time`, and `next_event_time` fields.
 - Calling `/status` does not modify the state of the environment and can be use to learn the simulaiton time
 - All timestamps must be in ISO 8601 format with Zulu timezone (e.g., "2024-06-01T12:00:00Z").
