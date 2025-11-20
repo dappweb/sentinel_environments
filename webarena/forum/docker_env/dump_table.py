@@ -26,7 +26,12 @@ def main(table_name):
                 assert len(vals) == len(colnames)
                 for i in range(len(colnames)):
                     record[colnames[i]] = vals[i]
-                print(json.dumps(record))
+                print(json.dumps({
+                    "time": record["timestamp"],
+                    "type": table_name.removesuffix("s"), # submissions -> submission, etc.
+                    "payload": record
+                }))
+
 
     finally:
         conn.close()

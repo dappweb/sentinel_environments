@@ -5,15 +5,33 @@ from fastapi import FastAPI
 from datetime import datetime
 import uvicorn
 import psycopg2
+import gzip
 
 app = FastAPI()
 
-submissions_file_handle = None
-comments_file_handle = None
+events_file_handle = None
+event_queue = []
 file_lock = asyncio.Lock()
 
 reference_time = datetime.fromisoformat("2023-02-19T00:00:00+00:00")
 db_reference_time = "2023-02-19 00:00:00"
+
+async def _read_next_buffer():
+    """Read from events_file_handle until (and including) the next submission."""
+    
+    event_buffer = []
+    async with file_lock:
+        while True:
+            line = events_file_handle.readline().strip()
+            if line == "":
+                break
+            else:
+                event = json.loads(line)
+                event_buffer.append(event)
+                if event["type"] == "submission":
+                    break
+        return event_buffer
+    
 
 @app.on_event("startup")
 async def startup_event():
@@ -39,18 +57,14 @@ async def shutdown_event():
         cur.close()
     if conn:
         con.close()
-    if submissions_file_handle:
-        submissions_file_handle.close()
-    if comments_file_handle:
-        comments_file_handle.close()
+    if events_file_handle:
+        events_file_handle.close()
     print("[shutdown]")
 
 @app.get("/reset")
 async def reset():
-    global submissions_file_handle
-    global comments_file_handle
-    global submission_data 
-    global comment_data
+    global events_file_handle
+    global event_queue
     global time_offset
 
     # Delete new rows in the database
@@ -61,48 +75,37 @@ async def reset():
     conn.commit()
 
     async with file_lock:
-        if submissions_file_handle:
-            submissions_file_handle.close()
-            submissions_file_handle = None
-        if comments_file_handle:
-            comments_file_handle.close()
-            comments_file_handle = None
-        submissions_file_handle = open("/var/www/html/submissions.jsonl", "rt")
-        comments_file_handle = open("/var/www/html/comments.jsonl", "rt")
+        if events_file_handle:
+            events_file_handle.close()
+            events_file_handle = None
+        events_file_handle = gzip.open("/var/www/html/events.jsonl.gz", "rt") 
 
-        submission_data = json.loads(submissions_file_handle.readline())
-        comment_data = json.loads(comments_file_handle.readline())
-
+    event_queue = await _read_next_buffer()
     time_offset = 0
 
     return {"time_offset": time_offset, "type": "reset" }
 
 @app.get("/next")
-
 async def next():
+    global event_queue
 
-    global submission_data 
-    global comment_data
+    while event_queue:
+        for event_data in event_queue:
+            if event_data["type"] == "submission":
+                insert_submission(conn, cur, event_data["payload"])
+            elif event_data["type"] == "comment":
+                insert_comment(conn, cur, event_data["payload"])
+            elif event_data["type"] == "submission_vote":
+                vote_on_submission(conn, cur, event_data["payload"])
+            elif event_data["type"] == "comment_vote":
+                vote_on_comment(conn, cur, event_data["payload"])
+            print(event_data["type"])
 
-    async with file_lock:
+            time_offset = datetime.fromisoformat(event_data["time"]).timestamp() - reference_time.timestamp()
+            record_type = event_data["type"]
 
-        while True:
-            if submission_data["timestamp"] <= comment_data["timestamp"]:
-                insert_submission(conn, cur, submission_data)
-                time_offset = datetime.fromisoformat(submission_data["timestamp"]).timestamp() - reference_time.timestamp()
-                title = submission_data["title"]
-                record_type = "submission"
-                submission_data = json.loads(submissions_file_handle.readline())
-                break
-            else:
-                insert_comment(conn, cur, comment_data)
-                time_offset = datetime.fromisoformat(comment_data["timestamp"]).timestamp() - reference_time.timestamp()
-                title = comment_data["body"]
-                record_type = "comment"
-                comment_data = json.loads(comments_file_handle.readline())
-        
-        return {"time_offset": time_offset, "type": record_type, "title": title }
-
+        event_queue = await _read_next_buffer()
+        return {"time_offset": time_offset, "type": record_type }
 
 
 def insert_submission(conn, cur, data):
@@ -148,7 +151,7 @@ def insert_submission(conn, cur, data):
             %(search_doc)s,
             %(last_active)s,
             0,
-            0,
+            1,
             %(visibility)s,
             %(media_type)s
         );
@@ -186,7 +189,7 @@ def insert_comment(conn, cur, data):
     %(moderated)s,
     %(user_flag)s,
     %(search_doc)s,
-    %(net_score)s
+    1
 );
     """
 
@@ -205,6 +208,17 @@ WHERE s.id = %(submission_id)s;
 """, {"submission_id": data["submission_id"]})
     conn.commit()
 
+def vote_on_submission(conn, cur, data):
+    op = "+ 1" if data["upvote"] else "- 1"
+    sql = "UPDATE submissions SET net_score=net_score " + op + " WHERE id=%(submission_id)s;"
+    cur.execute(sql, {"submission_id": data["submission_id"]})
+    conn.commit()
+
+def vote_on_comment(conn, cur, data):
+    op = "+ 1" if data["upvote"] else "- 1"
+    sql = "UPDATE comments SET net_score=net_score " + op + " WHERE id=%(comment_id)s;"
+    cur.execute(sql, {"comment_id": data["comment_id"]})
+    conn.commit()
 
 if __name__ == "__main__":
     uvicorn.run("sentinel_api:app", host="0.0.0.0", port=8000, workers=1)

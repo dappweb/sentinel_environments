@@ -24,9 +24,18 @@ RUN pg_ctl -D "$PGDATA" -o "-c listen_addresses=''" -w start \
     && pg_ctl -D "$PGDATA" -m fast -w stop 
 USER root
 
+# Generate votes
+COPY gen_votes.py /var/www/html/gen_votes.py
+RUN python3 gen_votes.py < submissions.jsonl > submission_votes.jsonl
+RUN python3 gen_votes.py < comments.jsonl > comment_votes.jsonl
+
+# Merge everything
+COPY merge.py /var/www/html/merge.py
+RUN python3 merge.py | gzip > /var/www/html/events.jsonl.gz
+
 # Patch Postmill
 COPY SubmissionPage.php /var/www/html/src/Pagination/SubmissionPage.php
 
 # Copy the sentinel server
 COPY sentinel_api.py /var/www/html/sentinel_api.py
-COPY fastapi.ini /etc/supervisor.d/fastapi.ini
+#COPY fastapi.ini /etc/supervisor.d/fastapi.ini
