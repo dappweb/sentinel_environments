@@ -28,6 +28,8 @@ USER root
 COPY gen_votes.py /var/www/html/gen_votes.py
 RUN python3 gen_votes.py < submissions.jsonl > submission_votes.jsonl
 RUN python3 gen_votes.py < comments.jsonl > comment_votes.jsonl
+RUN sort -d submission_votes.jsonl > .submission_votes.jsonl && mv .submission_votes.jsonl submission_votes.jsonl
+RUN sort -d comment_votes.jsonl > .comment_votes.jsonl && mv .comment_votes.jsonl comment_votes.jsonl
 
 # Merge everything
 COPY merge.py /var/www/html/merge.py
@@ -38,4 +40,4 @@ COPY SubmissionPage.php /var/www/html/src/Pagination/SubmissionPage.php
 
 # Copy the sentinel server
 COPY sentinel_api.py /var/www/html/sentinel_api.py
-#COPY fastapi.ini /etc/supervisor.d/fastapi.ini
+COPY fastapi.ini /etc/supervisor.d/fastapi.ini

@@ -56,7 +56,7 @@ async def shutdown_event():
     if cur:
         cur.close()
     if conn:
-        con.close()
+        conn.close()
     if events_file_handle:
         events_file_handle.close()
     print("[shutdown]")
