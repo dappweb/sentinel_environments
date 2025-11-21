@@ -4,21 +4,20 @@ STORE_URL = "http://localhost:7770"  # Your Adobe Commerce store URL
 ADMIN_USERNAME = "admin"  # Admin username
 ADMIN_PASSWORD = "admin1234"  # Admin password
 
+CUSTOMER_USERNAME = "mandamarie05@gmail.com"
+CUSTOMER_PASSWORD = "test1234!"
 
-def get_customer_token(username, password):
+
+def get_customer_token():
     """
     Get customer token using customer email and password.
-
-    Args:
-        username: Customer email
-        password: Customer password
 
     Returns:
         Bearer token string
     """
     url = f"{STORE_URL}/rest/V1/integration/customer/token"
 
-    payload = {"username": username, "password": password}
+    payload = {"username": CUSTOMER_USERNAME, "password": CUSTOMER_PASSWORD}
 
     headers = {"Content-Type": "application/json"}
 
@@ -35,21 +34,17 @@ def get_customer_token(username, password):
         return None
 
 
-def get_admin_token(username, password):
+def get_admin_token():
     """
     Get admin token using username and password.
     This is the simplest authentication method for testing.
-
-    Args:
-        username: Admin username
-        password: Admin password
 
     Returns:
         Bearer token string
     """
     url = f"{STORE_URL}/rest/V1/integration/admin/token"
 
-    payload = {"username": username, "password": password}
+    payload = {"username": ADMIN_USERNAME, "password": ADMIN_PASSWORD}
 
     headers = {"Content-Type": "application/json"}
 
