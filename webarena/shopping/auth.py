@@ -4,7 +4,7 @@ STORE_URL = "http://localhost:7770"  # Your Adobe Commerce store URL
 ADMIN_USERNAME = "admin"  # Admin username
 ADMIN_PASSWORD = "admin1234"  # Admin password
 
-CUSTOMER_USERNAME = "mandamarie05@gmail.com"
+CUSTOMER_USERNAME = "sentineluser@sentinel.com"
 CUSTOMER_PASSWORD = "test1234!"
 
 

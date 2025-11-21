@@ -38,7 +38,7 @@ def get_image_sources(url):
         time.sleep(2)  # Wait for DOM to load (can be replaced with WebDriverWait)
 
         # Select all <img> elements
-        img_elements = driver.find_elements(By.TAG_NAME, "img")
+        img_elements = driver.find_elements(By.CLASS_NAME, "fotorama__img")
 
         # Extract src attributes
         img_sources = []
@@ -235,30 +235,23 @@ def download_product_image(url_key, new_sku):
     # Use playwright to open the product page, query img tags, and get the first image URL
     product_url = urljoin(STORE_URL, f"{url_key}.html")
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.goto(product_url, wait_until="domcontentloaded")
+    images = get_image_sources(product_url)
+    if images:
+        first_url = images[0]
 
-        # query the first img tag
-        img_elements = page.locator("img.fotorama__img")
-        if img_elements:
-            img_url = img_elements.nth(0).get_attribute("src")
-            print(f"Found image URL: {img_url}")
+        # Download the image using requests
+        response = requests.get(first_url)
+        if response.status_code == 200:
+            # Save the image under the new SKU name
+            image_path = Path.cwd() / Path(f"product_images/{new_sku}.jpg")
+            with open(image_path, "wb") as f:
+                f.write(response.content)
+            print(f"✓ Downloaded image to {image_path}")
+            return image_path
 
-            # Download the image using requests
-            response = requests.get(img_url)
-            if response.status_code == 200:
-                # Save the image under the new SKU name
-                image_path = Path.cwd() / Path(f"product_images/{new_sku}.jpg")
-                with open(image_path, "wb") as f:
-                    f.write(response.content)
-                print(f"✓ Downloaded image to {image_path}")
-                return image_path
-
-        else:
-            print("No image found on the product page.")
-            return None
+    else:
+        print("No image found on the product page.")
+        return None
 
 
 def generate_product_from_catalog(token):
