@@ -1,4 +1,5 @@
 # sentinel_api.py
+import os
 import asyncio
 import json
 import fastapi
@@ -6,6 +7,7 @@ from fastapi.responses import JSONResponse
 from datetime import datetime
 import uvicorn
 import gzip
+import signal
 from products import add_product
 from auth import get_admin_token
 from product_sales import add_product_sales_rule
@@ -81,6 +83,21 @@ async def status():
     )
 
 
+@app.get("/init")
+async def init():
+    #
+
+    return JSONResponse(
+        status_code=fastapi.status.HTTP_200_OK,
+        content={
+            "success": True,
+            "status": state,
+            "simulation_time": simulation_time,
+            "next_event_time": next_event_time,
+        },
+    )
+
+
 @app.get("/advance")
 async def next(t: int):
     global simulation_time
@@ -141,6 +158,22 @@ async def next(t: int):
             "simulation_time": simulation_time,
             "next_event_time": next_event_time,
             "processed_events": processed_events,
+        },
+    )
+
+
+@app.get("/close")
+async def status():
+    global state
+
+    state = "stopping"
+    os.kill(1, signal.SIGTERM)  # Will kill the docker container
+
+    return JSONResponse(
+        status_code=fastapi.status.HTTP_200_OK,
+        content={
+            "success": True,
+            "status": state,
         },
     )
 

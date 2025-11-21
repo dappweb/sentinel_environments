@@ -14,6 +14,9 @@ next_event_time = response_data["next_event_time"]
 print("Playback at 4x speed")
 while True:
     sleep_for = next_event_time - simulation_time
+    if sleep_for < 0:
+        break
+
     if simulation_time > 0 and sleep_for > 0:
         print(f"Sleeping for {sleep_for} seconds")
         time.sleep(sleep_for * 0.25)

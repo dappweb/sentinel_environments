@@ -7,11 +7,56 @@ from uuid import uuid4
 import random
 from datetime import datetime
 import requests
-from playwright.sync_api import sync_playwright
 
 from auth import STORE_URL
 from store_requests import make_authenticated_request
 from openai import OpenAI
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from selenium.common.exceptions import WebDriverException, TimeoutException
+import time
+
+
+def get_image_sources(url):
+    """Fetch all <img> tag src attributes from a given URL using ChromeDriver."""
+    # Configure Chrome options
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")  # Run in headless mode (no GUI)
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--no-sandbox")
+
+    # Path to your ChromeDriver (ensure it matches your Chrome version)
+    service = Service("/opt/homebrew/bin/chromedriver")  # <-- Change this path
+
+    try:
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        driver.set_page_load_timeout(15)  # Timeout for page load
+
+        driver.get(url)
+        time.sleep(2)  # Wait for DOM to load (can be replaced with WebDriverWait)
+
+        # Select all <img> elements
+        img_elements = driver.find_elements(By.TAG_NAME, "img")
+
+        # Extract src attributes
+        img_sources = []
+        for img in img_elements:
+            src = img.get_attribute("src")
+            if src:  # Only add if src is not None
+                img_sources.append(src)
+
+        return img_sources
+
+    except (WebDriverException, TimeoutException) as e:
+        print(f"Error: {e}")
+        return []
+    finally:
+        try:
+            driver.quit()
+        except:
+            pass
 
 
 def post_product_image(token, sku, image_path):
