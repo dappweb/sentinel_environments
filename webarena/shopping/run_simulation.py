@@ -1,5 +1,6 @@
 import time
 import requests
+import math
 
 DOCKER_SENTINEL_URL = "http://localhost:8000"
 
@@ -13,9 +14,11 @@ next_event_time = response_data["next_event_time"]
 print("Playback at 4x speed")
 while True:
     sleep_for = next_event_time - simulation_time
-    time.sleep(sleep_for)
+    if simulation_time > 0 and sleep_for > 0:
+        print(f"Sleeping for {sleep_for} seconds")
+        time.sleep(sleep_for * 0.25)
 
-    next_event_time = int(
+    next_event_time = math.ceil(
         next_event_time
     )  # TODO: Make event time format consistent with postmill.
     response = requests.get(
@@ -27,7 +30,6 @@ while True:
     simulation_time = response_data["simulation_time"]
     next_event_time = response_data["next_event_time"]
 
-    print(f"Simulation time: {simulation_time}")
     for e in response_data["processed_events"]:
         print("    " + e["type"])
     print()

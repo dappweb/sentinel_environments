@@ -14,7 +14,7 @@ from store_requests import make_authenticated_request
 from openai import OpenAI
 
 
-def post_product_image(token, product_id, image_path):
+def post_product_image(token, sku, image_path):
     """
     Post product image to the catalog.
 
@@ -40,20 +40,20 @@ def post_product_image(token, product_id, image_path):
             "content": {
                 "base64_encoded_data": encoded_string,
                 "type": "image/jpeg",
-                "name": f"product_image_{product_id}.jpg",
+                "name": f"product_image_{sku}.jpg",
             },
         }
     }
 
-    endpoint = f"/rest/V1/products/{product_id}/media"
+    endpoint = f"/rest/V1/products/{sku}/media"
     result = make_authenticated_request(
         token, endpoint, method="POST", data=image_payload
     )
 
     if result:
-        print(f"✓ Added image to product ID: {product_id}")
+        print(f"✓ Added image to product with SKU: {sku}")
     else:
-        print(f"✗ Failed to add image to product ID: {product_id}")
+        print(f"✗ Failed to add image to product with SKU: {sku}")
 
     return result
 
@@ -84,7 +84,7 @@ def add_product(token, sku, product):
 
         # Post product image after creating the product
         image_path = Path(__file__).parent.absolute() / Path(
-            f"product_images/{sku}.jpg"
+            f"product_images/{result.get('sku')}.jpg"
         )
         post_product_image(token, result.get("sku"), image_path)
     else:
@@ -177,7 +177,7 @@ def get_product_name_from_description(original_name, description):
     return response.strip()
 
 
-def download_product_image(url_key, sku, new_sku):
+def download_product_image(url_key, new_sku):
     """
     Download the main product image for a given SKU.
 
@@ -216,7 +216,7 @@ def download_product_image(url_key, sku, new_sku):
             return None
 
 
-def generate_product_from_catalog(token, index):
+def generate_product_from_catalog(token):
     """
     Create a new product in the catalog, as a JSON.
     """
@@ -268,7 +268,7 @@ def generate_product_from_catalog(token, index):
     new_product["product"]["sku"] = f"{new_product['product']['sku']}-{product_id}"
 
     image_path = download_product_image(
-        url_key[0]["value"], random_product["sku"], new_product["product"]["sku"]
+        url_key[0]["value"], new_product["product"]["sku"]
     )
     if image_path is None:
         return None

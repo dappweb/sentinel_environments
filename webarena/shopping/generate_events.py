@@ -5,9 +5,9 @@ Script to generate, add, and remove products in Adobe Commerce (Magento) via RES
 from datetime import datetime
 import os
 from pathlib import Path
+import random
 from time import sleep
 import json
-import time
 import argparse
 from auth import get_admin_token, get_customer_token
 from store_requests import make_authenticated_request
@@ -86,52 +86,44 @@ def example_api_calls(token):
     )
 
 
-def generate_product_sales_events(token, num_sales):
-    num_sales_created = 0
-    sales_added = []
-    for i in range(num_sales):
-        print(f"\nGenerating sale {i + 1} of {num_sales}...")
-        # Use the adobe commerce API to create a product sale event modifying the salesrule table
-        product = get_random_product_from_catalog(token)
-        if not product:
-            print("✗ No products found in catalog to create sales event.")
-            return
+def generate_events(token, num_sales, num_products):
+    """Generate product sales and add product events."""
+    # Generate a list of num_sales items of "add_sale" and num_products items of "add_product"
+    all_events = ["add_sale"] * num_sales + ["add_product"] * num_products
+    random.shuffle(all_events)
 
-        sku = product.get("sku")
-        print(f"Creating sale event for product SKU: {sku}...")
+    events = []
+    for event in all_events:
+        if event == "add_sale":
+            print("\nGenerating product sale event...")
+            # Use the adobe commerce API to create a product sale event modifying the salesrule table
+            product = get_random_product_from_catalog(token)
+            if not product:
+                print("✗ No products found in catalog to create sales event.")
+                continue
 
-        # Get the rest API endpoint to modify sales rules
-        result = generate_sales_rule_for_product(token, product)
-        if result:
-            sales_added.append(result)
-            num_sales_created += 1
+            sku = product.get("sku")
+            print(f"Creating sale event for product SKU: {sku}...")
 
-    return sales_added
+            # Get the rest API endpoint to modify sales rules
+            result = generate_sales_rule_for_product(token, product)
+            if result:
+                events.append(result)
 
+        elif event == "add_product":
+            print("\nGenerating product add event...")
+            # Generate a new product based on existing catalog
+            product = generate_product_from_catalog(token)
+            if not product:
+                print("✗ Failed to generate new product from catalog.")
+                continue
 
-def generate_product_add_events(token, num_products):
-    # Generate a set of products based on the existing catalog and save to JSON file
-    num_added = 0
-    products_added = []
-    while True:
-        if num_added >= num_products:
-            break
+            events.append(product)
 
-        print(f"\nGenerating product {num_added + 1} of {num_products}...")
-
-        product = generate_product_from_catalog(token, num_added)
-        if product:
-            # Get a timestamp for when the product was created
-            products_added.append(product)
-            num_added += 1
-
-    return products_added
+    return events
 
 
-def combine_and_output_events(events, output_path):
-    # Collapse items in events into a single list
-    events = [item for sublist in events for item in sublist]
-
+def output_events(events, output_path):
     # Sort the items by their created_at key
     events.sort(key=lambda x: x["created_at"])
 
@@ -268,16 +260,11 @@ if __name__ == "__main__":
         exit(1)
 
     if args.option == "init":
-        # Generate N events of adding new products to the catalog
-        product_add_events = generate_product_add_events(token, args.num_products)
-
-        # Generate N events of posting product sales to the catalog (not implemented yet)
-        product_sales_events = generate_product_sales_events(token, args.num_sales)
+        # Generate product add and product sale events
+        all_events = generate_events(token, args.num_sales, args.num_products)
 
         # Combine and output all events to a single JSON file
-        combine_and_output_events(
-            [product_add_events, product_sales_events], args.output_file
-        )
+        output_events(all_events, args.output_file)
 
     elif args.option == "add":
         # Open the products_added.json file and add all products in the json file
