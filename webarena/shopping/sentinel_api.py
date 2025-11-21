@@ -48,7 +48,7 @@ async def startup_event():
     global events_file_handle
     global next_event
 
-    events_file_handle = gzip.open("/var/www/html/events.jsonl.gz", "rt")
+    events_file_handle = gzip.open("events.jsonl.gz", "rt")
     next_event = await _read_next_event()
     state = "running"
     print("[startup] events file opened")
