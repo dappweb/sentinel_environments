@@ -1,42 +1,50 @@
 # sentinel_api.py
 import asyncio
 import json
-from fastapi import FastAPI
+import fastapi
+from fastapi.responses import JSONResponse
 from datetime import datetime
 import uvicorn
 import psycopg2
 import gzip
 
-app = FastAPI()
+app = fastapi.FastAPI()
+state = "starting"
 
-events_file_handle = None
-event_queue = []
 file_lock = asyncio.Lock()
+events_file_handle = None
+next_event = None
 
 reference_time = datetime.fromisoformat("2023-02-19T00:00:00+00:00")
 db_reference_time = "2023-02-19 00:00:00"
 
-async def _read_next_buffer():
-    """Read from events_file_handle until (and including) the next submission."""
-    
-    event_buffer = []
+simulation_time = 0
+
+async def _read_next_event():
     async with file_lock:
-        while True:
-            line = events_file_handle.readline().strip()
-            if line == "":
-                break
-            else:
-                event = json.loads(line)
-                event_buffer.append(event)
-                if event["type"] == "submission":
-                    break
-        return event_buffer
-    
+        line = events_file_handle.readline().strip()
+        if line == "":
+            return None
+        else:
+            return json.loads(line)
+
+@app.exception_handler(Exception)
+async def internal_server_error_handler(request: fastapi.Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "message": str(exc),
+        },
+    )
 
 @app.on_event("startup")
 async def startup_event():
     global conn
     global cur
+    global state 
+    global events_file_handle
+    global next_event
 
     conn = None
     cur = None
@@ -48,8 +56,11 @@ async def startup_event():
     )
     cur = conn.cursor()
 
-    await reset()
-    print("[startup] file opened")
+    events_file_handle = gzip.open("/var/www/html/events.jsonl.gz", "rt") 
+    next_event = await _read_next_event()
+    simulation_time = 0
+    state = "running"
+    print("[startup] events file opened")
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -61,52 +72,66 @@ async def shutdown_event():
         events_file_handle.close()
     print("[shutdown]")
 
-@app.get("/reset")
-async def reset():
-    global events_file_handle
-    global event_queue
-    global time_offset
+@app.get("/status")
+async def status():
+    next_event_time = None
+    if next_event is not None:
+        next_event_time = datetime.fromisoformat(next_event["time"]).timestamp() - reference_time.timestamp()
 
-    # Delete new rows in the database
-    cur.execute("TRUNCATE comment_votes")
-    cur.execute("TRUNCATE submission_votes")
-    cur.execute("DELETE FROM comments WHERE timestamp >= '" + db_reference_time + "'")
-    cur.execute("DELETE FROM submissions WHERE timestamp >= '" + db_reference_time + "'")
-    conn.commit()
+    return JSONResponse(
+        status_code=fastapi.status.HTTP_200_OK,
+        content={
+            "success": True,
+            "status": state,
+            "simulation_time": simulation_time,
+            "next_event_time": next_event_time,
+        }
+    )
 
-    async with file_lock:
-        if events_file_handle:
-            events_file_handle.close()
-            events_file_handle = None
-        events_file_handle = gzip.open("/var/www/html/events.jsonl.gz", "rt") 
+@app.get("/advance")
+async def next(t: int):
+    global simulation_time
+    global next_event
 
-    event_queue = await _read_next_buffer()
-    time_offset = 0
+    if t <= simulation_time:
+        raise ValueError("Simulation time cannot go backwards.")
 
-    return {"time_offset": time_offset, "type": "reset" }
+    processed_events = []
 
-@app.get("/next")
-async def next():
-    global event_queue
+    if next_event is not None:
+        next_event_time = datetime.fromisoformat(next_event["time"]).timestamp() - reference_time.timestamp()
 
-    while event_queue:
-        for event_data in event_queue:
-            if event_data["type"] == "submission":
-                insert_submission(conn, cur, event_data["payload"])
-            elif event_data["type"] == "comment":
-                insert_comment(conn, cur, event_data["payload"])
-            elif event_data["type"] == "submission_vote":
-                vote_on_submission(conn, cur, event_data["payload"])
-            elif event_data["type"] == "comment_vote":
-                vote_on_comment(conn, cur, event_data["payload"])
-            print(event_data["type"])
+        while next_event_time <= t:
+            processed_events.append(next_event)
+            if next_event["type"] == "submission":
+                insert_submission(conn, cur, next_event["payload"])
+            elif next_event["type"] == "comment":
+                insert_comment(conn, cur, next_event["payload"])
+            elif next_event["type"] == "submission_vote":
+                vote_on_submission(conn, cur, next_event["payload"])
+            elif next_event["type"] == "comment_vote":
+                vote_on_comment(conn, cur, next_event["payload"])
 
-            time_offset = datetime.fromisoformat(event_data["time"]).timestamp() - reference_time.timestamp()
-            record_type = event_data["type"]
+            next_event = await _read_next_event()
+            if next_event is None:
+                break
+            else:
+                next_event_time = datetime.fromisoformat(next_event["time"]).timestamp() - reference_time.timestamp()
 
-        event_queue = await _read_next_buffer()
-        return {"time_offset": time_offset, "type": record_type }
+    simulation_time = t
+    if next_event is not None:
+        next_event_time = datetime.fromisoformat(next_event["time"]).timestamp() - reference_time.timestamp()
 
+    return JSONResponse(
+        status_code=fastapi.status.HTTP_200_OK,
+        content={
+            "success": True,
+            "status": state,
+            "simulation_time": simulation_time,
+            "next_event_time": next_event_time,
+            "processed_events": processed_events,
+        }
+    )
 
 def insert_submission(conn, cur, data):
     sql = """
