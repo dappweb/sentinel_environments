@@ -9,8 +9,9 @@ import uvicorn
 import gzip
 import signal
 from products import add_product
-from auth import get_admin_token
+from auth import get_admin_token, create_customer_account
 from product_sales import add_product_sales_rule
+
 
 app = fastapi.FastAPI()
 state = "starting"
@@ -54,6 +55,9 @@ async def startup_event():
     next_event = await _read_next_event()
     state = "running"
     print("[startup] events file opened")
+
+    # Initialize the customer account with the REST API
+    create_customer_account()
 
 
 @app.on_event("shutdown")

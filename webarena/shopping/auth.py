@@ -8,6 +8,37 @@ CUSTOMER_USERNAME = "mandamarie05@gmail.com"
 CUSTOMER_PASSWORD = "test1234!"
 
 
+def create_customer_account():
+    """
+    Use the Magento REST API to create a new customer account.
+    """
+    url = f"{STORE_URL}/rest/V1/customers"
+
+    payload = {
+        "customer": {
+            "email": CUSTOMER_USERNAME,
+            "firstname": "Sentinel",
+            "lastname": "User",
+            "store_id": 1,
+            "website_id": 1,
+        },
+        "password": CUSTOMER_PASSWORD,
+    }
+
+    headers = {"Content-Type": "application/json"}
+
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        response.raise_for_status()
+        print("✓ Successfully created customer account")
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error creating customer account: {e}")
+        if hasattr(e, "response") and e.response is not None:
+            print(f"Response: {e.response.text}")
+        return None
+
+
 def get_customer_token():
     """
     Get customer token using customer email and password.
