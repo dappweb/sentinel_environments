@@ -85,7 +85,7 @@ def generate_sales_rule_for_product(token, product):
     rule_data = {
         "rule": {
             "name": f"Huge discount on {name}",
-            "store_labels": [{"store_id": 1, "store_label": f"HalfPrice_{sku}"}],
+            "store_labels": [{"store_id": 1, "store_label": "HalfPrice"}],
             "description": f"Automatic sale rule for product {sku}",
             # "condition": {
             #     "condition_type": "Magento\\SalesRule\\Model\\Rule\\Condition\\Combine",
