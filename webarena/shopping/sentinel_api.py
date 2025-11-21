@@ -103,7 +103,7 @@ async def next(t: int):
             # Process each type of event.
             admin_token = get_admin_token()
             if next_event["type"] == "add_product":
-                await add_product(
+                add_product(
                     token=admin_token,
                     sku=next_event["payload"]["product"]["sku"],
                     product=next_event["payload"],
