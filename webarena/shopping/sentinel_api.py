@@ -8,7 +8,7 @@ import uvicorn
 import gzip
 from products import add_product
 from auth import get_admin_token
-from webarena.shopping.product_sales import add_product_sales_rule
+from product_sales import add_product_sales_rule
 
 app = fastapi.FastAPI()
 state = "starting"
