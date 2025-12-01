@@ -8,9 +8,9 @@ from datetime import datetime, timezone
 import uvicorn
 import gzip
 import signal
-from webarena.shopping.docker_env.products import add_product, update_stock_for_product
+from products import add_product, update_stock_for_product
 from reviews import add_product_review
-from webarena.shopping.docker_env.auth import get_admin_token, create_customer_account
+from auth import get_admin_token, create_customer_account
 from product_sales import add_product_sales_rule
 from generate_events import event_types
 

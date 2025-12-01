@@ -1,62 +1,41 @@
 import base64
 import copy
-import mimetypes
 from pathlib import Path
 from urllib.parse import urljoin
 from uuid import uuid4
 import random
 import requests
-
-from webarena.shopping.docker_env.auth import STORE_URL
+from bs4 import BeautifulSoup
+from auth import STORE_URL
 from store_requests import make_authenticated_request
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import WebDriverException, TimeoutException
-import time
-
-from webarena.shopping.docker_env.completions import get_completion_from_openai
+from completions import get_completion_from_openai
 
 
 def get_image_sources(url):
     """Fetch all <img> tag src attributes from a given URL using ChromeDriver."""
-    # Configure Chrome options
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Run in headless mode (no GUI)
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--no-sandbox")
+    response = requests.get(url, timeout=10)
 
-    # Path to your ChromeDriver (ensure it matches your Chrome version)
-    service = Service("/opt/homebrew/bin/chromedriver")  # <-- Change this path
-
+    # Select all <img> elements
     try:
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        driver.set_page_load_timeout(15)  # Timeout for page load
+        # Fetch the HTML content
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()  # Raise HTTPError for bad responses
 
-        driver.get(url)
-        time.sleep(2)  # Wait for DOM to load (can be replaced with WebDriverWait)
+        soup = BeautifulSoup(response.text, "html.parser")
+        img_elements = soup.find_all("img")
+        image_urls = []
+        for img_tag in img_elements:
+            src = img_tag.get("src")
+            if not src:
+                continue
 
-        # Select all <img> elements
-        img_elements = driver.find_elements(By.CLASS_NAME, "fotorama__img")
+            image_urls.append(src)
 
-        # Extract src attributes
-        img_sources = []
-        for img in img_elements:
-            src = img.get_attribute("src")
-            if src:  # Only add if src is not None
-                img_sources.append(src)
+        return image_urls
 
-        return img_sources
-
-    except (WebDriverException, TimeoutException) as e:
-        print(f"Error: {e}")
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching page: {e}")
         return []
-    finally:
-        try:
-            driver.quit()
-        except:
-            pass
 
 
 def post_product_image(token, sku, image_path):
