@@ -7,7 +7,7 @@ from uuid import uuid4
 import random
 import requests
 
-from auth import STORE_URL
+from webarena.shopping.docker_env.auth import STORE_URL
 from store_requests import make_authenticated_request
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -16,7 +16,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import WebDriverException, TimeoutException
 import time
 
-from completions import get_completion_from_openai
+from webarena.shopping.docker_env.completions import get_completion_from_openai
 
 
 def get_image_sources(url):

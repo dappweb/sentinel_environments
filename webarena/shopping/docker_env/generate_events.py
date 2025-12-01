@@ -28,7 +28,14 @@ from product_sales import (
 from enum import Enum
 
 event_types = Enum(
-    "EventType", ["ADD_PRODUCT", "RESTOCK_PRODUCT", "ADD_SALE", "ADD_PRODUCT_REVIEW"]
+    "EventType",
+    [
+        "ADD_PRODUCT",
+        "UNSTOCK_PRODUCT",
+        "RESTOCK_PRODUCT",
+        "ADD_SALE",
+        "ADD_PRODUCT_REVIEW",
+    ],
 )
 
 
@@ -163,6 +170,7 @@ def generate_events(token, num_sales, num_products, num_reviews, num_restocks):
             events.append(event)
         elif event == event_types.RESTOCK_PRODUCT:
             print("\nGenerating product restock event...")
+
             # Generate a restock event for an existing product
             product = get_random_product_from_catalog(token, in_stock=False)
             if not product:
@@ -182,6 +190,48 @@ def generate_events(token, num_sales, num_products, num_reviews, num_restocks):
             events.append(event)
 
     return events
+
+
+def add_events(token, event_type, payload, demo=False):
+    """Add events to the sentinel via the /init endpoint."""
+    if event_type == event_types.ADD_PRODUCT:
+        sku = payload["product"].get("sku")
+        add_product(token, sku, payload)
+
+        if demo:
+            display_product_pages(sku, payload["product"])
+
+    elif event_type == event_types.ADD_SALE:
+        product_id = payload.get("rule", {}).get("product_ids")[0]
+        sales_rule = add_product_sales_rule(token, product_id, payload)
+
+        if demo:
+            token = get_customer_token()
+            display_product_in_cart(token, sales_rule)
+
+    elif event_type == event_types.ADD_PRODUCT_REVIEW:
+        product_id = payload.get("review", {}).get("entity_pk_value")
+        add_product_review(token, product_id, payload)
+
+        if demo:
+            display_product_pages(sku, payload["product"])
+    elif event_type == event_types.RESTOCK_PRODUCT:
+        sku = payload.get("sku")
+
+        # First remove existing stock
+        remove_payload = {
+            "stockItem": {
+                "qty": 0,
+                "is_in_stock": False,
+            }
+        }
+        update_stock_for_product(token, payload.get("sku"), remove_payload)
+
+        del payload["sku"]  # Can't pass sku in the payload for stock update
+        update_stock_for_product(token, sku, payload)
+
+        if demo:
+            display_product_pages(sku, payload["product"])
 
 
 def output_events(events, output_path):
@@ -356,42 +406,8 @@ if __name__ == "__main__":
                     # Get the string value as the enum
                     event_type = event_types[event_type]
 
-                    if event_type == event_types.ADD_PRODUCT:
-                        sku = payload["product"].get("sku")
-                        add_product(token, sku, payload)
-
-                        if args.demo:
-                            display_product_pages(sku, payload["product"])
-
-                    elif event_type == event_types.ADD_SALE:
-                        product_id = payload.get("rule", {}).get("product_ids")[0]
-                        sales_rule = add_product_sales_rule(token, product_id, payload)
-
-                        if args.demo:
-                            token = get_customer_token()
-                            display_product_in_cart(token, sales_rule)
-
-                    elif event_type == event_types.ADD_PRODUCT_REVIEW:
-                        product_id = payload.get("review", {}).get("entity_pk_value")
-                        review = add_product_review(token, product_id, payload)
-                    elif event_type == event_types.RESTOCK_PRODUCT:
-                        sku = payload.get("sku")
-
-                        # First remove existing stock
-                        remove_payload = {
-                            "stockItem": {
-                                "qty": 0,
-                                "is_in_stock": False,
-                            }
-                        }
-                        update_stock_for_product(
-                            token, payload.get("sku"), remove_payload
-                        )
-
-                        del payload[
-                            "sku"
-                        ]  # Can't pass sku in the payload for stock update
-                        update_stock_for_product(token, sku, payload)
+                    # Process payloads per event type
+                    add_events(token, event_type, payload, demo=args.demo)
 
                     previous_timestamp = created_at
 

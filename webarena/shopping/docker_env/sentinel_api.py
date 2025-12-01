@@ -211,7 +211,7 @@ async def next(t: int):
                 del next_event["payload"]["sku"]
                 update_stock_for_product(admin_token, sku, next_event["payload"])
 
-            next_event = await _read_next_event()
+            next_event = await _next_event()
             if next_event is None:
                 break
             else:
