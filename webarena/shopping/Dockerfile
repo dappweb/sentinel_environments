@@ -14,6 +14,7 @@ RUN apk update --no-cache \
     harfbuzz \
     ca-certificates \
     ttf-freefont
+RUN apk add gcompat glib nss libxcb libgcc
 RUN apk update --no-cache chromium \
     chromium-chromedriver
 RUN apk update python3
@@ -35,3 +36,6 @@ COPY product_images/* /var/www/html/product_images/
 # Copy the sentinel server
 COPY sentinel_api.py /var/www/html/sentinel_api.py
 COPY fastapi.ini /etc/supervisor.d/fastapi.ini
+
+# https://ryanbigg.com/2023/08/alpine-linux-selenium-manager-chrome-and-chromedriver
+

@@ -8,10 +8,11 @@ from datetime import datetime
 import uvicorn
 import gzip
 import signal
-from products import add_product
+from products import add_product, update_stock_for_product
+from reviews import add_product_review
 from auth import get_admin_token, create_customer_account
 from product_sales import add_product_sales_rule
-
+from generate_events import event_types
 
 app = fastapi.FastAPI()
 state = "starting"
@@ -123,13 +124,13 @@ async def next(t: int):
 
             # Process each type of event.
             admin_token = get_admin_token()
-            if next_event["type"] == "add_product":
+            if next_event["type"] == event_types.ADD_PRODUCT:
                 add_product(
                     token=admin_token,
                     sku=next_event["payload"]["product"]["sku"],
                     product=next_event["payload"],
                 )
-            elif next_event["type"] == "add_sale":
+            elif next_event["type"] == event_types.ADD_SALES_RULE:
                 product_id = (
                     next_event["payload"].get("rule", {}).get("product_ids", [None])[0]
                 )
@@ -137,6 +138,17 @@ async def next(t: int):
                     add_product_sales_rule(
                         admin_token, product_id, next_event["payload"]
                     )
+            elif next_event["type"] == event_types.ADD_PRODUCT_REVIEW:
+                product_id = (
+                    next_event["payload"].get("review", {}).get("entity_pk_value")
+                )
+                add_product_review(admin_token, product_id, next_event["payload"])
+            elif next_event["type"] == event_types.RESTOCK_PRODUCT:
+                sku = next_event["payload"].get("sku")
+
+                # Remove sku from payload as it's not part of stock update API
+                del next_event["payload"]["sku"]
+                update_stock_for_product(admin_token, sku, next_event["payload"])
 
             next_event = await _read_next_event()
             if next_event is None:

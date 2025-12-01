@@ -21,9 +21,7 @@ while True:
         print(f"Sleeping for {sleep_for} seconds")
         time.sleep(sleep_for * 0.25)
 
-    next_event_time = math.ceil(
-        next_event_time
-    )  # TODO: Make event time format consistent with postmill.
+    next_event_time = math.ceil(next_event_time)
     response = requests.get(
         f"{DOCKER_SENTINEL_URL}/advance", params={"t": next_event_time}
     )

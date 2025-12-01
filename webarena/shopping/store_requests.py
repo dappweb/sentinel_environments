@@ -1,7 +1,7 @@
-
 import requests
 import json
 from auth import STORE_URL
+
 
 def make_authenticated_request(token, endpoint, method="GET", data=None):
     """

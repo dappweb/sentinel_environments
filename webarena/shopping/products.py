@@ -5,18 +5,18 @@ from pathlib import Path
 from urllib.parse import urljoin
 from uuid import uuid4
 import random
-from datetime import datetime
 import requests
 
 from auth import STORE_URL
 from store_requests import make_authenticated_request
-from openai import OpenAI
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import WebDriverException, TimeoutException
 import time
+
+from completions import get_completion_from_openai
 
 
 def get_image_sources(url):
@@ -136,7 +136,7 @@ def add_product(token, sku, product):
         print("✗ Failed to create product")
 
 
-def get_random_product_from_catalog(token):
+def get_random_product_from_catalog(token, in_stock=True):
     """
     Get a random product from the catalog.
 
@@ -147,12 +147,15 @@ def get_random_product_from_catalog(token):
     """
     print("Fetching products from catalog...")
     endpoint = "/rest/V1/products?searchCriteria[pageSize]=100"
+
     result = make_authenticated_request(token, endpoint)
 
     if result:
         items = result.get("items", [])
         total = result.get("total_count", 0)
-        print(f"✓ Found {total} total products, showing {len(items)}")
+        print(
+            f"✓ Found {total} total products, In stock={in_stock}, showing {len(items)}"
+        )
 
         # Request a range of products
         pages = total // 10
@@ -182,32 +185,11 @@ def get_random_product_from_catalog(token):
         return None
 
 
-def _is_chat_model(model):
-    """Heuristic to determine whether a model expects the chat completions API."""
-    normalized = model.lower()
-    if "instruct" in normalized or normalized.startswith("text-"):
-        return False
-    return True
-
-
-def get_completion_from_openai(prompt, model="gpt-5"):
-    """Return the completion text for the given prompt using the appropriate OpenAI API."""
-    client = OpenAI()
-    if _is_chat_model(model):
-        completion = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            reasoning_effort="minimal",
-        )
-    message = completion.choices[0].message.content
-    return message if isinstance(message, str) else message or ""
-
-
 def get_product_name_from_description(original_name, description):
     """
     Generate a new product name based on the original name and description, using an LLM.
     """
-    prompt = """Using the following product description and original from an online store, 
+    prompt = """Using the following product description and original name from an online store, 
     generate a concise and catchy test product name that accurately reflects the product's features and benefits.
     
     Original Product Name: "{original_name}"
@@ -295,13 +277,7 @@ def generate_product_from_catalog(token):
 
     del new_product["media_gallery_entries"]
 
-    new_product = {
-        "product": new_product,
-        "created_at": datetime.now().isoformat(
-            timespec="milliseconds"
-        ),  # TODO: verify we are using consistent timestamp format
-    }
-
+    new_product = {"product": new_product}
     product_id = uuid4()
     new_product["product"]["sku"] = f"{new_product['product']['sku']}-{product_id}"
 
@@ -338,3 +314,58 @@ def generate_product_from_catalog(token):
         url_key[0]["value"] = f"{url_key[0]['value']}-{product_id}"
 
     return new_product
+
+
+def generate_restock_event(token, sku):
+    """Generate a restock event payload for a given product SKU."""
+    endpoint = f"/rest/V1/stockItems/{sku}"
+    stock_item_response = make_authenticated_request(token, endpoint)
+
+    if stock_item_response:
+        additional_quantity = random.randint(20, 100)
+        current_qty = stock_item_response.get("qty", 0)
+        new_qty = current_qty + additional_quantity
+
+        stock_payload = {
+            "stockItem": {
+                "qty": new_qty,
+                "is_in_stock": True,
+            },
+            "sku": sku,
+        }
+        return stock_payload
+    else:
+        print(f"✗ Failed to fetch stock item for SKU: {sku}")
+        return None
+
+
+def update_stock_for_product(token, sku, payload):
+    """
+    Restock a product by increasing its quantity.
+
+    Args:
+        token: Bearer token
+        sku: Product SKU
+        payload: Payload containing updated stock information
+
+    Returns:
+        Response JSON or None
+    """
+    print(f"\nRestocking product with SKU: {sku}...")
+
+    # Update the stock item with the new quantity
+    result = make_authenticated_request(
+        token,
+        f"/rest/V1/products/{sku}/stockItems/1",
+        method="PUT",
+        data=payload,
+    )
+
+    if result:
+        print(
+            f"✓ Restocked product with SKU: {sku}. New quantity: {payload['stockItem']['qty']}"
+        )
+    else:
+        print(f"✗ Failed to restock product with SKU: {sku}")
+
+    return result

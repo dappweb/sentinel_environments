@@ -76,7 +76,7 @@ def remove_product_sales_rule(token, product_id):
     #     print(f"✗ Failed to remove sales rule with ID: {rule_id}")
 
 
-def generate_sales_rule_for_product(token, product):
+def generate_sales_rule_for_product(product):
     """Post a product sale event for a given product ID."""
     # Use the API to get the product info
     sku = product.get("sku")
@@ -123,7 +123,4 @@ def generate_sales_rule_for_product(token, product):
 
     print(f"✓ Created sales rule data for product SKU: {sku}")
 
-    rule_data["created_at"] = datetime.now().isoformat(
-        timespec="milliseconds"
-    )  # TODO: verify we are using consistent timestamp format
     return rule_data

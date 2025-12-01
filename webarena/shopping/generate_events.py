@@ -16,11 +16,19 @@ from products import (
     add_product,
     generate_product_from_catalog,
     get_random_product_from_catalog,
+    generate_restock_event,
+    update_stock_for_product,
 )
+from reviews import generate_product_review, add_product_review
 from product_sales import (
     generate_sales_rule_for_product,
     add_product_sales_rule,
     remove_product_sales_rule,
+)
+from enum import Enum
+
+event_types = Enum(
+    "EventType", ["ADD_PRODUCT", "RESTOCK_PRODUCT", "ADD_SALE", "ADD_PRODUCT_REVIEW"]
 )
 
 
@@ -86,15 +94,20 @@ def example_api_calls(token):
     )
 
 
-def generate_events(token, num_sales, num_products):
+def generate_events(token, num_sales, num_products, num_reviews, num_restocks):
     """Generate product sales and add product events."""
-    # Generate a list of num_sales items of "add_sale" and num_products items of "add_product"
-    all_events = ["add_sale"] * num_sales + ["add_product"] * num_products
+    # Generate a list of the right amount of each event type
+    all_events = (
+        [event_types.ADD_SALE] * num_sales
+        + [event_types.ADD_PRODUCT] * num_products
+        + [event_types.ADD_PRODUCT_REVIEW] * num_reviews
+        + [event_types.RESTOCK_PRODUCT] * num_restocks
+    )
     random.shuffle(all_events)
 
     events = []
     for event in all_events:
-        if event == "add_sale":
+        if event == event_types.ADD_SALE:
             print("\nGenerating product sale event...")
             # Use the adobe commerce API to create a product sale event modifying the salesrule table
             product = get_random_product_from_catalog(token)
@@ -106,19 +119,67 @@ def generate_events(token, num_sales, num_products):
             print(f"Creating sale event for product SKU: {sku}...")
 
             # Get the rest API endpoint to modify sales rules
-            result = generate_sales_rule_for_product(token, product)
-            if result:
-                events.append(result)
+            payload = generate_sales_rule_for_product(product)
 
-        elif event == "add_product":
+            event = {
+                "created_at": datetime.now().isoformat(timespec="milliseconds"),
+                "type": event_types.ADD_SALE.name,
+                "payload": payload,
+            }
+            events.append(event)
+
+        elif event == event_types.ADD_PRODUCT:
             print("\nGenerating product add event...")
             # Generate a new product based on existing catalog
-            product = generate_product_from_catalog(token)
+            payload = generate_product_from_catalog(token)
             if not product:
                 print("✗ Failed to generate new product from catalog.")
                 continue
 
-            events.append(product)
+            event = {
+                "created_at": datetime.now().isoformat(timespec="milliseconds"),
+                "type": event_types.ADD_PRODUCT.name,
+                "payload": payload,
+            }
+            events.append(event)
+
+        elif event == event_types.ADD_PRODUCT_REVIEW:
+            print("\nGenerating product review event...")
+            # Generate a new product review based on existing catalog
+            product = get_random_product_from_catalog(token)
+            if not product:
+                print("✗ No products found in catalog to create review event.")
+                continue
+
+            sku = product.get("sku")
+            print(f"Creating review event for product SKU: {sku}...")
+
+            payload = generate_product_review(token, sku)
+            event = {
+                "created_at": datetime.now().isoformat(timespec="milliseconds"),
+                "type": event_types.ADD_PRODUCT_REVIEW.name,
+                "payload": payload,
+            }
+            events.append(event)
+        elif event == event_types.RESTOCK_PRODUCT:
+            print("\nGenerating product restock event...")
+            # Generate a restock event for an existing product
+            product = get_random_product_from_catalog(token, in_stock=False)
+            if not product:
+                print("✗ No products found in catalog to create restock event.")
+                continue
+
+            sku = product.get("sku")
+            print(f"Creating restock event for product SKU: {sku}...")
+
+            # Create payload with updated stock information
+            payload = generate_restock_event(token, sku)
+            event = {
+                "created_at": datetime.now().isoformat(timespec="milliseconds"),
+                "type": event_types.RESTOCK_PRODUCT.name,
+                "payload": payload,
+            }
+            events.append(event)
 
     return events
 
@@ -126,21 +187,6 @@ def generate_events(token, num_sales, num_products):
 def output_events(events, output_path):
     # Sort the items by their created_at key
     events.sort(key=lambda x: x["created_at"])
-
-    # Convert product payloads into required JSONL format
-    events = [
-        {
-            "time": p["created_at"],
-            "type": "add_product" if "product" in p else "add_sale",
-            "payload": p,
-        }
-        for p in events
-    ]
-
-    # Remove created_at key from payload to avoid redundancy
-    for event in events:
-        if "created_at" in event.get("payload", {}):
-            del event["payload"]["created_at"]
 
     output_path = Path(__file__).parent.absolute() / Path(output_path)
 
@@ -237,6 +283,15 @@ if __name__ == "__main__":
         default=0,
     )
     parser.add_argument(
+        "--num-reviews",
+        type=int,
+        help="Number of product reviews to add",
+        default=0,
+    )
+    parser.add_argument(
+        "--num-restocks", type=int, help="Number of restock events", default=0
+    )
+    parser.add_argument(
         "--output-file",
         type=str,
         help="where to output the generated events JSON file",
@@ -261,13 +316,19 @@ if __name__ == "__main__":
 
     if args.option == "init":
         # Generate product add and product sale events
-        all_events = generate_events(token, args.num_sales, args.num_products)
+        all_events = generate_events(
+            token,
+            args.num_sales,
+            args.num_products,
+            args.num_reviews,
+            args.num_restocks,
+        )
 
         # Combine and output all events to a single JSON file
         output_events(all_events, args.output_file)
 
     elif args.option == "add":
-        # Open the products_added.json file and add all products in the json file
+        # Read events from the output file and add them
         try:
             output_path = Path(__file__).parent.absolute() / Path(args.output_file)
             with open(output_path, "r") as f:
@@ -276,6 +337,7 @@ if __name__ == "__main__":
 
                 previous_timestamp = None
                 for event in events:
+                    print(event)
                     created_at = event.get("time")
                     if previous_timestamp is not None:
                         # Calculate time difference and sleep accordingly to simulate original timing
@@ -289,24 +351,47 @@ if __name__ == "__main__":
                             sleep(time_diff.total_seconds())
 
                     payload = event.get("payload", {})
-                    if event.get("type") == "add_product":
+                    event_type = event.get("type")
+
+                    # Get the string value as the enum
+                    event_type = event_types[event_type]
+
+                    if event_type == event_types.ADD_PRODUCT:
                         sku = payload["product"].get("sku")
-                        if sku:
-                            add_product(token, sku, payload)
+                        add_product(token, sku, payload)
 
-                            if args.demo:
-                                display_product_pages(sku, payload["product"])
+                        if args.demo:
+                            display_product_pages(sku, payload["product"])
 
-                    elif event.get("type") == "add_sale":
+                    elif event_type == event_types.ADD_SALE:
                         product_id = payload.get("rule", {}).get("product_ids")[0]
-                        if product_id:
-                            sales_rule = add_product_sales_rule(
-                                token, product_id, payload
-                            )
+                        sales_rule = add_product_sales_rule(token, product_id, payload)
 
-                            if args.demo:
-                                token = get_customer_token()
-                                display_product_in_cart(token, sales_rule)
+                        if args.demo:
+                            token = get_customer_token()
+                            display_product_in_cart(token, sales_rule)
+
+                    elif event_type == event_types.ADD_PRODUCT_REVIEW:
+                        product_id = payload.get("review", {}).get("entity_pk_value")
+                        review = add_product_review(token, product_id, payload)
+                    elif event_type == event_types.RESTOCK_PRODUCT:
+                        sku = payload.get("sku")
+
+                        # First remove existing stock
+                        remove_payload = {
+                            "stockItem": {
+                                "qty": 0,
+                                "is_in_stock": False,
+                            }
+                        }
+                        update_stock_for_product(
+                            token, payload.get("sku"), remove_payload
+                        )
+
+                        del payload[
+                            "sku"
+                        ]  # Can't pass sku in the payload for stock update
+                        update_stock_for_product(token, sku, payload)
 
                     previous_timestamp = created_at
 
@@ -318,10 +403,10 @@ if __name__ == "__main__":
     elif args.option == "reset":
         try:
             with open(args.output_file, "r") as f:
-                line = f.readlines()
-                events = [json.loads(l) for l in line]
+                lines = f.readlines()
+                events = [json.loads(item) for item in lines]
                 for event in events:
-                    if event.get("type") == "add_product":
+                    if event.get("type") == event_types.ADD_PRODUCT:
                         sku = event.get("payload").get("product").get("sku")
                         if sku:
                             remove_product(token, sku)
@@ -342,7 +427,7 @@ if __name__ == "__main__":
                                     print(
                                         f"Opened Edge browser for product SKU: {sku}. It should give a page not found message."
                                     )
-                    elif event.get("type") == "add_sale":
+                    elif event.get("type") == event_types.ADD_SALE:
                         product_id = (
                             event.get("payload").get("rule").get("product_ids")[0]
                         )
