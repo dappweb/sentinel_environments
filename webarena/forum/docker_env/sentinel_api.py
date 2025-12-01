@@ -29,7 +29,7 @@ next_event = None
 
 # Time of simulation start in the original WebArena data This is time
 # ORIGINALLY used in the database (prior to shifting done in the
-# Dockerfile or init()). This is the time basis uses in events.jsonl.gz 
+# Dockerfile or init()). This is the time basis uses in events.jsonl.gz
 webarena_reference_time = datetime.fromisoformat("2023-02-19T00:00:00+00:00")
 
 # The wall-clock time of when the simulation has started.
@@ -40,8 +40,9 @@ simulation_reference_time = None
 # This is how time is expressed to through all public APIs
 simulation_time = 0
 
+
 async def _next_file_event():
-    """ Return the next event from the events file. """
+    """Return the next event from the events file."""
     async with file_lock:
         line = events_file_handle.readline().strip()
         if line == "":
@@ -50,13 +51,19 @@ async def _next_file_event():
             event_data = json.loads(line)
 
             # Make the timestamps relative
-            event_data["time"] = datetime.fromisoformat(event_data["time"]).timestamp() - webarena_reference_time.timestamp()
+            event_data["time"] = (
+                datetime.fromisoformat(event_data["time"]).timestamp()
+                - webarena_reference_time.timestamp()
+            )
 
             # Other time fields
             payload = event_data["payload"]
             for tf in ["timestamp", "edited_at", "last_active"]:
                 if tf in payload and payload[tf] is not None:
-                    payload[tf] = datetime.fromisoformat(payload[tf]).timestamp() - webarena_reference_time.timestamp()
+                    payload[tf] = (
+                        datetime.fromisoformat(payload[tf]).timestamp()
+                        - webarena_reference_time.timestamp()
+                    )
 
             return event_data
 
@@ -93,11 +100,12 @@ async def internal_server_error_handler(request: fastapi.Request, exc: Exception
         },
     )
 
+
 @app.on_event("startup")
 async def startup_event():
     global conn
     global cur
-    global state 
+    global state
     global simulation_time
     global events_file_handle
     global next_file_event
@@ -113,7 +121,7 @@ async def startup_event():
     )
     cur = conn.cursor()
 
-    events_file_handle = gzip.open("/var/www/html/events.jsonl.gz", "rt") 
+    events_file_handle = gzip.open("/var/www/html/events.jsonl.gz", "rt")
 
     # Prime things
     next_file_event = await _next_file_event()
@@ -122,6 +130,7 @@ async def startup_event():
 
     state = "preinit"
     print("[startup] database opened")
+
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -132,6 +141,7 @@ async def shutdown_event():
     if events_file_handle:
         events_file_handle.close()
     print("[shutdown]")
+
 
 @app.get("/status")
 async def status():
@@ -146,8 +156,9 @@ async def status():
             "status": state,
             "simulation_time": simulation_time,
             "next_event_time": next_event_time,
-        }
+        },
     )
+
 
 @app.post("/init")
 async def init(request: fastapi.Request):
@@ -162,13 +173,12 @@ async def init(request: fastapi.Request):
 
     # TODO validate data
 
-
     # Compute the simulation reference time, and then shift the database accordingly
     simulation_reference_time = datetime.now(timezone.utc)
     simulation_time = 0
 
     # Shift about 2 days of data forward (we don't shift it all, as this would be too slow)
-    cur.execute(f"SELECT MAX(\"timestamp\") FROM submissions")
+    cur.execute(f'SELECT MAX("timestamp") FROM submissions')
     max_timestamp = None
     for row in cur.fetchall():
         max_timestamp = row[0]
@@ -206,8 +216,9 @@ async def init(request: fastapi.Request):
             "status": state,
             "simulation_time": simulation_time,
             "next_event_time": next_event_time,
-        }
+        },
     )
+
 
 @app.get("/advance")
 async def next(t: int):
@@ -220,7 +231,6 @@ async def next(t: int):
     processed_events = []
 
     if next_event is not None:
-
         next_event_time = None
         if next_event is not None:
             next_event_time = next_event["time"]
@@ -254,26 +264,27 @@ async def next(t: int):
             "simulation_time": simulation_time,
             "next_event_time": next_event_time,
             "processed_events": processed_events,
-        }
+        },
     )
+
 
 @app.get("/close")
 async def status():
     global state
 
     state = "stopping"
-    os.kill(1, signal.SIGTERM) # Will kill the docker container
+    os.kill(1, signal.SIGTERM)  # Will kill the docker container
 
     return JSONResponse(
         status_code=fastapi.status.HTTP_200_OK,
         content={
             "success": True,
             "status": state,
-        }
+        },
     )
 
-def insert_submission(conn, cur, data):
 
+def insert_submission(conn, cur, data):
     # Clone data
     data = json.loads(json.dumps(data))
 
@@ -282,11 +293,17 @@ def insert_submission(conn, cur, data):
     # the future and this will look weird in the UI. Max out at now() if necessary
     now = datetime.now(timezone.utc)
     if data["timestamp"] is not None:
-        data["timestamp"] = min(now, simulation_reference_time + timedelta(seconds=data["timestamp"]))
+        data["timestamp"] = min(
+            now, simulation_reference_time + timedelta(seconds=data["timestamp"])
+        )
     if data["edited_at"] is not None:
-        data["edited_at"] = min(now, simulation_reference_time + timedelta(seconds=data["edited_at"]))
+        data["edited_at"] = min(
+            now, simulation_reference_time + timedelta(seconds=data["edited_at"])
+        )
     if data["last_active"] is not None:
-        data["last_active"] = min(now, simulation_reference_time + timedelta(seconds=data["last_active"]))
+        data["last_active"] = min(
+            now, simulation_reference_time + timedelta(seconds=data["last_active"])
+        )
 
     sql = """
         INSERT INTO submissions (
@@ -340,16 +357,19 @@ def insert_submission(conn, cur, data):
 
 
 def insert_comment(conn, cur, data):
-
     # Clone data
     data = json.loads(json.dumps(data))
 
     # Change from relative to absolute times
     now = datetime.now(timezone.utc)
     if data["timestamp"] is not None:
-        data["timestamp"] = min(now, simulation_reference_time + timedelta(seconds=data["timestamp"]))
+        data["timestamp"] = min(
+            now, simulation_reference_time + timedelta(seconds=data["timestamp"])
+        )
     if data["edited_at"] is not None:
-        data["edited_at"] = min(now, simulation_reference_time + timedelta(seconds=data["edited_at"]))
+        data["edited_at"] = min(
+            now, simulation_reference_time + timedelta(seconds=data["edited_at"])
+        )
 
     sql = """
     INSERT INTO comments (
@@ -387,7 +407,8 @@ def insert_comment(conn, cur, data):
     conn.commit()
 
     # Update the comment count
-    cur.execute("""
+    cur.execute(
+        """
 UPDATE submissions AS s
 SET comment_count = (
     SELECT COUNT(*)
@@ -395,20 +416,29 @@ SET comment_count = (
     WHERE c.submission_id = s.id
 )
 WHERE s.id = %(submission_id)s;
-""", {"submission_id": data["submission_id"]})
+""",
+        {"submission_id": data["submission_id"]},
+    )
     conn.commit()
+
 
 def vote_on_submission(conn, cur, data):
     op = "+ 1" if data["upvote"] else "- 1"
-    sql = "UPDATE submissions SET net_score=net_score " + op + " WHERE id=%(submission_id)s;"
+    sql = (
+        "UPDATE submissions SET net_score=net_score "
+        + op
+        + " WHERE id=%(submission_id)s;"
+    )
     cur.execute(sql, {"submission_id": data["submission_id"]})
     conn.commit()
+
 
 def vote_on_comment(conn, cur, data):
     op = "+ 1" if data["upvote"] else "- 1"
     sql = "UPDATE comments SET net_score=net_score " + op + " WHERE id=%(comment_id)s;"
     cur.execute(sql, {"comment_id": data["comment_id"]})
     conn.commit()
+
 
 if __name__ == "__main__":
     uvicorn.run("sentinel_api:app", host="0.0.0.0", port=8000, workers=1)

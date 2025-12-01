@@ -4,7 +4,7 @@ import asyncio
 import json
 import fastapi
 from fastapi.responses import JSONResponse
-from datetime import datetime
+from datetime import datetime, timezone
 import uvicorn
 import gzip
 import signal
@@ -21,8 +21,18 @@ file_lock = asyncio.Lock()
 events_file_handle = None
 next_event = None
 
-reference_time = datetime.fromisoformat("2023-02-19T00:00:00+00:00")
+simulation_time = 0
 
+
+# Time of simulation start in the original WebArena data.
+webarena_reference_time = datetime.fromisoformat("2023-02-19T00:00:00+00:00")
+
+# The wall-clock time of when the simulation has started.
+# It is set to now() in init(), and is from where simulation_time is measured
+simulation_reference_time = None
+
+# This is the number of seconds passed since simulation_reference_time
+# This is how time is expressed to through all public APIs
 simulation_time = 0
 
 
@@ -32,7 +42,13 @@ async def _read_next_event():
         if line == "":
             return None
         else:
-            return json.loads(line)
+            line_json = json.loads(line)
+
+            # Make the timestamps relative
+            line_json["time"] = (
+                datetime.fromisoformat(line_json["time"]).timestamp()
+                - webarena_reference_time.timestamp()
+            )
 
 
 @app.exception_handler(Exception)
@@ -51,9 +67,13 @@ async def startup_event():
     global state
     global events_file_handle
     global next_event
+    global simulation_time
 
     events_file_handle = gzip.open("events.jsonl.gz", "rt")
     next_event = await _read_next_event()
+
+    simulation_time = 0
+
     state = "running"
     print("[startup] events file opened")
 
@@ -72,10 +92,7 @@ async def shutdown_event():
 async def status():
     next_event_time = None
     if next_event is not None:
-        next_event_time = (
-            datetime.fromisoformat(next_event["time"]).timestamp()
-            - reference_time.timestamp()
-        )
+        next_event_time = next_event["time"]
 
     return JSONResponse(
         status_code=fastapi.status.HTTP_200_OK,
@@ -88,9 +105,28 @@ async def status():
     )
 
 
-@app.get("/init")
-async def init():
-    #
+@app.post("/init")
+async def init(request: fastapi.Request):
+    global simulation_reference_time
+    global simulation_time
+    global custom_events
+    global next_event
+    global state
+
+    data = await request.json()
+    custom_events = data["events"]
+
+    # TODO validate data
+
+    # Compute the simulation reference time, and then shift the database accordingly
+    simulation_reference_time = datetime.now(timezone.utc)
+    simulation_time = 0
+
+    state = "running"
+
+    next_event_time = None
+    if next_event is not None:
+        next_event_time = next_event["time"]
 
     return JSONResponse(
         status_code=fastapi.status.HTTP_200_OK,
@@ -114,10 +150,7 @@ async def next(t: int):
     processed_events = []
 
     if next_event is not None:
-        next_event_time = (
-            datetime.fromisoformat(next_event["time"]).timestamp()
-            - reference_time.timestamp()
-        )
+        next_event_time = next_event["time"]
 
         while next_event_time <= t:
             processed_events.append(next_event)
@@ -154,17 +187,11 @@ async def next(t: int):
             if next_event is None:
                 break
             else:
-                next_event_time = (
-                    datetime.fromisoformat(next_event["time"]).timestamp()
-                    - reference_time.timestamp()
-                )
+                next_event_time = next_event["time"]
 
     simulation_time = t
     if next_event is not None:
-        next_event_time = (
-            datetime.fromisoformat(next_event["time"]).timestamp()
-            - reference_time.timestamp()
-        )
+        next_event_time = next_event["time"]
 
     return JSONResponse(
         status_code=fastapi.status.HTTP_200_OK,
