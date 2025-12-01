@@ -8,9 +8,9 @@ from datetime import datetime, timezone
 import uvicorn
 import gzip
 import signal
-from products import add_product, update_stock_for_product
+from webarena.shopping.docker_env.products import add_product, update_stock_for_product
 from reviews import add_product_review
-from auth import get_admin_token, create_customer_account
+from webarena.shopping.docker_env.auth import get_admin_token, create_customer_account
 from product_sales import add_product_sales_rule
 from generate_events import event_types
 
@@ -36,19 +36,44 @@ simulation_reference_time = None
 simulation_time = 0
 
 
-async def _read_next_event():
+async def _next_file_event():
+    """Return the next event from the events file."""
     async with file_lock:
         line = events_file_handle.readline().strip()
         if line == "":
             return None
         else:
-            line_json = json.loads(line)
+            event_data = json.loads(line)
 
             # Make the timestamps relative
-            line_json["time"] = (
-                datetime.fromisoformat(line_json["time"]).timestamp()
+            event_data["time"] = (
+                datetime.fromisoformat(event_data["time"]).timestamp()
                 - webarena_reference_time.timestamp()
             )
+
+            return event_data
+
+
+async def _next_event():
+    global custom_events
+    global next_file_event
+
+    if len(custom_events) == 0:
+        # No custom events, just read from the file
+        result = next_file_event
+        next_file_event = await _next_file_event()
+    elif next_file_event is None:
+        # No file events, just read from the custom events list
+        if len(custom_events) > 0:
+            result = custom_events.pop(0)
+    else:
+        # Return whichever event is earliest
+        if custom_events[0]["time"] <= next_file_event["time"]:
+            result = custom_events.pop(0)
+        else:
+            result = next_file_event
+            next_file_event = await _next_file_event()
+    return result
 
 
 @app.exception_handler(Exception)
@@ -66,15 +91,18 @@ async def internal_server_error_handler(request: fastapi.Request, exc: Exception
 async def startup_event():
     global state
     global events_file_handle
+    global next_file_event
     global next_event
     global simulation_time
 
-    events_file_handle = gzip.open("events.jsonl.gz", "rt")
-    next_event = await _read_next_event()
+    events_file_handle = gzip.open("/var/www/html/events.jsonl.gz", "rt")
+
+    next_file_event = await _next_file_event()
+    next_event = await _next_event()
 
     simulation_time = 0
 
-    state = "running"
+    state = "preinit"
     print("[startup] events file opened")
 
     # Initialize the customer account with the REST API

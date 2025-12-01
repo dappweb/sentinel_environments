@@ -9,9 +9,9 @@ import random
 from time import sleep
 import json
 import argparse
-from auth import get_admin_token, get_customer_token
+from webarena.shopping.docker_env.auth import get_admin_token, get_customer_token
 from store_requests import make_authenticated_request
-from products import (
+from webarena.shopping.docker_env.products import (
     remove_product,
     add_product,
     generate_product_from_catalog,
