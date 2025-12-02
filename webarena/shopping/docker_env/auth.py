@@ -1,6 +1,7 @@
 import requests
 
 STORE_URL = "http://localhost:7770"  # Your Adobe Commerce store URL
+
 ADMIN_USERNAME = "admin"  # Admin username
 ADMIN_PASSWORD = "admin1234"  # Admin password
 

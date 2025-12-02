@@ -129,7 +129,7 @@ def generate_events(token, num_sales, num_products, num_reviews, num_restocks):
             payload = generate_sales_rule_for_product(product)
 
             event = {
-                "created_at": datetime.now().isoformat(timespec="milliseconds"),
+                "time": datetime.now().isoformat(timespec="milliseconds"),
                 "type": event_types.ADD_SALE.name,
                 "payload": payload,
             }
@@ -144,7 +144,7 @@ def generate_events(token, num_sales, num_products, num_reviews, num_restocks):
                 continue
 
             event = {
-                "created_at": datetime.now().isoformat(timespec="milliseconds"),
+                "time": datetime.now().isoformat(timespec="milliseconds"),
                 "type": event_types.ADD_PRODUCT.name,
                 "payload": product,
             }
@@ -163,7 +163,7 @@ def generate_events(token, num_sales, num_products, num_reviews, num_restocks):
 
             payload = generate_product_review(token, sku)
             event = {
-                "created_at": datetime.now().isoformat(timespec="milliseconds"),
+                "time": datetime.now().isoformat(timespec="milliseconds"),
                 "type": event_types.ADD_PRODUCT_REVIEW.name,
                 "payload": payload,
             }
@@ -183,7 +183,7 @@ def generate_events(token, num_sales, num_products, num_reviews, num_restocks):
             # Create payload with updated stock information
             payload = generate_restock_event(token, sku)
             event = {
-                "created_at": datetime.now().isoformat(timespec="milliseconds"),
+                "time": datetime.now().isoformat(timespec="milliseconds"),
                 "type": event_types.RESTOCK_PRODUCT.name,
                 "payload": payload,
             }
@@ -213,8 +213,9 @@ def add_events(token, event_type, payload, demo=False):
         product_id = payload.get("review", {}).get("entity_pk_value")
         add_product_review(token, product_id, payload)
 
-        if demo:
-            display_product_pages(sku, payload["product"])
+        # if demo:
+        #     display_product_pages(sku, payload["product"])
+
     elif event_type == event_types.RESTOCK_PRODUCT:
         sku = payload.get("sku")
 
@@ -236,7 +237,7 @@ def add_events(token, event_type, payload, demo=False):
 
 def output_events(events, output_path):
     # Sort the items by their created_at key
-    events.sort(key=lambda x: x["created_at"])
+    events.sort(key=lambda x: x["time"])
 
     output_path = Path(__file__).parent.absolute() / Path(output_path)
 

@@ -17,6 +17,9 @@ from generate_events import event_types
 app = fastapi.FastAPI()
 state = "starting"
 
+# Events passed via init()
+custom_events = []
+
 file_lock = asyncio.Lock()
 events_file_handle = None
 next_event = None
