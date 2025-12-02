@@ -138,7 +138,7 @@ def generate_events(token, num_sales, num_products, num_reviews, num_restocks):
         elif event == event_types.ADD_PRODUCT:
             print("\nGenerating product add event...")
             # Generate a new product based on existing catalog
-            payload = generate_product_from_catalog(token)
+            product = generate_product_from_catalog(token)
             if not product:
                 print("✗ Failed to generate new product from catalog.")
                 continue
@@ -146,7 +146,7 @@ def generate_events(token, num_sales, num_products, num_reviews, num_restocks):
             event = {
                 "created_at": datetime.now().isoformat(timespec="milliseconds"),
                 "type": event_types.ADD_PRODUCT.name,
-                "payload": payload,
+                "payload": product,
             }
             events.append(event)
 
