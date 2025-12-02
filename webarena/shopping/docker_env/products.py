@@ -22,7 +22,7 @@ def get_image_sources(url):
         response.raise_for_status()  # Raise HTTPError for bad responses
 
         soup = BeautifulSoup(response.text, "html.parser")
-        img_elements = soup.find_all("img", class_="fotorama__img")
+        img_elements = soup.find_all("img", class_="gallery-placeholder__image")
         image_urls = []
         for img_tag in img_elements:
             src = img_tag.get("src")

@@ -16,7 +16,6 @@ def get_completion_from_openai(prompt, model="gpt-5", format="text"):
         model=model,
         messages=[{"role": "user", "content": prompt}],
         reasoning_effort="minimal",
-        response_format=format,
     )
     message = completion.choices[0].message.content
     return message if isinstance(message, str) else message or ""
