@@ -5,7 +5,7 @@ docker container rm shopping
 docker build --build-arg BUILD_DATE=$(date +%F) -t shopping-sentinel:latest .
 
 if [[ "$arg" == "start" ]]; then
-    docker run --name shopping -p 7770:80 -p 8000:8000 -v $(pwd):/mnt/workspace -d shopping-sentinel
+    docker run --env-file .env --name shopping -p 7770:80 -p 8000:8000 -v $(pwd):/mnt/workspace -d shopping-sentinel
     
     # Sleep for 1 minute to allow servies to start
     sleep 60
@@ -16,6 +16,6 @@ if [[ "$arg" == "start" ]]; then
     # Generate events inside the container once the container is fully started
     # This is different than postmill because we need the web server to be running first to get an authenticatio token
     # which we need to get existing product data for generating events from.
-    docker exec shopping python3 /var/www/html/generate_events.py --num-products 10 --num-sales 10 --num-reviews 10 --num-restocks 10
+    docker exec shopping python3 /var/www/html/generate_events.py --option init --num-products 10 --num-sales 10 --num-reviews 10 --num-restocks 10
     docker exec shopping gzip /var/www/html/events.jsonl -c > /var/www/html/events.jsonl.gz
 fi
