@@ -28,7 +28,8 @@ COPY product_sales.py /var/www/html/product_sales.py
 COPY products.py /var/www/html/products.py
 COPY auth.py /var/www/html/auth.py
 COPY store_requests.py /var/www/html/store_requests.py
-COPY product_images/* /var/www/html/product_images/
+COPY completions.py /var/www/html/completions.py
+COPY reviews.py /var/www/html/reviews.py
 RUN python3 /var/www/html/generate_events.py --num-products 10 --num-sales 10 --num-reviews 10 --num-restocks 10
 RUN gzip /var/www/html/events.jsonl -c > /var/www/html/events.jsonl.gz
 

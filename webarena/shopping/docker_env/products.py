@@ -203,6 +203,9 @@ def download_product_image(url_key, new_sku):
         # Download the image using requests
         response = requests.get(first_url)
         if response.status_code == 200:
+            # Create product_images directory if it doesn't exist
+            Path.cwd().joinpath("product_images").mkdir(parents=True, exist_ok=True)
+
             # Save the image under the new SKU name
             image_path = Path.cwd() / Path(f"product_images/{new_sku}.jpg")
             with open(image_path, "wb") as f:
