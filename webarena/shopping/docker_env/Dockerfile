@@ -26,6 +26,7 @@ COPY store_requests.py /var/www/html/store_requests.py
 COPY completions.py /var/www/html/completions.py
 COPY reviews.py /var/www/html/reviews.py
 COPY .env /var/www/html/.env
+COPY events.jsonl.gz /var/www/html/events.jsonl.gz
 
 # Copy the sentinel server
 COPY sentinel_api.py /var/www/html/sentinel_api.py
