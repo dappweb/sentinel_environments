@@ -1,6 +1,6 @@
 {
     "start_page": "HOST_ADDRESS/user/MarvelsGrantMan136/submissions",
-    "prompt": "Please monitor my posts from the last 3 days, and let me know if any posts gets 20 or upvotes. When this threshold is crossed, please provide the post title.",
+    "prompt": "Please monitor my posts from the last 3 days, and let me know if any posts gets 20 or more upvotes. When this threshold is crossed, please provide the post title.",
     "events": [
         {"time": 28, "type": "submission_vote", "payload": {"timestamp": 28, "submission_id": 107905, "upvote": true}},
         {"time": 51, "type": "submission_vote", "payload": {"timestamp": 51, "submission_id": 107905, "upvote": true}},
