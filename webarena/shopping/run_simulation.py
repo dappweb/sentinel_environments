@@ -1,9 +1,19 @@
+from enum import Enum
 import time
 import requests
 import json
-from docker_env.generate_events import event_types
 
-DOCKER_SENTINEL_URL = "http://localhost:7770"
+DOCKER_SENTINEL_URL = "http://localhost:8000"
+event_types = Enum(
+    "EventType",
+    [
+        "ADD_PRODUCT",
+        "UNSTOCK_PRODUCT",
+        "RESTOCK_PRODUCT",
+        "ADD_SALE",
+        "ADD_PRODUCT_REVIEW",
+    ],
+)
 
 
 def generate_shopping_init_events():
