@@ -27,8 +27,8 @@ next_event = None
 simulation_time = 0
 
 
-# Time of simulation start in the original WebArena data.
-webarena_reference_time = datetime.fromisoformat("2023-02-19T00:00:00+00:00")
+# Time of simulation start (at when shopping events were generated.)
+webarena_reference_time = datetime.fromisoformat("2025-12-02T10:36:19+00:00")
 
 # The wall-clock time of when the simulation has started.
 # It is set to now() in init(), and is from where simulation_time is measured

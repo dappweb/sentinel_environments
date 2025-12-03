@@ -2,6 +2,8 @@ from enum import Enum
 import time
 import requests
 import json
+import argparse
+
 
 DOCKER_SENTINEL_URL = "http://localhost:8000"
 event_types = Enum(
@@ -19,7 +21,7 @@ event_types = Enum(
 def generate_shopping_init_events():
     events = [
         {
-            "type": event_types.ADD_PRODUCT_REVIEW,
+            "type": event_types.ADD_PRODUCT_REVIEW.name,
             "time": 10,
             "payload": {
                 "review": {
@@ -60,12 +62,30 @@ def _poll_until(target_states, valid_states=None):
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Run shopping simulation against Docker Sentinel server."
+    )
+    parser.add_argument(
+        "--close", action="store_true", help="Close the server after simulation"
+    )
+    args = parser.parse_args()
+
+    if args.close:
+        # Send close signal to server
+        response = requests.get(f"{DOCKER_SENTINEL_URL}/close")
+        response.raise_for_status()
+        print("Sent close signal to server.")
+        return
+
     # Wait for things to start up
     response_data = _poll_until(target_states=["preinit"], valid_states=["starting"])
 
     # Initialize the server
     init_events = generate_shopping_init_events()
-    response = requests.post(f"{DOCKER_SENTINEL_URL}/init", json=init_events)
+    events = {
+        "events": init_events,
+    }
+    response = requests.post(f"{DOCKER_SENTINEL_URL}/init", json=events)
     response.raise_for_status()
     response_data = response.json()
 
@@ -78,6 +98,10 @@ def main():
     print("Playback at 4x speed")
     while True:
         sleep_for = next_event_time - simulation_time
+
+        print(
+            f"Sleeping for {sleep_for} seconds (real time: {sleep_for * 0.25} seconds)"
+        )
         time.sleep(sleep_for * 0.25)
 
         response = requests.get(
