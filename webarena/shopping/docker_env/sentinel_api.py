@@ -30,11 +30,6 @@ simulation_time = 0
 # Time of simulation start (at when shopping events were generated.)
 webarena_reference_time = datetime.fromisoformat("2025-12-02T10:36:19+00:00")
 
-# The wall-clock time of when the simulation has started.
-# It is set to now() in init(), and is from where simulation_time is measured
-simulation_reference_time = None
-
-# This is the number of seconds passed since simulation_reference_time
 # This is how time is expressed to through all public APIs
 simulation_time = 0
 
@@ -48,8 +43,8 @@ async def _next_file_event():
         else:
             event_data = json.loads(line)
 
-            # Make the timestamps relative
-            event_data["time"] = (
+            # Make the timestamps relative, and in seconds
+            event_data["time"] = int(
                 datetime.fromisoformat(event_data["time"]).timestamp()
                 - webarena_reference_time.timestamp()
             )
@@ -138,7 +133,6 @@ async def status():
 
 @app.post("/init")
 async def init(request: fastapi.Request):
-    global simulation_reference_time
     global simulation_time
     global custom_events
     global next_event
@@ -149,8 +143,6 @@ async def init(request: fastapi.Request):
 
     # TODO validate data
 
-    # Compute the simulation reference time, and then shift the database accordingly
-    simulation_reference_time = datetime.now(timezone.utc)
     simulation_time = 0
 
     state = "running"

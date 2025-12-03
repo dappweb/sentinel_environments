@@ -66,6 +66,9 @@ def main():
         description="Run shopping simulation against Docker Sentinel server."
     )
     parser.add_argument(
+        "--playback-speed", type=float, default=1.0, help="Playback speed"
+    )
+    parser.add_argument(
         "--close", action="store_true", help="Close the server after simulation"
     )
     args = parser.parse_args()
@@ -95,14 +98,14 @@ def main():
     next_event_time = response_data["next_event_time"]
 
     # Run the simulation
-    print("Playback at 4x speed")
+    print(f"Playback at {args.playback_speed}x speed")
     while True:
         sleep_for = next_event_time - simulation_time
 
         print(
-            f"Sleeping for {sleep_for} seconds (real time: {sleep_for * 0.25} seconds)"
+            f"Sleeping for {sleep_for} seconds (real time: {sleep_for * (1 / args.playback_speed)} seconds)"
         )
-        time.sleep(sleep_for * 0.25)
+        time.sleep(sleep_for * (1 / args.playback_speed))
 
         response = requests.get(
             f"{DOCKER_SENTINEL_URL}/advance", params={"t": next_event_time}
