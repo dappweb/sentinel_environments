@@ -180,13 +180,15 @@ async def next(t: int):
 
             # Process each type of event.
             admin_token = get_admin_token()
-            if next_event["type"] == event_types.ADD_PRODUCT:
+            event_type = next_event["type"]
+            event_type = event_types[event_type]
+            if event_type == event_types.ADD_PRODUCT:
                 add_product(
                     token=admin_token,
                     sku=next_event["payload"]["product"]["sku"],
                     product=next_event["payload"],
                 )
-            elif next_event["type"] == event_types.ADD_SALES_RULE:
+            elif event_type == event_types.ADD_SALE:
                 product_id = (
                     next_event["payload"].get("rule", {}).get("product_ids", [None])[0]
                 )
@@ -194,12 +196,12 @@ async def next(t: int):
                     add_product_sales_rule(
                         admin_token, product_id, next_event["payload"]
                     )
-            elif next_event["type"] == event_types.ADD_PRODUCT_REVIEW:
+            elif event_type == event_types.ADD_PRODUCT_REVIEW:
                 product_id = (
                     next_event["payload"].get("review", {}).get("entity_pk_value")
                 )
                 add_product_review(admin_token, product_id, next_event["payload"])
-            elif next_event["type"] == event_types.RESTOCK_PRODUCT:
+            elif event_type == event_types.RESTOCK_PRODUCT:
                 sku = next_event["payload"].get("sku")
 
                 # Remove sku from payload as it's not part of stock update API

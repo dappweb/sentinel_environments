@@ -27,6 +27,8 @@ COPY completions.py /var/www/html/completions.py
 COPY reviews.py /var/www/html/reviews.py
 COPY .env /var/www/html/.env
 COPY events.jsonl.gz /var/www/html/events.jsonl.gz
+COPY product_images.gz /var/www/html/product_images.gz
+RUN gunzip /var/www/html/product_images.gz
 
 # Copy the sentinel server
 COPY sentinel_api.py /var/www/html/sentinel_api.py

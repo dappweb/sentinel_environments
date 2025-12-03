@@ -193,7 +193,7 @@ def download_product_image(url_key, new_sku):
     Returns:
         Path to downloaded image or None
     """
-    # Use playwright to open the product page, query img tags, and get the first image URL
+    # Get the image data using the product URL and beautifulsoup
     product_url = urljoin(STORE_URL, f"{url_key}.html")
 
     images = get_image_sources(product_url)

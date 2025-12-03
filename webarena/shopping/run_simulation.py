@@ -25,12 +25,23 @@ def generate_shopping_init_events():
             "time": 10,
             "payload": {
                 "review": {
-                    "entity_pk_value": 24,
-                    "status_id": 1,
-                    "title": "Great product!",
-                    "detail": "I really enjoyed using this product. Highly recommend!",
-                    "nickname": "HappyCustomer",
-                    "customer_id": 123,
+                    "entity_pk_value": 39276,
+                    "title": "Durable, Comfortable, and Safe for Little Listeners - TESTED and APPROVED!",
+                    "detail": "Great kid-friendly headphones with smart safety touches. I bought this 2-pack for my kindergarten classroom, and they’ve been a hit. The adjustable headband actually fits small heads properly without slipping, and the lightweight build keeps kids comfortable through story time and short computer sessions. The ABS plastic earcups feel rugged enough for daily classroom use, and the protective slotted baffles are a thoughtful detail—no more curious fingers poking the drivers. Sound quality is clear and balanced for voices, audiobooks, and learning apps. They’re not bass-heavy, but that’s not the goal here; intelligible speech is excellent. The ambient noise-reducing cups help keep volume lower (a big plus for hearing safety), and the child-accessible volume control lets us fine-tune without cranking it. The permanently attached 5.5' cord with reinforced strain relief has survived plenty of tugs, and the right-angle 3.5mm plug sits neatly in tablets and laptops, reducing accidental pull-outs. For classroom or home learning, these check all the boxes: safe, durable, and age-appropriate sizing. Minor nitpicks: the styling is more playful than sleek, which is perfect for young kids but not older ones; and there’s no mic, so not ideal for two-way calls. Overall, excellent value in a 2-pack for schools and parents focused on safe listening and durability.",
+                    "nickname": "Ms. K—Kinder Tech",
+                    "ratings": [
+                        {
+                            "rating_id": 4,
+                            "rating_name": "Rating",
+                            "value": 4,
+                            "percent": 80,
+                        }
+                    ],
+                    "review_entity": "product",
+                    "review_type": 2,
+                    "review_status": 1,
+                    "store_id": 1,
+                    "stores": [1],
                 }
             },
         }
