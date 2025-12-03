@@ -210,6 +210,7 @@ async def next(t: int):
 
             next_event = await _next_event()
             if next_event is None:
+                next_event_time
                 break
             else:
                 next_event_time = next_event["time"]

@@ -128,6 +128,7 @@ def main():
         next_event_time = response_data["next_event_time"]
 
         print(f"Simulation time: {simulation_time}")
+        print(f"Next event time: {next_event_time}")
         for e in response_data["processed_events"]:
             print("    " + e["type"])
         print()
