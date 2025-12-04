@@ -5,7 +5,7 @@ import json
 import argparse
 
 
-DOCKER_SENTINEL_URL = "http://localhost:8000"
+DOCKER_SENTINEL_URL = "http://gcr-sandbox-009.redmond.corp.microsoft.com/:8000"
 event_types = Enum(
     "EventType",
     [
