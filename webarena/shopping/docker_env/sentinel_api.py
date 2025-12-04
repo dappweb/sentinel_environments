@@ -4,7 +4,7 @@ import asyncio
 import json
 import fastapi
 from fastapi.responses import JSONResponse
-from datetime import datetime, timezone
+from datetime import datetime
 import uvicorn
 import gzip
 import signal
@@ -28,7 +28,7 @@ simulation_time = 0
 
 
 # Time of simulation start (at when shopping events were generated.)
-webarena_reference_time = datetime.fromisoformat("2025-12-02T10:36:19+00:00")
+webarena_reference_time = datetime.fromisoformat("2025-12-03T16:44:25+00:00")
 
 # This is how time is expressed to through all public APIs
 simulation_time = 0
