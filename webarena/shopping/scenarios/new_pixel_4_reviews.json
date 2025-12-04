@@ -1,0 +1,252 @@
+{
+    "start_page": "HOST_ADDRESS/google-pixel-4-just-black-64gb-unlocked.html",
+    "prompt": "I am interested in reading reviews for the Google Pixel 4. Please monitor the product page for new reviews and provide me with the name of the customer who submitted it.",
+    "events": [
+        {
+            "time": 0,
+            "type": "ADD_PRODUCT_REVIEW",
+            "payload": {
+                "review": {
+                    "entity_pk_value": 19123,
+                    "title": "Still a Camera Champ\u2014Great Value as a Renewed Buy",
+                    "detail": "Solid renewed flagship with a few age-related caveats. As a backup phone and camera-first device, the Pixel 4 XL still shines. Setup was quick, and being unlocked made it simple to pop in my SIM and go. The 6.3-inch display is crisp and smooth, colors are punchy, and the phone feels surprisingly light for its size. The headline remains the camera: portrait shots come out with excellent detail and natural background blur, and Night Sight really does pull in impressive low-light images without a flash\u2014great for city nights and even stargazing if you\u2019re patient. Call Screen is a sleeper hit; it dramatically cut down spam calls and let me decide which unknown callers were worth answering. Google Assistant is fast for dictating texts, sharing photos, and looking up info hands-free. Quick Gestures are handy for skipping songs or silencing a ring when my hands are messy, though I wouldn\u2019t buy the phone for that alone. As a renewed unit, mine arrived clean with minimal cosmetic wear, battery health felt decent, and all included accessories (USB-C cable, charger, SIM tool, and OTG dongle) were in the box. Performance from the 6GB RAM is still smooth for everyday apps, browsing, and 4K video capture. A few things to consider: this is a 2019 model, so long-term software support and security updates may be limited depending on your provider. Battery life is acceptable for a light to moderate day but heavy users may need a midday top-up. There\u2019s only 64GB of storage with no microSD slot\u2014cloud backups help, but photographers and videographers might bump into limits. Overall, if you want Google\u2019s computational photography, spam-call filtering, and a clean Android experience at a budget price, this renewed Pixel 4 XL is excellent value\u2014just be mindful of storage and battery expectations on an older device.",
+                    "nickname": "PixelFan_Chris",
+                    "ratings": [
+                        {
+                            "rating_id": 4,
+                            "rating_name": "Rating",
+                            "value": 4,
+                            "percent": 80.0
+                        }
+                    ],
+                    "review_entity": "product",
+                    "review_type": 2,
+                    "review_status": 1,
+                    "store_id": 1,
+                    "stores": [
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "time": 40,
+            "type": "ADD_PRODUCT_REVIEW",
+            "payload": {
+                "review": {
+                    "entity_pk_value": 74525,
+                    "title": "Reliable everyday charging bundle with durable 6 ft cables",
+                    "detail": "Surprisingly handy little charging set that gives you everything you need for everyday USB\u2011C charging without the premium price. You get two compact dual\u2011port wall plugs and two 6\u2011foot braided USB\u2011A to USB\u2011C cables. The highlights: the cubes are lightweight and travel\u2011friendly with global 100\u2013240V support, and the built\u2011in protections (over\u2011current, over\u2011temp, short\u2011circuit) worked well in my testing\u2014no excess heat and no interference with Bluetooth or Wi\u2011Fi. The 6 ft nylon\u2011braided cables are the unsung heroes here: they feel sturdy, don\u2019t tangle, have solid metal connectors that \u201cclick\u201d in securely, and the extra length is perfect for couch/bed use or reaching hotel outlets. Charging speed is standard USB\u2011A at up to 2.1A from the brick (2.0A on the cable spec) and 480 Mbps data transfer\u2014fine for overnight or top\u2011ups and ideal for older or mid\u2011range phones and accessories. Compatibility is broad across Samsung Galaxy S\u2011series/Notes, Google Pixel (including 4a/4/4XL and many others), LG Stylo, Moto, and more. What to know before you buy: this is not USB\u2011C Power Delivery or PPS\u2014so it won\u2019t \u201cfast charge\u201d newer flagships at their highest speeds, nor is it for laptops/tablets that require PD. If you need rapid charging for a Pixel 6/7 or Galaxy S22/S23/S24, look for a PD or PPS charger. For everyday reliability, travel spares, kids\u2019 devices, or mixed household use, this kit is excellent value. The two\u2011pack format means you can outfit multiple rooms or keep one in your bag. Pros: durable 6 ft braided cables, compact dual\u2011port plugs, good safety features, great compatibility, strong connector fit. Cons: limited to 5V/2.1A (no PD/Quick Charge), USB\u2011A only, color options are limited. Overall, a dependable, budget\u2011friendly charging bundle that prioritizes durability and convenience over bleeding\u2011edge speed.",
+                    "nickname": "TechNomad",
+                    "ratings": [
+                        {
+                            "rating_id": 4,
+                            "rating_name": "Rating",
+                            "value": 4,
+                            "percent": 80.0
+                        }
+                    ],
+                    "review_entity": "product",
+                    "review_type": 2,
+                    "review_status": 1,
+                    "store_id": 1,
+                    "stores": [
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "time": 60,
+            "type": "ADD_PRODUCT_REVIEW",
+            "payload": {
+                "review": {
+                    "entity_pk_value": 74770,
+                    "title": "Perfect Fit for Pixel 4a 5G\u2014Easy Install, Crystal Clear, Case-Friendly",
+                    "detail": "Rock-solid protection with stress-free installation. This 3-pack from OMOTON is tailor-made for the Google Pixel 4a 5G (6.2\u201d), and it shows. The included plastic alignment frame is the hero here\u2014snap it on, drop the glass in, and you get a perfectly centered, bubble-free install in minutes. I used all the prep items in the kit and ended up with a flawless application on the first try. The tempered glass feels premium: 0.33 mm thick, with a smooth oleophobic coating that resists fingerprints far better than bare glass. Swiping and typing feel natural with zero lag or loss in touch sensitivity. Clarity is excellent\u2014colors and brightness look unchanged, and there\u2019s no weird rainbowing or haze. Durability has been great so far. The 9H-rated glass shrugged off pocket grit and keys, and a minor face-down drop on my desk left the protector unscathed. I also appreciate that you get three protectors, which is fantastic value for long-term use or as backups. A couple of notes: this is a case-friendly, non\u2013edge-to-edge design. It intentionally covers only the flat display area, so you\u2019ll see a slim border of exposed glass on the curved edges. That trade-off means it plays nicely with cases (no lifting), but if you prefer full-bleed coverage, this isn\u2019t it. Also, this will not fit the smaller Pixel 4a (4G) model\u2014double-check your phone before ordering. Overall, for ease of install, clarity, smooth touch, and genuine scratch/drop protection, this is an easy recommendation for Pixel 4a 5G owners.",
+                    "nickname": "TechDad42",
+                    "ratings": [
+                        {
+                            "rating_id": 4,
+                            "rating_name": "Rating",
+                            "value": 5,
+                            "percent": 100.0
+                        }
+                    ],
+                    "review_entity": "product",
+                    "review_type": 2,
+                    "review_status": 1,
+                    "store_id": 1,
+                    "stores": [
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "time": 80,
+            "type": "ADD_PRODUCT_REVIEW",
+            "payload": {
+                "review": {
+                    "entity_pk_value": 75462,
+                    "title": "Great Privacy and Protection Without Sacrificing Touch",
+                    "detail": "Solid privacy protection for the Pixel 4 XL with only minor trade-offs. The LankXin tempered glass really does what it promises on privacy\u2014front-on, the display looks clear and crisp, but tilt past roughly 30 degrees and it turns dark, so nosy seatmates see nothing. The glass feels premium and the 9H hardness has handled keys and a stray box cutter in my bag with no scratches so far. Touch response is excellent; at 0.25\u20130.28 mm it still registers light taps and swipes without lag, and gestures work normally. The oleophobic coating keeps fingerprints and smudges down better than standard film protectors, and quick wipes restore clarity. Installation was straightforward and I didn\u2019t get bubbles; alignment took a minute but the glass settled cleanly with edge-to-edge coverage that doesn\u2019t add bulk. A few notes: like most privacy glass, it slightly dims the screen compared to a non-privacy protector. At max brightness it\u2019s fine indoors and usable outdoors, but if you live in bright sunlight you\u2019ll notice the tint. Also, Face Unlock and front sensors work, but if you use a thick case with a raised lip, watch for edge lift\u2014no issues on my slim case. Overall, if you value privacy on commutes or in open offices and want real scratch protection without sacrificing touch accuracy, this is a great pick for the Pixel 4 XL.",
+                    "nickname": "CommuteTechie",
+                    "ratings": [
+                        {
+                            "rating_id": 4,
+                            "rating_name": "Rating",
+                            "value": 4,
+                            "percent": 80.0
+                        }
+                    ],
+                    "review_entity": "product",
+                    "review_type": 2,
+                    "review_status": 1,
+                    "store_id": 1,
+                    "stores": [
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "time": 100,
+            "type": "ADD_PRODUCT_REVIEW",
+            "payload": {
+                "review": {
+                    "entity_pk_value": 76257,
+                    "title": "Clear calls, comfy all day, and a handy charging dock",
+                    "detail": "Solid work-from-home and on-the-road performer with just a few quirks. Setup was quick\u2014hold power to pair and you\u2019re off. Bluetooth 5.0 stayed stable across my apartment and about 30 feet in the yard, and multipoint made it easy to switch between my laptop and phone without re-pairing. The boom mic is the star here: calls sounded clear and colleagues said background noise (keyboard and fan) was notably reduced. The 270\u00b0 swivel lets you dial in mic placement, and the onboard mute (press + and - together) is handy once you get used to it. Comfort is very good for long sessions. The headset is light, the headband adjusts easily, and the memory-foam padding didn\u2019t create hotspots during 3\u20134 hour stretches. Battery life matched the claims for me\u2014about 15\u201317 hours at moderate volume\u2014and the magnetic charging dock is a nice touch for drop-in charging between meetings. A few trade-offs: audio for music is fine but not audiophile-level\u2014SBC codec only, so it\u2019s tuned for voice clarity over richness. The plastic build feels more functional than premium, and the controls take a day to learn by feel. Also, the 33 ft range is accurate but walls reduce it a bit. If you need a reliable, comfortable headset for calls, Zoom/Teams, driving, or study sessions\u2014with long battery life, clear mic isolation, and a convenient dock\u2014this is a great value pick. If you want immersive music performance or premium materials, you may want to look higher-end. Overall, a practical, comfortable call-first headset that delivers on the essentials.",
+                    "nickname": "Call-Centric Chris",
+                    "ratings": [
+                        {
+                            "rating_id": 4,
+                            "rating_name": "Rating",
+                            "value": 4,
+                            "percent": 80.0
+                        }
+                    ],
+                    "review_entity": "product",
+                    "review_type": 2,
+                    "review_status": 1,
+                    "store_id": 1,
+                    "stores": [
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "time": 120,
+            "type": "ADD_PRODUCT_REVIEW",
+            "payload": {
+                "review": {
+                    "entity_pk_value": 77181,
+                    "title": "Reliable 2\u2011in\u20111 USB\u2011C adapter with clear audio and true fast charging",
+                    "detail": "Solid little lifesaver if your phone ditched the headphone jack. I\u2019ve been using this MIUONO USB-C to 3.5mm adapter (model MI-28) daily with a Pixel 4XL and a Samsung S20, and it does exactly what it promises: lets you listen and charge at the same time without weird workarounds.\u2022 Audio quality: Clear and clean with no hiss. The built\u2011in 24-bit/48kHz DAC sounds crisp with Spotify and lossless tracks. Calls are natural, and in-line mic and volume controls on my wired earbuds worked as expected.\u2022 Charging: PD fast charging works well. I see normal fast-charge speeds on both phones while streaming music. It doesn\u2019t get hot and hasn\u2019t triggered any battery warnings.\u2022 Functionality: Music + call + volume control + charging simultaneously is reliable. No random disconnects, no \u201caccessory not supported\u201d errors. It\u2019s plug-and-play\u2014no apps or settings needed.\u2022 Compatibility: Worked on my Pixel 4XL and Samsung S20 out of the box; also tested briefly on an iPad Pro 2020 and it recognized headphones and charged. The wide compatibility list is a plus if you swap devices.\u2022 Portability: Super slim and very light (about 0.63 oz). Easy to throw in a pocket or leave attached to headphones.Minor nitpicks: The short tail means it can dangle a bit when charging and listening\u2014fine for a desk, slightly awkward in a pocket. Also, the build is decent but mostly plastic; frequent travelers might prefer a braided cable for longevity.Bottom line: If you need a dependable 2\u2011in\u20111 USB\u2011C adapter that preserves audio quality and supports real PD fast charging, this is a strong buy for Pixels, Samsung flagships, and iPad Pro. Not the flashiest build, but it nails the essentials at a good price.",
+                    "nickname": "TechNomad",
+                    "ratings": [
+                        {
+                            "rating_id": 4,
+                            "rating_name": "Rating",
+                            "value": 4,
+                            "percent": 80.0
+                        }
+                    ],
+                    "review_entity": "product",
+                    "review_type": 2,
+                    "review_status": 1,
+                    "store_id": 1,
+                    "stores": [
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "type": "ADD_PRODUCT_REVIEW",
+            "time": 120,
+            "payload": {
+                "review": {
+                    "entity_pk_value": 42163,
+                    "title": "Great phone for photography",
+                    "detail": "I recently purchased the Google Pixel 4 and I am extremely satisfied with its camera capabilities. The photos are sharp, vibrant, and the night mode is impressive. Highly recommend for photography enthusiasts!",
+                    "nickname": "MrPhotoGuy",
+                    "ratings": [
+                        {
+                            "rating_id": 4,
+                            "rating_name": "Rating",
+                            "value": 5,
+                            "percent": 100
+                        }
+                    ],
+                    "review_entity": "product",
+                    "review_type": 2,
+                    "review_status": 1,
+                    "store_id": 1,
+                    "stores": [
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "time": 140,
+            "type": "ADD_PRODUCT_REVIEW",
+            "payload": {
+                "review": {
+                    "entity_pk_value": 89938,
+                    "title": "Great Camera, Clean Android, and 5G Value\u2014Even Renewed",
+                    "detail": "Solid mid-range performer with smart Google features at a budget-friendly price. As a renewed device, my Pixel 4a with 5G arrived clean, with minimal cosmetic wear and a strong battery. The 6.2-inch display is bright and sharp for streaming and reading, and 5G makes downloads and browsing noticeably faster where coverage is good. The camera is the standout: Google\u2019s computational photography delivers crisp photos and excellent low-light shots, plus a very handy ultrawide lens for landscapes and group photos. Call quality is clear and the built-in robocall screening is genuinely useful. The phone feels light and pocketable, and stock Android runs smoothly on 6GB RAM with smart features like Recorder transcription and tight Google integration. Battery life comfortably gets through a day, and Extreme Battery Saver can stretch it to the next morning if needed. A few trade-offs: there\u2019s no official water resistance, no wireless charging, and the single rear camera setup (plus ultrawide) lacks a dedicated telephoto. Being a 2020 model, long-term software support is limited compared to newer Pixels, and results may vary slightly with renewed units (mine was excellent). For anyone who wants clean Android, great photos, and 5G in an unlocked phone without spending big, this is a very compelling choice.",
+                    "nickname": "TechSavvySam",
+                    "ratings": [
+                        {
+                            "rating_id": 4,
+                            "rating_name": "Rating",
+                            "value": 4,
+                            "percent": 80.0
+                        }
+                    ],
+                    "review_entity": "product",
+                    "review_type": 2,
+                    "review_status": 1,
+                    "store_id": 1,
+                    "stores": [
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "time": 160,
+            "type": "ADD_PRODUCT_REVIEW",
+            "payload": {
+                "review": {
+                    "entity_pk_value": 101839,
+                    "title": "Easy, bubble-free install and crystal-clear protection",
+                    "detail": "Solid protection at a wallet-friendly price. This TOCOL 3-pack was a painless upgrade for my Pixel 4 XL. The included installation tray and tools make alignment easy; I had a bubble-free install in minutes. The tempered glass feels smooth and responsive\u2014no lag or dead spots\u2014and clarity is excellent with no rainbowing or haze. After a few weeks in pockets with keys, the screen is still scratch-free, which speaks to the 9H hardness claim. I also appreciate the three-pack value: great to have spares in case of a mishap or for a second device. A couple of notes: this is a standard flat-glass protector, so if you use a bulky case with tight lips, check compatibility to avoid edge lift. Also, while the oleophobic coating is decent, fingerprints do build up over the day and benefit from a quick wipe. Overall, for the price, features, and ease of install, it\u2019s an easy recommendation for Pixel 4 XL owners who want reliable, clear, and touch-accurate protection without fuss.",
+                    "nickname": "TechNomad",
+                    "ratings": [
+                        {
+                            "rating_id": 4,
+                            "rating_name": "Rating",
+                            "value": 4,
+                            "percent": 80.0
+                        }
+                    ],
+                    "review_entity": "product",
+                    "review_type": 2,
+                    "review_status": 1,
+                    "store_id": 1,
+                    "stores": [
+                        1
+                    ]
+                }
+            }
+        }
+    ],
+    "answer": "MrPhotoGuy",
+    "answer_time": 120,
+    "annotator_notes": "N/A"
+}
