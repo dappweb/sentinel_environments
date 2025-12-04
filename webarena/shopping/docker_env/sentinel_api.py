@@ -143,7 +143,8 @@ async def init(request: fastapi.Request):
     data = await request.json()
     custom_events = data["events"]
 
-    # TODO validate data
+    # Sort custom events by time. Don't assume they are pre-sorted.
+    custom_events.sort(key=lambda e: e["time"])
 
     simulation_time = 0
 
