@@ -10,9 +10,10 @@ while true; do
         sleep 60
 
         HOSTNAME="$(hostname -f).redmond.corp.microsoft.com"
-        echo "Configuring base URL to http://$HOSTNAME:7770"
-        docker exec shopping /var/www/magento2/bin/magento setup:store-config:set --base-url="http://$HOSTNAME:7770" # no trailing slash
-        docker exec shopping mysql -u magentouser -pMyPassword magentodb -e  "UPDATE core_config_data SET value=\"http://$HOSTNAME:7770/\" WHERE path = \"web/secure/base_url\";"
+        HOSTNAME_LOWER="${HOSTNAME,,}"
+        echo "Configuring base URL to http://$HOSTNAME_LOWER:7770"
+        docker exec shopping /var/www/magento2/bin/magento setup:store-config:set --base-url="http://$HOSTNAME_LOWER:7770" # no trailing slash
+        docker exec shopping mysql -u magentouser -pMyPassword magentodb -e  "UPDATE core_config_data SET value=\"http://$HOSTNAME_LOWER:7770/\" WHERE path = \"web/secure/base_url\";"
         docker exec shopping /var/www/magento2/bin/magento cache:flush
 
         # Wait for the container to stop
