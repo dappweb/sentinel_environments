@@ -76,11 +76,24 @@ def main():
     parser = argparse.ArgumentParser(
         description="Run shopping simulation against Docker Sentinel server."
     )
+    parser = argparse.ArgumentParser(
+        description="Run simulation against Docker Sentinel server."
+    )
+    parser.add_argument("scenario", type=str, help="Path to the scenario JSON file")
     parser.add_argument(
-        "--playback-speed", type=float, default=1.0, help="Playback speed"
+        "--host",
+        type=str,
+        default=DOCKER_SENTINEL_URL,
+        help="Docker Sentinel server URL",
     )
     parser.add_argument(
-        "--close", action="store_true", help="Close the server after simulation"
+        "--speed",
+        type=float,
+        default=1.0,
+        help="Playback speed (e.g., 1.0, 2.0, 4.0, etc.)",
+    )
+    parser.add_argument(
+        "--close", action="store_true", help="Close the Docker Sentinel server"
     )
     args = parser.parse_args()
 
@@ -91,13 +104,17 @@ def main():
         print("Sent close signal to server.")
         return
 
+    # Read the scenario
+    scenario_data = None
+    with open(args.scenario, "rt") as f:
+        scenario_data = json.load(f)
+
     # Wait for things to start up
     response_data = _poll_until(target_states=["preinit"], valid_states=["starting"])
 
     # Initialize the server
-    init_events = generate_shopping_init_events()
     events = {
-        "events": init_events,
+        "events": scenario_data["events"],
     }
     response = requests.post(f"{DOCKER_SENTINEL_URL}/init", json=events)
     response.raise_for_status()
@@ -109,14 +126,14 @@ def main():
     next_event_time = response_data["next_event_time"]
 
     # Run the simulation
-    print(f"Playback at {args.playback_speed}x speed")
+    print(f"Playback at {args.speed}x speed")
     while True:
         sleep_for = next_event_time - simulation_time
 
         print(
-            f"Sleeping for {sleep_for} seconds (real time: {sleep_for * (1 / args.playback_speed)} seconds)"
+            f"Sleeping for {sleep_for} seconds (real time: {sleep_for * (1 / args.speed)} seconds)"
         )
-        time.sleep(sleep_for * (1 / args.playback_speed))
+        time.sleep(sleep_for * (1 / args.speed))
 
         response = requests.get(
             f"{DOCKER_SENTINEL_URL}/advance", params={"t": next_event_time}

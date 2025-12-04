@@ -9,6 +9,8 @@ import random
 from time import sleep
 import json
 import argparse
+
+from tqdm import tqdm
 from auth import get_admin_token, get_customer_token
 from store_requests import make_authenticated_request
 from products import (
@@ -113,7 +115,7 @@ def generate_events(token, num_sales, num_products, num_reviews, num_restocks):
     random.shuffle(all_events)
 
     events = []
-    for event in all_events:
+    for event in tqdm(all_events):
         if event == event_types.ADD_SALE:
             print("\nGenerating product sale event...")
             # Use the adobe commerce API to create a product sale event modifying the salesrule table

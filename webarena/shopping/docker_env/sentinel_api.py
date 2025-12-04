@@ -63,10 +63,12 @@ async def _next_event():
     elif next_file_event is None:
         # No file events, just read from the custom events list
         if len(custom_events) > 0:
+            print(f"[next_event] custom event used: {custom_events[0]}")
             result = custom_events.pop(0)
     else:
         # Return whichever event is earliest
         if custom_events[0]["time"] <= next_file_event["time"]:
+            print(f"[next_event] custom event used: {custom_events[0]}")
             result = custom_events.pop(0)
         else:
             result = next_file_event
@@ -209,8 +211,11 @@ async def next(t: int):
                 update_stock_for_product(admin_token, sku, next_event["payload"])
 
             next_event = await _next_event()
+            print(
+                f"[advance] processed event, time={simulation_time}, next_event={next_event}"
+            )
             if next_event is None:
-                next_event_time
+                next_event_time = None
                 break
             else:
                 next_event_time = next_event["time"]
