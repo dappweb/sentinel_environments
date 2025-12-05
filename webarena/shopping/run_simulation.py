@@ -60,7 +60,6 @@ def generate_shopping_init_events():
 
 def get_product_link_by_sku(token, sku):
     """Get the product link for a given SKU."""
-    print(f"\nGetting product link for SKU: {sku}")
     endpoint = f"/rest/V1/products/{sku}"
     result = make_authenticated_request(
         token,
@@ -87,7 +86,6 @@ def get_product_link_by_sku(token, sku):
 
 def get_product_link_by_entity_id(token, entity_id):
     """Get the product link for a given entity ID."""
-    print(f"\nGetting product link for Entity ID: {entity_id}")
     endpoint = f"/rest/V1/products?searchCriteria[filter_groups][0][filters][0][field]=entity_id&searchCriteria[filter_groups][0][filters][0][value]={entity_id}"
     result = make_authenticated_request(
         token,
@@ -190,6 +188,7 @@ def main():
 
     # Run the simulation
     print(f"Playback at {args.speed}x speed")
+    demo = defaultdict(int)
     while True:
         sleep_for = next_event_time - simulation_time
 
@@ -210,7 +209,6 @@ def main():
         print(f"Simulation time: {simulation_time}")
         print(f"Next event time: {next_event_time}")
 
-        demo = defaultdict(int)
         token = get_admin_token()
         for e in response_data["processed_events"]:
             print("    " + e["type"])
@@ -219,12 +217,13 @@ def main():
                 if e["type"] == event_types.ADD_PRODUCT_REVIEW.name:
                     review = e["payload"]["review"]
                     print(
-                        f"        Review Title: {review['title']}, Rating: {review['ratings'][0]['value']}, Text: {review['detail']}"
+                        f"        Review Title: {review['title']}, Rating: {review['ratings'][0]['value']}"
                     )
 
                     # only open the product page for the first review event
                     if demo[event_types.ADD_PRODUCT_REVIEW.name] >= 1:
                         continue
+
                     demo[event_types.ADD_PRODUCT_REVIEW.name] += 1
 
                     product_link = get_product_link_by_entity_id(
