@@ -1,6 +1,6 @@
 {
     "start_page": "HOST_ADDRESS/f/worldnews/new",
-    "prompt": "I am admin /f/worldnews. Please monitor this forum for new posts and let me know of any are about US Politics -- as this would violate forum rules.  If found, provide the exact title of the post.",
+    "prompt": "I am admin /f/worldnews. Please monitor this forum for new posts and let me know of any are about internal US Politics (i.e., involving no diplomacy, foreign affairs or relations) -- as this would violate forum rules.  If found, provide the exact title of the post.",
     "events": [
         {
             "time": 178,
@@ -30,7 +30,7 @@
             }
         }
     ],
-    "answer": "Official Poster for 'The Marvels'",
+    "answer": "Trump administration says it will withhold SNAP from Democrat-led states if they don’t provide data",
     "answer_time": 178,
     "annotator_notes": "N/A"
 }
