@@ -3,6 +3,7 @@ FROM shopping_final_0712
 
 # Sets the port for the Adobe Commerce store URL 
 ENV MAGENTO_PORT=80
+ENV MAGENTO_URL=localhost
 
 # Install system dependencies
 RUN apk update
