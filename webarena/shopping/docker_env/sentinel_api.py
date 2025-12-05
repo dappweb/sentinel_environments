@@ -208,8 +208,9 @@ async def next(t: int):
                 sku = next_event["payload"].get("sku")
 
                 # Remove sku from payload as it's not part of stock update API
-                del next_event["payload"]["sku"]
-                update_stock_for_product(admin_token, sku, next_event["payload"])
+                payload_copy = next_event["payload"].copy()
+                del payload_copy["sku"]
+                update_stock_for_product(admin_token, sku, payload_copy)
 
             next_event = await _next_event()
             print(

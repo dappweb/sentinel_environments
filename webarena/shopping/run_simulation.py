@@ -1,11 +1,19 @@
+from collections import defaultdict
 from enum import Enum
+import os
 import time
 import requests
 import json
 import argparse
+import sys
 
+sys.path.append(os.path.join(os.path.dirname(__file__), "docker_env"))
 
-DOCKER_SENTINEL_URL = "http://gcr-sandbox-009.redmond.corp.microsoft.com:8000/"
+from docker_env.auth import get_admin_token
+from docker_env.store_requests import make_authenticated_request
+
+DOCKER_SENTINEL_URL = "http://gcr-sandbox-009.redmond.corp.microsoft.com:8000"
+ADOBE_COMMERCE_STORE_URL = "http://gcr-sandbox-009.redmond.corp.microsoft.com:7770"
 event_types = Enum(
     "EventType",
     [
@@ -48,6 +56,60 @@ def generate_shopping_init_events():
     ]
 
     return events
+
+
+def get_product_link_by_sku(token, sku):
+    """Get the product link for a given SKU."""
+    print(f"\nGetting product link for SKU: {sku}")
+    endpoint = f"/rest/V1/products/{sku}"
+    result = make_authenticated_request(
+        token,
+        endpoint,
+        method="GET",
+    )
+    if result:
+        product = result
+        product_url_key = None
+        for attr in product.get("custom_attributes", []):
+            if attr["attribute_code"] == "url_key":
+                product_url_key = attr["value"]
+                break
+        if product_url_key:
+            product_link = f"{ADOBE_COMMERCE_STORE_URL}/{product_url_key}.html"
+            return product_link
+        else:
+            print(f"✗ URL key not found for SKU: {sku}")
+            return None
+    else:
+        print(f"✗ Failed to get product with SKU: {sku}")
+        return None
+
+
+def get_product_link_by_entity_id(token, entity_id):
+    """Get the product link for a given entity ID."""
+    print(f"\nGetting product link for Entity ID: {entity_id}")
+    endpoint = f"/rest/V1/products?searchCriteria[filter_groups][0][filters][0][field]=entity_id&searchCriteria[filter_groups][0][filters][0][value]={entity_id}"
+    result = make_authenticated_request(
+        token,
+        endpoint,
+        method="GET",
+    )
+    if result and "items" in result and len(result["items"]) > 0:
+        product = result["items"][0]
+        product_url_key = None
+        for attr in product.get("custom_attributes", []):
+            if attr["attribute_code"] == "url_key":
+                product_url_key = attr["value"]
+                break
+        if product_url_key:
+            product_link = f"{ADOBE_COMMERCE_STORE_URL}/{product_url_key}.html"
+            return product_link
+        else:
+            print(f"✗ URL key not found for Entity ID: {entity_id}")
+            return None
+    else:
+        print(f"✗ Failed to get product with Entity ID: {entity_id}")
+        return None
 
 
 def _poll_until(target_states, valid_states=None):
@@ -95,6 +157,7 @@ def main():
     parser.add_argument(
         "--close", action="store_true", help="Close the Docker Sentinel server"
     )
+    parser.add_argument("--demo", action="store_true", help="Run demo scenario")
     args = parser.parse_args()
 
     if args.close:
@@ -146,8 +209,69 @@ def main():
 
         print(f"Simulation time: {simulation_time}")
         print(f"Next event time: {next_event_time}")
+
+        demo = defaultdict(int)
+        token = get_admin_token()
         for e in response_data["processed_events"]:
             print("    " + e["type"])
+
+            if args.demo:
+                if e["type"] == event_types.ADD_PRODUCT_REVIEW.name:
+                    review = e["payload"]["review"]
+                    print(
+                        f"        Review Title: {review['title']}, Rating: {review['ratings'][0]['value']}, Text: {review['detail']}"
+                    )
+
+                    # only open the product page for the first review event
+                    if demo[event_types.ADD_PRODUCT_REVIEW.name] >= 1:
+                        continue
+                    demo[event_types.ADD_PRODUCT_REVIEW.name] += 1
+
+                    product_link = get_product_link_by_entity_id(
+                        token, review["entity_pk_value"]
+                    )
+                    print(f"        Opening product page: {product_link}")
+                    if product_link:
+                        os_command = f"open -a 'Microsoft Edge' '{product_link}'"
+                        os.system(os_command)
+
+                elif e["type"] == event_types.RESTOCK_PRODUCT.name:
+                    # Only open the product page for the first restock event
+                    if demo[event_types.RESTOCK_PRODUCT.name] >= 1:
+                        continue
+                    demo[event_types.RESTOCK_PRODUCT.name] += 1
+
+                    stock_item = e["payload"]["stockItem"]
+                    sku = e["payload"]["sku"]
+                    print(f"        Restocked SKU: {sku}, New Qty: {stock_item['qty']}")
+
+                    # Open the product page
+                    link = get_product_link_by_sku(token, sku)
+
+                    os_command = f"open -a 'Microsoft Edge' '{link}'"
+                    os.system(os_command)
+
+                elif e["type"] == event_types.ADD_PRODUCT.name:
+                    product = e["payload"]["product"]
+                    print(
+                        f"        Added Product: {product['name']}, SKU: {product['sku']}"
+                    )
+
+                    sku = product["sku"]
+                    if demo[event_types.ADD_PRODUCT.name] >= 1:
+                        continue
+                    demo[event_types.ADD_PRODUCT.name] += 1
+
+                    # Open the product page
+                    link = get_product_link_by_sku(token, sku)
+                    os_command = f"open -a 'Microsoft Edge' '{link}'"
+                    os.system(os_command)
+                elif e["type"] == event_types.ADD_SALE.name:
+                    rule = e["payload"].get("rule", {})
+                    print(
+                        f"        Added Sale for Product IDs: {rule.get('product_ids', [])}, Discount: {rule.get('discount_amount', 0)}"
+                    )
+
         print()
 
         if next_event_time is None:

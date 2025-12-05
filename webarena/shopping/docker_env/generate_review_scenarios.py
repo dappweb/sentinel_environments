@@ -35,6 +35,8 @@ def generate_similar_product_reviews(query):
     for i, product in enumerate(products):
         product_id = product["id"]
 
+        print(f"Product name: {product['name']}, id: {product_id}")
+
         product_description = list(
             filter(
                 lambda x: x["attribute_code"] == "description",
@@ -85,7 +87,7 @@ def generate_similar_product_reviews(query):
 
 
 if __name__ == "__main__":
-    query = "Google Pixel 4"
+    query = "google pixel 4"
     events = generate_similar_product_reviews(query)
 
     with open("product_review_events.json", "w") as f:

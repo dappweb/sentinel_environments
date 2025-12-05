@@ -313,15 +313,18 @@ def generate_product_from_catalog(token):
     return new_product
 
 
-def generate_restock_event(token, sku):
+def generate_restock_event(token, sku, qty=None):
     """Generate a restock event payload for a given product SKU."""
     endpoint = f"/rest/V1/stockItems/{sku}"
     stock_item_response = make_authenticated_request(token, endpoint)
 
     if stock_item_response:
-        additional_quantity = random.randint(20, 100)
-        current_qty = stock_item_response.get("qty", 0)
-        new_qty = current_qty + additional_quantity
+        if qty is not None:
+            new_qty = qty
+        else:
+            additional_quantity = random.randint(20, 100)
+            current_qty = stock_item_response.get("qty", 0)
+            new_qty = current_qty + additional_quantity
 
         stock_payload = {
             "stockItem": {
