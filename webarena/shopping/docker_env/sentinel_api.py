@@ -63,12 +63,12 @@ async def _next_event():
     elif next_file_event is None:
         # No file events, just read from the custom events list
         if len(custom_events) > 0:
-            print(f"[next_event] custom event used: {custom_events[0]}")
+            print(f"[next_event] custom event used: {custom_events[0]['type']}")
             result = custom_events.pop(0)
     else:
         # Return whichever event is earliest
         if custom_events[0]["time"] <= next_file_event["time"]:
-            print(f"[next_event] custom event used: {custom_events[0]}")
+            print(f"[next_event] custom event used: {custom_events[0]['type']}")
             result = custom_events.pop(0)
         else:
             result = next_file_event
@@ -99,7 +99,6 @@ async def startup_event():
 
     next_file_event = await _next_file_event()
     next_event = await _next_event()
-
     simulation_time = 0
 
     state = "preinit"
@@ -214,7 +213,7 @@ async def next(t: int):
 
             next_event = await _next_event()
             print(
-                f"[advance] processed event, time={simulation_time}, next_event={next_event}"
+                f"[advance] processed event, time={simulation_time}, next_event={next_event['type']}"
             )
             if next_event is None:
                 next_event_time = None

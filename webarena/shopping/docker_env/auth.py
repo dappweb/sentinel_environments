@@ -3,7 +3,8 @@ import os
 
 # Configuration so that use the correct URL both locally and in Docker
 PORT = os.environ.get("MAGENTO_PORT", "7770")
-STORE_URL = f"http://gcr-sandbox-009.redmond.corp.microsoft.com:{PORT}"  # Your Adobe Commerce store URL
+URL = os.environ.get("MAGENTO_URL", "localhost")
+STORE_URL = f"http://{URL}:{PORT}"  # Your Adobe Commerce store URL
 
 ADMIN_USERNAME = "admin"  # Admin username
 ADMIN_PASSWORD = "admin1234"  # Admin password
