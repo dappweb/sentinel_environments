@@ -54,7 +54,7 @@ def generate_product_review(token, sku):
         )
 
         print(
-            f"Generated review: Title={review.review_title}, Rating={review.rating}, Text={review.review_text}"
+            f"\nGenerated review: Title={review.review_title}, Rating={review.rating}, Text={review.review_text}"
         )
         review_payload = {
             "review": {

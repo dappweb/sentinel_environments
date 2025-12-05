@@ -4,7 +4,7 @@ import asyncio
 import json
 import fastapi
 from fastapi.responses import JSONResponse
-from datetime import datetime, timezone
+from datetime import datetime
 import uvicorn
 import gzip
 import signal
@@ -28,7 +28,7 @@ simulation_time = 0
 
 
 # Time of simulation start (at when shopping events were generated.)
-webarena_reference_time = datetime.fromisoformat("2025-12-02T10:36:19+00:00")
+webarena_reference_time = datetime.fromisoformat("2025-12-03T16:44:25+00:00")
 
 # This is how time is expressed to through all public APIs
 simulation_time = 0
@@ -63,10 +63,12 @@ async def _next_event():
     elif next_file_event is None:
         # No file events, just read from the custom events list
         if len(custom_events) > 0:
+            print(f"[next_event] custom event used: {custom_events[0]}")
             result = custom_events.pop(0)
     else:
         # Return whichever event is earliest
         if custom_events[0]["time"] <= next_file_event["time"]:
+            print(f"[next_event] custom event used: {custom_events[0]}")
             result = custom_events.pop(0)
         else:
             result = next_file_event
@@ -141,7 +143,8 @@ async def init(request: fastapi.Request):
     data = await request.json()
     custom_events = data["events"]
 
-    # TODO validate data
+    # Sort custom events by time. Don't assume they are pre-sorted.
+    custom_events.sort(key=lambda e: e["time"])
 
     simulation_time = 0
 
@@ -205,12 +208,16 @@ async def next(t: int):
                 sku = next_event["payload"].get("sku")
 
                 # Remove sku from payload as it's not part of stock update API
-                del next_event["payload"]["sku"]
-                update_stock_for_product(admin_token, sku, next_event["payload"])
+                payload_copy = next_event["payload"].copy()
+                del payload_copy["sku"]
+                update_stock_for_product(admin_token, sku, payload_copy)
 
             next_event = await _next_event()
+            print(
+                f"[advance] processed event, time={simulation_time}, next_event={next_event}"
+            )
             if next_event is None:
-                next_event_time
+                next_event_time = None
                 break
             else:
                 next_event_time = next_event["time"]

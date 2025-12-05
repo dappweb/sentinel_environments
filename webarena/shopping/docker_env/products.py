@@ -12,7 +12,7 @@ from completions import get_completion_from_openai
 
 
 def get_image_sources(url):
-    """Fetch all <img> tag src attributes from a given URL using ChromeDriver."""
+    """Fetch all <img> tag src attributes from a given URL using BeautifulSoup."""
     response = requests.get(url, timeout=10)
 
     # Select all <img> elements
@@ -38,22 +38,18 @@ def get_image_sources(url):
         return []
 
 
-def post_product_image(token, sku, image_path):
+def post_product_image(token, sku, img_data):
     """
     Post product image to the catalog.
 
     Args:
         token: Bearer token
         product_id: ID of the product to which the image will be added
-        image_path: Path to the image file
+        img_data: Base64 encoded image data
 
     Returns:
         Response JSON or None
     """
-    with open(image_path, "rb") as image_file:
-        image_data = image_file.read()
-        encoded_string = base64.b64encode(image_data).decode("utf-8")
-
     image_payload = {
         "entry": {
             "media_type": "image",
@@ -62,7 +58,7 @@ def post_product_image(token, sku, image_path):
             "disabled": False,
             "types": ["image", "small_image", "thumbnail", "swatch_image"],
             "content": {
-                "base64_encoded_data": encoded_string,
+                "base64_encoded_data": img_data,
                 "type": "image/jpeg",
                 "name": f"product_image_{sku}.jpg",
             },
@@ -93,6 +89,12 @@ def remove_product(token, sku):
 
 
 def add_product(token, sku, product):
+    """Add a new product to the catalog, along with its image data"""
+    img_data = product.get("image_data_base64", None)
+    if img_data:
+        # Remove image data from product payload before adding the product
+        del product["image_data_base64"]
+
     print(f"\nAdding product with SKU: {sku}...")
     result = make_authenticated_request(
         token,
@@ -107,10 +109,16 @@ def add_product(token, sku, product):
         print(f"  ID: {result.get('id')}")
 
         # Post product image after creating the product
-        image_path = Path(__file__).parent.absolute() / Path(
-            f"product_images/{result.get('sku')}.jpg"
-        )
-        post_product_image(token, result.get("sku"), image_path)
+        if not img_data:
+            # If no image data provided, try to read from local file for default events
+            image_path = Path.cwd() / Path(f"product_images/{sku}.jpg")
+            with open(image_path, "rb") as image_file:
+                # Read and encode image data to base64
+                image_data = image_file.read()
+                img_data = base64.b64encode(image_data).decode("utf-8")
+
+        print(f"Posting product image for SKU: {sku}...")
+        post_product_image(token, sku, img_data)
     else:
         print("✗ Failed to create product")
 
@@ -218,23 +226,18 @@ def download_product_image(url_key, new_sku):
         return None
 
 
-def generate_product_from_catalog(token):
-    """
-    Create a new product in the catalog, as a JSON.
-    """
-    random_product = get_random_product_from_catalog(token)
-    if not random_product:
-        return None
+def generate_product_from_product(product):
+    """Create a cloned product of the given product with modified name, description, and SKU."""
 
     url_key = list(
         filter(
             lambda x: x["attribute_code"] == "url_key",
-            random_product["custom_attributes"],
+            product["custom_attributes"],
         )
     )
 
     # Update the SKU and name of the product to make it unique
-    new_product = copy.deepcopy(random_product)
+    new_product = copy.deepcopy(product)
     del new_product["created_at"]
     del new_product["updated_at"]
     del new_product["extension_attributes"]["website_ids"]
@@ -298,15 +301,30 @@ def generate_product_from_catalog(token):
     return new_product
 
 
-def generate_restock_event(token, sku):
+def generate_product_from_catalog(token):
+    """
+    Create a new product in the catalog, as a JSON.
+    """
+    random_product = get_random_product_from_catalog(token)
+    if not random_product:
+        return None
+
+    new_product = generate_product_from_product(random_product)
+    return new_product
+
+
+def generate_restock_event(token, sku, qty=None):
     """Generate a restock event payload for a given product SKU."""
     endpoint = f"/rest/V1/stockItems/{sku}"
     stock_item_response = make_authenticated_request(token, endpoint)
 
     if stock_item_response:
-        additional_quantity = random.randint(20, 100)
-        current_qty = stock_item_response.get("qty", 0)
-        new_qty = current_qty + additional_quantity
+        if qty is not None:
+            new_qty = qty
+        else:
+            additional_quantity = random.randint(20, 100)
+            current_qty = stock_item_response.get("qty", 0)
+            new_qty = current_qty + additional_quantity
 
         stock_payload = {
             "stockItem": {

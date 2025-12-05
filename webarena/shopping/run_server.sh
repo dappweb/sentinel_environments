@@ -8,8 +8,12 @@ while true; do
         # Sleep for 1 minute to allow services to start
         echo "Sleeping for 60 seconds to allow services to start..." 
         sleep 60
-        docker exec shopping /var/www/magento2/bin/magento setup:store-config:set --base-url="http://localhost:7770" # no trailing slash
-        docker exec shopping mysql -u magentouser -pMyPassword magentodb -e  'UPDATE core_config_data SET value="http://localhost:7770/" WHERE path = "web/secure/base_url";'
+
+        HOSTNAME="$(hostname -f).redmond.corp.microsoft.com"
+        HOSTNAME_LOWER="${HOSTNAME,,}"
+        echo "Configuring base URL to http://$HOSTNAME_LOWER:7770"
+        docker exec shopping /var/www/magento2/bin/magento setup:store-config:set --base-url="http://$HOSTNAME_LOWER:7770" # no trailing slash
+        docker exec shopping mysql -u magentouser -pMyPassword magentodb -e  "UPDATE core_config_data SET value=\"http://$HOSTNAME_LOWER:7770/\" WHERE path = \"web/secure/base_url\";"
         docker exec shopping /var/www/magento2/bin/magento cache:flush
 
         # Wait for the container to stop
