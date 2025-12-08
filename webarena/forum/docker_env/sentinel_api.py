@@ -1,4 +1,4 @@
-# sentinel_api.py
+"""Sentinel API for controlling the simulation of WebArena data."""
 import asyncio
 import gzip
 import json
@@ -77,6 +77,7 @@ async def _next_file_event():
 
 
 async def _next_event():
+    """Return the next event, merging custom events and file events."""
     global custom_events
     global next_file_event
 
@@ -100,6 +101,7 @@ async def _next_event():
 
 @app.exception_handler(Exception)
 async def internal_server_error_handler(request: fastapi.Request, exc: Exception):
+    """Handle uncaught exceptions and return a JSON response."""
     return JSONResponse(
         status_code=500,
         content={
@@ -111,6 +113,7 @@ async def internal_server_error_handler(request: fastapi.Request, exc: Exception
 
 @app.on_event("startup")
 async def startup_event():
+    """Startup the endpoint, opening database connections, etc."""
     global conn
     global cur
     global state
@@ -142,6 +145,7 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
+    """Shutdown the endpoint, closing database connections, etc."""
     if cur:
         cur.close()
     if conn:
@@ -153,6 +157,7 @@ async def shutdown_event():
 
 @app.get("/status")
 async def status():
+    """Get the current status of the simulation."""
     next_event_time = None
     if next_event is not None:
         next_event_time = next_event["time"]
@@ -170,6 +175,7 @@ async def status():
 
 @app.post("/init")
 async def init(request: fastapi.Request):
+    """Initialize the simulation with custom events."""
     global simulation_reference_time
     global simulation_time
     global custom_events
@@ -235,6 +241,7 @@ async def init(request: fastapi.Request):
 
 @app.get("/advance")
 async def advance(t: int):
+    """Advance the simulation to a given time."""
     global state
 
     if state != STATE_READY and state != STATE_RUNNING_MANUAL:
@@ -252,7 +259,7 @@ async def advance(t: int):
 
 
 async def _advance(t: int):
-    """Helper function to advance the simulation to a given time. Called by advance() and play()."""
+    """Advance the simulation to a given time. Called by advance() and play()."""
     global simulation_time
     global next_event
     global state
@@ -299,6 +306,7 @@ async def _advance(t: int):
 
 @app.get("/play")
 async def play():
+    """Start automatic playback of the simulation."""
     global state
 
     if state != STATE_READY and state != STATE_RUNNING_MANUAL:
@@ -324,6 +332,7 @@ async def play():
 
 
 async def _run_scenario():
+    """Run the scenario in automatic mode."""
     while True:
         if next_event is None:
             break
@@ -332,7 +341,8 @@ async def _run_scenario():
 
 
 @app.get("/close")
-async def status():
+async def close():
+    """Close the simulation and stop the container."""
     global state
 
     state = STATE_STOPPING
@@ -348,6 +358,7 @@ async def status():
 
 
 def insert_submission(conn, cur, data):
+    """Insert a submission into the database."""
     # Clone data
     data = json.loads(json.dumps(data))
 
@@ -420,6 +431,7 @@ def insert_submission(conn, cur, data):
 
 
 def insert_comment(conn, cur, data):
+    """Insert a comment into the database."""
     # Clone data
     data = json.loads(json.dumps(data))
 
@@ -486,6 +498,7 @@ WHERE s.id = %(submission_id)s;
 
 
 def vote_on_submission(conn, cur, data):
+    """Vote on a submission, updating its net score."""
     op = "+ 1" if data["upvote"] else "- 1"
     sql = (
         "UPDATE submissions SET net_score=net_score "
@@ -497,6 +510,7 @@ def vote_on_submission(conn, cur, data):
 
 
 def vote_on_comment(conn, cur, data):
+    """Vote on a comment in the database, updating its net score."""
     op = "+ 1" if data["upvote"] else "- 1"
     sql = "UPDATE comments SET net_score=net_score " + op + " WHERE id=%(comment_id)s;"
     cur.execute(sql, {"comment_id": data["comment_id"]})

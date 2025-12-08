@@ -1,3 +1,4 @@
+"""Dump all records to JSON from a given table in the Postmill database since 2023-02-19."""
 import json
 import sys
 from datetime import datetime
@@ -6,6 +7,7 @@ import psycopg2
 
 
 def main(table_name):
+    """Dump all records to JSON from a given table in the Postmill database since 2023-02-19."""
     # Adjust password/host/port as needed
     conn = psycopg2.connect(
         dbname="postmill",

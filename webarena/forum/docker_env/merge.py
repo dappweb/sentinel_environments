@@ -1,17 +1,20 @@
+"""Merge-sort 4 jsonl files (submissions, comments, submission_votes, comment_votes)."""
 import json
 import math
 from datetime import datetime
 
 
 def next_record(fh):
-    l = fh.readline().strip()
-    if l == "":
+    """Read the next record from a jsonl file handle."""
+    line = fh.readline().strip()
+    if line == "":
         return None
     else:
-        return json.loads(l)
+        return json.loads(line)
 
 
 def get_time(record):
+    """Get the timestamp of a record, or infinity if None."""
     if record is None:
         return float("inf")
     else:

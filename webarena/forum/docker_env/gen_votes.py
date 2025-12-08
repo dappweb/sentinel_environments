@@ -1,3 +1,4 @@
+"""Generate simulated vote events from net score data."""
 import json
 import random
 import sys
@@ -5,10 +6,11 @@ from datetime import datetime, timedelta
 
 
 def main():
+    """Generate vote events from net score data read from stdin."""
     random.seed(1000)
 
-    for l in sys.stdin:
-        record = json.loads(l)["payload"]
+    for line in sys.stdin:
+        record = json.loads(line)["payload"]
         timestamp = datetime.fromisoformat(record["timestamp"])
         total_votes = abs(record["net_score"])
 

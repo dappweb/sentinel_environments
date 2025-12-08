@@ -1,3 +1,4 @@
+"""Run a simulation against a Docker Sentinel server using a specified scenario file."""
 import argparse
 import json
 import time
@@ -8,6 +9,7 @@ DOCKER_SENTINEL_URL = "http://gcrazgdl1200.northcentralus.cloudapp.azure.com:800
 
 
 def _raise_for_status_with_body(resp: requests.Response) -> None:
+    """Like resp.raise_for_status(), but includes the response body in the error message."""
     try:
         resp.raise_for_status()
     except requests.HTTPError as e:
@@ -41,6 +43,7 @@ def _poll_until(docker_sentinel_url, target_states, valid_states=None):
 def main(
     scenario_file_path: str, docker_sentinel_url: str, playback_speed: float = 1.0
 ):
+    """Run the simulation against the Docker Sentinel server."""
     # Read the scenario
     with open(scenario_file_path) as f:
         scenario_data = json.load(f)
