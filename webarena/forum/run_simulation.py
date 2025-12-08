@@ -39,14 +39,17 @@ def _poll_until(docker_sentinel_url, target_states, valid_states=None):
         time.sleep(1)  # Wait before polling again
 
 
-def main(scenario_file_path: str, docker_sentinel_url: str, playback_speed: float = 1.0):
-
+def main(
+    scenario_file_path: str, docker_sentinel_url: str, playback_speed: float = 1.0
+):
     # Read the scenario
     with open(scenario_file_path, "rt") as f:
         scenario_data = json.load(f)
 
     # Wait for things to start up
-    response_data = _poll_until(docker_sentinel_url, target_states=["preinit"], valid_states=["starting"])
+    response_data = _poll_until(
+        docker_sentinel_url, target_states=["preinit"], valid_states=["starting"]
+    )
 
     # Initialize the server
     init_events = {
@@ -70,7 +73,9 @@ def main(scenario_file_path: str, docker_sentinel_url: str, playback_speed: floa
         sleep_for = next_event_time - simulation_time
         time.sleep(sleep_for / playback_speed)
 
-        response = requests.get(f"{docker_sentinel_url}/advance", params={"t": next_event_time})
+        response = requests.get(
+            f"{docker_sentinel_url}/advance", params={"t": next_event_time}
+        )
         _raise_for_status_with_body(response)
         response_data = response.json()
 
@@ -88,9 +93,21 @@ def main(scenario_file_path: str, docker_sentinel_url: str, playback_speed: floa
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Run simulation against Docker Sentinel server.')
-    parser.add_argument('scenario', type=str, help='Path to the scenario JSON file')
-    parser.add_argument('--host', type=str, default=DOCKER_SENTINEL_URL, help='Docker Sentinel server URL')
-    parser.add_argument('--speed', type=float, default=1.0, help='Playback speed (e.g., 1.0, 2.0, 4.0, etc.)')
+    parser = argparse.ArgumentParser(
+        description="Run simulation against Docker Sentinel server."
+    )
+    parser.add_argument("scenario", type=str, help="Path to the scenario JSON file")
+    parser.add_argument(
+        "--host",
+        type=str,
+        default=DOCKER_SENTINEL_URL,
+        help="Docker Sentinel server URL",
+    )
+    parser.add_argument(
+        "--speed",
+        type=float,
+        default=1.0,
+        help="Playback speed (e.g., 1.0, 2.0, 4.0, etc.)",
+    )
     args = parser.parse_args()
     main(args.scenario, args.host, args.speed)

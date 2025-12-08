@@ -176,7 +176,9 @@ async def init(request: fastapi.Request):
     global state
 
     if state != STATE_PREINIT:
-        raise RuntimeError(f"Wrong state: /init must be called when in state '{STATE_PREINIT}'. Current state is '{state}'.")
+        raise RuntimeError(
+            f"Wrong state: /init must be called when in state '{STATE_PREINIT}'. Current state is '{state}'."
+        )
 
     data = await request.json()
     custom_events = data["events"]
@@ -235,7 +237,9 @@ async def advance(t: int):
     global state
 
     if state != STATE_READY and state != STATE_RUNNING_MANUAL:
-        raise RuntimeError(f"Wrong state: /advance must be called when in state '{STATE_READY}' or '{STATE_RUNNING_MANUAL}'. Current state is '{state}'.")
+        raise RuntimeError(
+            f"Wrong state: /advance must be called when in state '{STATE_READY}' or '{STATE_RUNNING_MANUAL}'. Current state is '{state}'."
+        )
 
     state = STATE_RUNNING_MANUAL
     result = await _advance(t)
@@ -244,6 +248,7 @@ async def advance(t: int):
         status_code=fastapi.status.HTTP_200_OK,
         content=result,
     )
+
 
 async def _advance(t: int):
     """
@@ -292,12 +297,15 @@ async def _advance(t: int):
         "processed_events": processed_events,
     }
 
+
 @app.get("/play")
 async def play():
     global state
 
     if state != STATE_READY and state != STATE_RUNNING_MANUAL:
-        raise RuntimeError(f"Wrong state: /play must be called when in state '{STATE_READY}' or '{STATE_RUNNING_MANUAL}'. Current state is '{state}'.")
+        raise RuntimeError(
+            f"Wrong state: /play must be called when in state '{STATE_READY}' or '{STATE_RUNNING_MANUAL}'. Current state is '{state}'."
+        )
 
     state = STATE_RUNNING_AUTO
     asyncio.create_task(_run_scenario())
@@ -321,7 +329,7 @@ async def _run_scenario():
         if next_event is None:
             break
         await asyncio.sleep(1)
-        await _advance(t=simulation_time+1)
+        await _advance(t=simulation_time + 1)
 
 
 @app.get("/close")

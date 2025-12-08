@@ -2,6 +2,7 @@ import json
 import math
 from datetime import datetime
 
+
 def next_record(fh):
     l = fh.readline().strip()
     if l == "":
@@ -9,11 +10,13 @@ def next_record(fh):
     else:
         return json.loads(l)
 
+
 def get_time(record):
     if record is None:
         return float("inf")
     else:
         return datetime.fromisoformat(record["time"]).timestamp()
+
 
 def main():
     """
@@ -31,8 +34,12 @@ def main():
     next_comment_vote = next_record(comment_votes_fh)
 
     while True:
-
-        arr = [get_time(next_submission), get_time(next_comment), get_time(next_submission_vote), get_time(next_comment_vote)]
+        arr = [
+            get_time(next_submission),
+            get_time(next_comment),
+            get_time(next_submission_vote),
+            get_time(next_comment_vote),
+        ]
         min_time = min(arr)
         if math.isinf(min_time):
             break
@@ -55,6 +62,7 @@ def main():
     comments_fh.close()
     submission_votes_fh.close()
     comment_votes_fh.close()
+
 
 if __name__ == "__main__":
     main()
