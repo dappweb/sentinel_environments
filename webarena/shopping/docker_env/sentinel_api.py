@@ -9,9 +9,9 @@ from datetime import datetime
 import uvicorn
 import gzip
 import signal
-import mariadb
 import socket
 import subprocess
+import mysql.connector
 
 from products import add_product, update_stock_for_product
 from reviews import add_product_review
@@ -44,18 +44,22 @@ simulation_time = 0
 def _connect_to_mariadb():
     try:
         # Establish connection
-        conn = mariadb.connect(
+        conn = mysql.connector.connect(
             user="magentouser",  # DB username
             password="MyPassword",  # DB password
             host="127.0.0.1",  # Host (use IP or domain)
             port=3306,  # Default MariaDB/MySQL port
             database="magentodb",  # Database name
         )
+
+        if conn.is_connected():
+            print(
+                f"[_connect_to_mariadb] connection successful. DB info: {conn.get_server_info()}"
+            )
         return conn
 
-    except mariadb.Error as e:
-        print(f"❌ Error connecting to MariaDB: {e}")
-        sys.exit(1)
+    except mysql.connector.Error as e:
+        raise Exception(f"Error connecting to MariaDB: {e.msg}")
 
 
 def _setup_magento():
