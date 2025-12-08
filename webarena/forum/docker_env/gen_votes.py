@@ -1,4 +1,5 @@
 """Generate simulated vote events from net score data."""
+
 import json
 import random
 import sys

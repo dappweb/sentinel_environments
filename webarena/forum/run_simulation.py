@@ -1,4 +1,5 @@
 """Run a simulation against a Docker Sentinel server using a specified scenario file."""
+
 import argparse
 import json
 import time

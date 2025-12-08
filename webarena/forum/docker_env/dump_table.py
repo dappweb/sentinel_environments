@@ -1,4 +1,5 @@
 """Dump all records to JSON from a given table in the Postmill database since 2023-02-19."""
+
 import json
 import sys
 from datetime import datetime

@@ -1,4 +1,5 @@
 """Sentinel API for controlling the simulation of WebArena data."""
+
 import asyncio
 import gzip
 import json
