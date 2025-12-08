@@ -18,7 +18,7 @@ from product_sales import add_product_sales_rule
 from generate_events import event_types
 
 SERVER_URL = (
-    f"{os.environ.get('SERVER_URL', 'gcr-sandbox-009')}.redmond.corp.microsoft.com"
+    f"{os.environ.get('SERVER_URL', 'gcr-sandbox-009.redmond.corp.microsoft.com')}"
 )
 
 app = fastapi.FastAPI()
