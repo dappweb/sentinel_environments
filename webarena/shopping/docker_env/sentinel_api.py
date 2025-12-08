@@ -69,12 +69,13 @@ def _setup_magento():
     curr.execute(
         f'UPDATE core_config_data SET value="http://{SERVER_URL}:7770/" WHERE path = "web/secure/base_url";'
     )
+    print(f"[_setup_magento] {curr.rowcount} rows updated")
     conn.commit()
     conn.close()
 
     # Setup store_config and flush the cache, using subprocess
     try:
-        _ = subprocess.check_output(
+        output = subprocess.check_output(
             [
                 "/var/www/magento2/bin/magento",
                 "setup:store-config:set",
@@ -82,12 +83,16 @@ def _setup_magento():
                 f"http://{SERVER_URL}:7770/",
             ]
         )
+        print(f"[_setup_magento] store config set: {output.decode()}")
     except subprocess.CalledProcessError as e:
         raise Exception(f"Error setting up Magento store config: {e.output.decode()}")
 
     # Flush the cache
     try:
-        _ = subprocess.check_output(["/var/www/magento2/bin/magento", "cache:flush"])
+        output = subprocess.check_output(
+            ["/var/www/magento2/bin/magento", "cache:flush"]
+        )
+        print(f"[_setup_magento] cache flushed: {output.decode()}")
     except subprocess.CalledProcessError as e:
         raise Exception(f"Error flushing Magento cache: {e.output.decode()}")
 
@@ -161,7 +166,7 @@ async def startup_event():
 
     # Sleep for 60s to allow the magento instance and services to start according to the webarena docs
     # https://github.com/web-arena-x/webarena/blob/main/environment_docker/README.md#shopping-website-onestopshop
-    asyncio.sleep(60)
+    await asyncio.sleep(60)
 
     # Connect to the db, initialize settings
     _setup_magento()
