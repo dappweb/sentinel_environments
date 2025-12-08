@@ -2,17 +2,24 @@
 import os
 import asyncio
 import json
+import sys
 import fastapi
 from fastapi.responses import JSONResponse
 from datetime import datetime
 import uvicorn
 import gzip
 import signal
+import mariadb
+import socket
+import subprocess
+
 from products import add_product, update_stock_for_product
 from reviews import add_product_review
 from auth import get_admin_token, create_customer_account
 from product_sales import add_product_sales_rule
 from generate_events import event_types
+
+SERVER_URL = f"{socket.gethostname()}.redmond.corp.microsoft.com"
 
 app = fastapi.FastAPI()
 state = "starting"
@@ -32,6 +39,53 @@ webarena_reference_time = datetime.fromisoformat("2025-12-03T16:44:25+00:00")
 
 # This is how time is expressed to through all public APIs
 simulation_time = 0
+
+
+def _connect_to_mariadb():
+    try:
+        # Establish connection
+        conn = mariadb.connect(
+            user="magentouser",  # DB username
+            password="MyPassword",  # DB password
+            host="127.0.0.1",  # Host (use IP or domain)
+            port=3306,  # Default MariaDB/MySQL port
+            database="magentodb",  # Database name
+        )
+        return conn
+
+    except mariadb.Error as e:
+        print(f"❌ Error connecting to MariaDB: {e}")
+        sys.exit(1)
+
+
+def _setup_magento():
+    """Set up Magento to use the correct base URL."""
+    conn = _connect_to_mariadb()
+    curr = conn.cursor()
+    curr.execute(
+        f'UPDATE core_config_data SET value="http://{SERVER_URL}:7770/" WHERE path = "web/secure/base_url";'
+    )
+    conn.commit()
+    conn.close()
+
+    # Setup store_config and flush the cache, using subprocess
+    try:
+        _ = subprocess.check_output(
+            [
+                "/var/www/magento2/bin/magento",
+                "setup:store-config:set",
+                "--base-url",
+                f"http://{SERVER_URL}:7770/",
+            ]
+        )
+    except subprocess.CalledProcessError as e:
+        raise Exception(f"Error setting up Magento store config: {e.output.decode()}")
+
+    # Flush the cache
+    try:
+        _ = subprocess.check_output(["/var/www/magento2/bin/magento", "cache:flush"])
+    except subprocess.CalledProcessError as e:
+        raise Exception(f"Error flushing Magento cache: {e.output.decode()}")
 
 
 async def _next_file_event():
@@ -101,6 +155,13 @@ async def startup_event():
     next_event = await _next_event()
     simulation_time = 0
 
+    # Sleep for 60s to allow the magento instance and services to start according to the webarena docs
+    # https://github.com/web-arena-x/webarena/blob/main/environment_docker/README.md#shopping-website-onestopshop
+    asyncio.sleep(60)
+
+    # Connect to the db, initialize settings
+    _setup_magento()
+
     state = "preinit"
     print("[startup] events file opened")
 
@@ -143,7 +204,7 @@ async def init(request: fastapi.Request):
     custom_events = data["events"]
 
     # Sort custom events by time. Don't assume they are pre-sorted.
-    custom_events.sort(key=lambda e: e["time"])
+    custom_events.sort(key=lambda e: e["time"], reverse=False)
 
     simulation_time = 0
 
