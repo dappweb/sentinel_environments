@@ -19,7 +19,7 @@ RUN apk update --no-cache build-base python3-dev
 RUN python3 -m ensurepip
 
 # Install required Python packages
-RUN pip3 install --no-cache --upgrade pip setuptools && pip3 install fastapi uvicorn requests openai beautifulsoup4
+RUN pip3 install --no-cache --upgrade pip setuptools && pip3 install mysql-connector-python fastapi uvicorn requests openai beautifulsoup4
 
 # Copy scripts for event generation
 COPY generate_events.py /var/www/html/generate_events.py
