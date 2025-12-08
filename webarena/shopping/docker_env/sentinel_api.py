@@ -2,14 +2,12 @@
 import os
 import asyncio
 import json
-import sys
 import fastapi
 from fastapi.responses import JSONResponse
 from datetime import datetime
 import uvicorn
 import gzip
 import signal
-import socket
 import subprocess
 import mysql.connector
 
@@ -19,7 +17,9 @@ from auth import get_admin_token, create_customer_account
 from product_sales import add_product_sales_rule
 from generate_events import event_types
 
-SERVER_URL = f"{socket.gethostname()}.redmond.corp.microsoft.com"
+SERVER_URL = (
+    f"{os.environ.get('SERVER_URL', 'gcr-sandbox-009')}.redmond.corp.microsoft.com"
+)
 
 app = fastapi.FastAPI()
 state = "starting"
