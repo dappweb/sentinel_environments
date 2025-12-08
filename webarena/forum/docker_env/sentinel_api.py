@@ -1,14 +1,15 @@
 # sentinel_api.py
 import asyncio
-import json
-import fastapi
-import signal
-import os
-from fastapi.responses import JSONResponse
-from datetime import datetime, timedelta, timezone
-import uvicorn
-import psycopg2
 import gzip
+import json
+import os
+import signal
+from datetime import UTC, datetime, timedelta
+
+import fastapi
+import psycopg2
+import uvicorn
+from fastapi.responses import JSONResponse
 
 STATE_STARTING = "starting"
 STATE_PREINIT = "preinit"
@@ -186,11 +187,11 @@ async def init(request: fastapi.Request):
     # TODO validate data
 
     # Compute the simulation reference time, and then shift the database accordingly
-    simulation_reference_time = datetime.now(timezone.utc)
+    simulation_reference_time = datetime.now(UTC)
     simulation_time = 0
 
     # Shift about 2 days of data forward (we don't shift it all, as this would be too slow)
-    cur.execute(f'SELECT MAX("timestamp") FROM submissions')
+    cur.execute('SELECT MAX("timestamp") FROM submissions')
     max_timestamp = None
     for row in cur.fetchall():
         max_timestamp = row[0]
@@ -251,9 +252,7 @@ async def advance(t: int):
 
 
 async def _advance(t: int):
-    """
-    Helper function to advance the simulation to a given time. Called by advance() and play()
-    """
+    """Helper function to advance the simulation to a given time. Called by advance() and play()."""
     global simulation_time
     global next_event
     global state
@@ -355,7 +354,7 @@ def insert_submission(conn, cur, data):
     # Change from relative to absolute times
     # NOTE: If running the simulation faster than real-time, events might be in
     # the future and this will look weird in the UI. Max out at now() if necessary
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if data["timestamp"] is not None:
         data["timestamp"] = min(
             now, simulation_reference_time + timedelta(seconds=data["timestamp"])
@@ -425,7 +424,7 @@ def insert_comment(conn, cur, data):
     data = json.loads(json.dumps(data))
 
     # Change from relative to absolute times
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if data["timestamp"] is not None:
         data["timestamp"] = min(
             now, simulation_reference_time + timedelta(seconds=data["timestamp"])

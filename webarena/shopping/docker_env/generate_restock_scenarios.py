@@ -1,18 +1,16 @@
-from datetime import datetime
 import json
+from datetime import datetime
 
 from auth import get_admin_token
-from store_requests import make_authenticated_request
 from generate_events import event_types
-from reviews import get_product_review_from_description
 from products import generate_restock_event
+from reviews import get_product_review_from_description
+from store_requests import make_authenticated_request
 
 
 # Use the Adobe Commerce REST API to search for products for a given search query
 def search_products(sku, token):
-    """
-    Search for products using the Adobe Commerce REST API
-    """
+    """Search for products using the Adobe Commerce REST API."""
     url = f"/rest/V1/products?searchCriteria[filterGroups][0][filters][0][field]=sku&searchCriteria[filterGroups][0][filters][0][value]={sku}&searchCriteria[filterGroups][0][filters][0][condition_type]=like"
     print(f"Searching products with sku: {sku}, URL: {url}")
     response = make_authenticated_request(token, url, method="GET")
@@ -24,9 +22,7 @@ def search_products(sku, token):
 
 
 def generate_review_events(token, sku, num_reviews=10):
-    """
-    Generate product review events for products matching the search query.
-    """
+    """Generate product review events for products matching the search query."""
     products = search_products(sku, token)
     print(f"Found {len(products)} products matching sku '{sku}'")
 

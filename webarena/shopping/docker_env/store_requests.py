@@ -1,11 +1,11 @@
-import requests
 import json
+
+import requests
 from auth import STORE_URL
 
 
 def make_authenticated_request(token, endpoint, method="GET", data=None):
-    """
-    Make an authenticated API request using Bearer token.
+    """Make an authenticated API request using Bearer token.
 
     Args:
         token: Bearer token
@@ -15,6 +15,7 @@ def make_authenticated_request(token, endpoint, method="GET", data=None):
 
     Returns:
         Response JSON or None
+
     """
     url = f"{STORE_URL}{endpoint}"
 

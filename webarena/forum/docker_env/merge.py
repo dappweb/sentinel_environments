@@ -19,14 +19,11 @@ def get_time(record):
 
 
 def main():
-    """
-    Merge-sort the 4 jsonl files.
-    """
-
-    submissions_fh = open("/var/www/html/submissions.jsonl", "rt")
-    comments_fh = open("/var/www/html/comments.jsonl", "rt")
-    submission_votes_fh = open("/var/www/html/submission_votes.jsonl", "rt")
-    comment_votes_fh = open("/var/www/html/comment_votes.jsonl", "rt")
+    """Merge-sort the 4 jsonl files."""
+    submissions_fh = open("/var/www/html/submissions.jsonl")
+    comments_fh = open("/var/www/html/comments.jsonl")
+    submission_votes_fh = open("/var/www/html/submission_votes.jsonl")
+    comment_votes_fh = open("/var/www/html/comment_votes.jsonl")
 
     next_submission = next_record(submissions_fh)
     next_comment = next_record(comments_fh)

@@ -1,7 +1,6 @@
 import json
-import sys
 import random
-import math
+import sys
 from datetime import datetime, timedelta
 
 

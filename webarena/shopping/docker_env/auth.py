@@ -1,5 +1,6 @@
-import requests
 import os
+
+import requests
 
 # Configuration so that use the correct URL both locally and in Docker
 PORT = os.environ.get("MAGENTO_PORT", "7770")
@@ -14,9 +15,7 @@ CUSTOMER_PASSWORD = "test1234!"
 
 
 def create_customer_account():
-    """
-    Use the Magento REST API to create a new customer account.
-    """
+    """Use the Magento REST API to create a new customer account."""
     url = f"{STORE_URL}/rest/V1/customers"
 
     payload = {
@@ -45,11 +44,11 @@ def create_customer_account():
 
 
 def get_customer_token():
-    """
-    Get customer token using customer email and password.
+    """Get customer token using customer email and password.
 
     Returns:
         Bearer token string
+
     """
     url = f"{STORE_URL}/rest/V1/integration/customer/token"
 
@@ -71,12 +70,12 @@ def get_customer_token():
 
 
 def get_admin_token():
-    """
-    Get admin token using username and password.
+    """Get admin token using username and password.
     This is the simplest authentication method for testing.
 
     Returns:
         Bearer token string
+
     """
     url = f"{STORE_URL}/rest/V1/integration/admin/token"
 

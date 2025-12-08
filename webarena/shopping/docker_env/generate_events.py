@@ -1,33 +1,31 @@
-"""
-Script to generate, add, and remove products in Adobe Commerce (Magento) via REST API.
-"""
+"""Script to generate, add, and remove products in Adobe Commerce (Magento) via REST API."""
 
-from datetime import datetime
-import os
-from pathlib import Path
-import random
-from time import sleep
-import json
 import argparse
+import json
+import os
+import random
+from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from time import sleep
 
-from tqdm import tqdm
 from auth import get_admin_token, get_customer_token
-from store_requests import make_authenticated_request
-from products import (
-    remove_product,
-    add_product,
-    generate_product_from_catalog,
-    get_random_product_from_catalog,
-    generate_restock_event,
-    update_stock_for_product,
-)
-from reviews import generate_product_review, add_product_review
 from product_sales import (
-    generate_sales_rule_for_product,
     add_product_sales_rule,
+    generate_sales_rule_for_product,
     remove_product_sales_rule,
 )
-from enum import Enum
+from products import (
+    add_product,
+    generate_product_from_catalog,
+    generate_restock_event,
+    get_random_product_from_catalog,
+    remove_product,
+    update_stock_for_product,
+)
+from reviews import add_product_review, generate_product_review
+from store_requests import make_authenticated_request
+from tqdm import tqdm
 
 event_types = Enum(
     "EventType",
@@ -42,10 +40,7 @@ event_types = Enum(
 
 
 def example_api_calls(token):
-    """
-    Example API calls using Bearer token.
-    """
-
+    """Example API calls using Bearer token."""
     print("\n" + "=" * 60)
     print("Example API Calls")
     print("=" * 60)
@@ -384,7 +379,7 @@ if __name__ == "__main__":
         # Read events from the output file and add them
         try:
             output_path = Path(__file__).parent.absolute() / Path(args.output_file)
-            with open(output_path, "r") as f:
+            with open(output_path) as f:
                 lines = f.readlines()
                 events = [json.loads(l) for l in lines]
 
@@ -421,7 +416,7 @@ if __name__ == "__main__":
             exit(1)
     elif args.option == "reset":
         try:
-            with open(args.output_file, "r") as f:
+            with open(args.output_file) as f:
                 lines = f.readlines()
                 events = [json.loads(item) for item in lines]
                 for event in events:

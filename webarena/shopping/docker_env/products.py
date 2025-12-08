@@ -1,14 +1,15 @@
 import base64
 import copy
+import random
 from pathlib import Path
 from urllib.parse import urljoin
 from uuid import uuid4
-import random
+
 import requests
-from bs4 import BeautifulSoup
 from auth import STORE_URL
-from store_requests import make_authenticated_request
+from bs4 import BeautifulSoup
 from completions import get_completion_from_openai
+from store_requests import make_authenticated_request
 
 
 def get_image_sources(url):
@@ -39,8 +40,7 @@ def get_image_sources(url):
 
 
 def post_product_image(token, sku, img_data):
-    """
-    Post product image to the catalog.
+    """Post product image to the catalog.
 
     Args:
         token: Bearer token
@@ -49,6 +49,7 @@ def post_product_image(token, sku, img_data):
 
     Returns:
         Response JSON or None
+
     """
     image_payload = {
         "entry": {
@@ -89,7 +90,7 @@ def remove_product(token, sku):
 
 
 def add_product(token, sku, product):
-    """Add a new product to the catalog, along with its image data"""
+    """Add a new product to the catalog, along with its image data."""
     img_data = product.get("image_data_base64", None)
     if img_data:
         # Remove image data from product payload before adding the product
@@ -124,13 +125,13 @@ def add_product(token, sku, product):
 
 
 def get_random_product_from_catalog(token, in_stock=True):
-    """
-    Get a random product from the catalog.
+    """Get a random product from the catalog.
 
     Args:
         token: Bearer token
     Returns:
         List of products or None
+
     """
     print("Fetching products from catalog...")
     endpoint = "/rest/V1/products?searchCriteria[pageSize]=100"
@@ -155,7 +156,7 @@ def get_random_product_from_catalog(token, in_stock=True):
 
             # filter out products that are not simple
             print("Filtering for simple products...")
-            all_types = set([item.get("type_id") for item in items])
+            all_types = {item.get("type_id") for item in items}
             print(f"Found product types on this page: {all_types}")
             items = [item for item in items if item.get("type_id") == "simple"]
 
@@ -173,12 +174,10 @@ def get_random_product_from_catalog(token, in_stock=True):
 
 
 def get_product_name_from_description(original_name, description):
-    """
-    Generate a new product name based on the original name and description, using an LLM.
-    """
-    prompt = """Using the following product description and original name from an online store, 
+    """Generate a new product name based on the original name and description, using an LLM."""
+    prompt = """Using the following product description and original name from an online store,
     generate a concise and catchy test product name that accurately reflects the product's features and benefits.
-    
+
     Original Product Name: "{original_name}"
     Product Description: "{description}"""
 
@@ -192,14 +191,14 @@ def get_product_name_from_description(original_name, description):
 
 
 def download_product_image(url_key, new_sku):
-    """
-    Download the main product image for a given SKU.
+    """Download the main product image for a given SKU.
 
     Args:
         token: Bearer token
         sku: Product SKU
     Returns:
         Path to downloaded image or None
+
     """
     # Get the image data using the product URL and beautifulsoup
     product_url = urljoin(STORE_URL, f"{url_key}.html")
@@ -228,7 +227,6 @@ def download_product_image(url_key, new_sku):
 
 def generate_product_from_product(product):
     """Create a cloned product of the given product with modified name, description, and SKU."""
-
     url_key = list(
         filter(
             lambda x: x["attribute_code"] == "url_key",
@@ -302,9 +300,7 @@ def generate_product_from_product(product):
 
 
 def generate_product_from_catalog(token):
-    """
-    Create a new product in the catalog, as a JSON.
-    """
+    """Create a new product in the catalog, as a JSON."""
     random_product = get_random_product_from_catalog(token)
     if not random_product:
         return None
@@ -340,8 +336,7 @@ def generate_restock_event(token, sku, qty=None):
 
 
 def update_stock_for_product(token, sku, payload):
-    """
-    Restock a product by increasing its quantity.
+    """Restock a product by increasing its quantity.
 
     Args:
         token: Bearer token
@@ -350,6 +345,7 @@ def update_stock_for_product(token, sku, payload):
 
     Returns:
         Response JSON or None
+
     """
     print(f"\nRestocking product with SKU: {sku}...")
 

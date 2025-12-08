@@ -1,8 +1,8 @@
-import psycopg2
 import json
 import sys
-
 from datetime import datetime
+
+import psycopg2
 
 
 def main(table_name):
@@ -48,7 +48,7 @@ def main(table_name):
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         sys.stderr.write(
-            f"SYNTAX: python dump_table.py <TABLE_NAME>\n\nTables include:\n  submissions\n  comments\n"
+            "SYNTAX: python dump_table.py <TABLE_NAME>\n\nTables include:\n  submissions\n  comments\n"
         )
         sys.exit(1)
     else:

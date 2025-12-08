@@ -1,16 +1,15 @@
 import base64
 import json
+
 from auth import get_admin_token
-from store_requests import make_authenticated_request
 from generate_events import event_types
 from products import generate_product_from_product
+from store_requests import make_authenticated_request
 
 
 # Use the Adobe Commerce REST API to search for products for a given search query
 def search_products(query, token):
-    """
-    Search for products using the Adobe Commerce REST API
-    """
+    """Search for products using the Adobe Commerce REST API."""
     url = f"/rest/V1/products?searchCriteria[filter_groups][0][filters][0][field]=name&searchCriteria[filter_groups][0][filters][0][value]=%25{query}%25&searchCriteria[filter_groups][0][filters][0][condition_type]=like"
 
     print(f"Searching products with query: {query}, URL: {url}")
@@ -23,9 +22,7 @@ def search_products(query, token):
 
 
 def generate_similar_product_add_events(query):
-    """
-    Generate product add events for products matching the search query.
-    """
+    """Generate product add events for products matching the search query."""
     admin_token = get_admin_token()
     products = search_products(query, admin_token)
     print(f"Found {len(products)} products matching query '{query}'")
@@ -38,7 +35,7 @@ def generate_similar_product_add_events(query):
         new_product = generate_product_from_product(product)
         sku = new_product["product"]["sku"]
 
-        product_image_path = "./product_images/{sku}.jpg".format(sku=sku)
+        product_image_path = f"./product_images/{sku}.jpg"
         with open(product_image_path, "rb") as image_file:
             image_data = image_file.read()
             encoded_string = base64.b64encode(image_data).decode("utf-8")

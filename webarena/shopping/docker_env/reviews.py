@@ -1,15 +1,13 @@
-from store_requests import make_authenticated_request
 from completions import get_structured_completion_from_openai
+from store_requests import make_authenticated_request
 
 
 def get_product_review_from_description(original_name, description):
-    """
-    Generate a new product review based on the original name and description, using an LLM.
-    """
-    prompt = """Using the following product description and original name from an online store, 
+    """Generate a new product review based on the original name and description, using an LLM."""
+    prompt = """Using the following product description and original name from an online store,
     generate a detailed and engaging product review that highlights the key features and benefits of the product.
-    The review should include a rating out of 5, a title, a nickname for the person posting the review, 
-    and a descriptive text that would help potential customers make an informed purchasing decision, 
+    The review should include a rating out of 5, a title, a nickname for the person posting the review,
+    and a descriptive text that would help potential customers make an informed purchasing decision,
     and can be either positive or negative based on the description.
 
     Original Product Name: "{original_name}"

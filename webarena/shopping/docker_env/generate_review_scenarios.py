@@ -1,14 +1,13 @@
 import json
+
 from auth import get_admin_token
-from store_requests import make_authenticated_request
 from reviews import get_product_review_from_description
+from store_requests import make_authenticated_request
 
 
 # Use the Adobe Commerce REST API to search for products for a given search query
 def search_products(query, token):
-    """
-    Search for products using the Adobe Commerce REST API
-    """
+    """Search for products using the Adobe Commerce REST API."""
     url = f"/rest/V1/products?searchCriteria[filter_groups][0][filters][0][field]=name&searchCriteria[filter_groups][0][filters][0][value]=%25{query}%25&searchCriteria[filter_groups][0][filters][0][condition_type]=like"
 
     print(f"Searching products with query: {query}, URL: {url}")
@@ -21,9 +20,7 @@ def search_products(query, token):
 
 
 def generate_similar_product_reviews(query):
-    """
-    Generate product review events for products matching the search query.
-    """
+    """Generate product review events for products matching the search query."""
     admin_token = get_admin_token()
     products = search_products(query, admin_token)
     print(f"Found {len(products)} products matching query '{query}'")

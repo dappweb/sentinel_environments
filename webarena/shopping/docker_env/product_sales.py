@@ -5,7 +5,6 @@ from store_requests import make_authenticated_request
 
 def add_product_sales_rule(token, name, rule_data):
     """Post a product sale event for a given product as specified in the payload."""
-
     # Post a salesrule for this product
     result = make_authenticated_request(
         token,
@@ -22,7 +21,7 @@ def add_product_sales_rule(token, name, rule_data):
 
 
 def remove_product_sales_rule(token, product_id):
-    """Remove a product sale event for a given product"""
+    """Remove a product sale event for a given product."""
     # Use the API to get the sales rules
     sales_rules = make_authenticated_request(
         token,

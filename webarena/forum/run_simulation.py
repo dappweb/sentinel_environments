@@ -1,7 +1,8 @@
-import time
-import requests
-import json
 import argparse
+import json
+import time
+
+import requests
 
 DOCKER_SENTINEL_URL = "http://gcrazgdl1200.northcentralus.cloudapp.azure.com:8000"
 
@@ -18,13 +19,11 @@ def _raise_for_status_with_body(resp: requests.Response) -> None:
 
 
 def _poll_until(docker_sentinel_url, target_states, valid_states=None):
-    """
-    Poll the server until it is in the desired state.
+    """Poll the server until it is in the desired state.
 
     target_states: the function returns when the server is in one of these states
     valid_states: [Optional] list of valid states. Raise an error if not in one of these states.
     """
-
     while True:
         response = requests.get(f"{docker_sentinel_url}/status")
         _raise_for_status_with_body(response)
@@ -43,7 +42,7 @@ def main(
     scenario_file_path: str, docker_sentinel_url: str, playback_speed: float = 1.0
 ):
     # Read the scenario
-    with open(scenario_file_path, "rt") as f:
+    with open(scenario_file_path) as f:
         scenario_data = json.load(f)
 
     # Wait for things to start up

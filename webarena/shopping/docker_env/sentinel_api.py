@@ -1,21 +1,21 @@
 # sentinel_api.py
-import os
 import asyncio
-import json
-import fastapi
-from fastapi.responses import JSONResponse
-from datetime import datetime
-import uvicorn
 import gzip
+import json
+import os
 import signal
 import subprocess
-import mysql.connector
+from datetime import datetime
 
+import fastapi
+import mysql.connector
+import uvicorn
+from auth import create_customer_account, get_admin_token
+from fastapi.responses import JSONResponse
+from generate_events import event_types
+from product_sales import add_product_sales_rule
 from products import add_product, update_stock_for_product
 from reviews import add_product_review
-from auth import get_admin_token, create_customer_account
-from product_sales import add_product_sales_rule
-from generate_events import event_types
 
 SERVER_URL = (
     f"{os.environ.get('SERVER_URL', 'gcr-sandbox-009.redmond.corp.microsoft.com')}"

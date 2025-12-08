@@ -1,11 +1,12 @@
+import argparse
+import json
+import os
+import sys
+import time
 from collections import defaultdict
 from enum import Enum
-import os
-import time
+
 import requests
-import json
-import argparse
-import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "docker_env"))
 
@@ -111,13 +112,11 @@ def get_product_link_by_entity_id(token, entity_id):
 
 
 def _poll_until(target_states, valid_states=None):
-    """
-    Poll the server until it is in the desired state.
+    """Poll the server until it is in the desired state.
 
     target_states: the function returns when the server is in one of these states
     valid_states: [Optional] list of valid states. Raise an error if not in one of these states.
     """
-
     while True:
         response = requests.get(f"{DOCKER_SENTINEL_URL}/status")
         response.raise_for_status()
@@ -167,7 +166,7 @@ def main():
 
     # Read the scenario
     scenario_data = None
-    with open(args.scenario, "rt") as f:
+    with open(args.scenario) as f:
         scenario_data = json.load(f)
 
     # Wait for things to start up
