@@ -1,3 +1,9 @@
+"""Functions to generate restock events for products for a given search query.
+
+Used in generation of events for shopping scenarios.
+
+"""
+
 import json
 from datetime import datetime
 

@@ -1,3 +1,5 @@
+"""Issue requests to the Magento 2 REST API using a Bearer token."""
+
 import json
 
 import requests

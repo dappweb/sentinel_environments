@@ -1,3 +1,5 @@
+"""Functions for generating and managing product reviews in the Magento store."""
+
 from completions import get_structured_completion_from_openai
 from store_requests import make_authenticated_request
 
@@ -22,6 +24,16 @@ def get_product_review_from_description(original_name, description):
 
 
 def generate_product_review(token, sku):
+    """Generate a new product review for a given product SKU using an LLM and product description to synthesize a new review.
+
+    Args:
+        token: Authentication token for making requests to the API.
+        sku: The SKU of the product for which to generate a review.
+
+    Returns:
+        A dictionary containing the generated review details, or None if no product is found.
+
+    """
     print(f"\nGet the entity value for product with SKU: {sku}...")
     endpoint = f"/rest/V1/products?searchCriteria[filter_groups][0][filters][0][field]=sku&searchCriteria[filter_groups][0][filters][0][value]={sku}"
     result = make_authenticated_request(token, endpoint, method="GET")

@@ -1,4 +1,5 @@
-# sentinel_api.py
+"""Sentinel API for controlling the simulation of WebArena data in the OneStopShop environment."""
+
 import asyncio
 import gzip
 import json
@@ -59,7 +60,7 @@ def _connect_to_mariadb():
         return conn
 
     except mysql.connector.Error as e:
-        raise Exception(f"Error connecting to MariaDB: {e.msg}")
+        raise Exception(f"Error connecting to MariaDB: {e.msg}") from e
 
 
 def _setup_magento():
@@ -71,6 +72,7 @@ def _setup_magento():
     )
     print(f"[_setup_magento] {curr.rowcount} rows updated")
     conn.commit()
+    curr.close()
     conn.close()
 
     # Setup store_config and flush the cache, using subprocess
@@ -85,7 +87,9 @@ def _setup_magento():
         )
         print(f"[_setup_magento] store config set: {output.decode()}")
     except subprocess.CalledProcessError as e:
-        raise Exception(f"Error setting up Magento store config: {e.output.decode()}")
+        raise Exception(
+            f"Error setting up Magento store config: {e.output.decode()}"
+        ) from e
 
     # Flush the cache
     try:
@@ -94,7 +98,9 @@ def _setup_magento():
         )
         print(f"[_setup_magento] cache flushed: {output.decode()}")
     except subprocess.CalledProcessError as e:
-        raise Exception(f"Error flushing Magento cache: {e.output.decode()}")
+        raise Exception(f"Error flushing Magento cache: {e.output.decode()}") from e
+
+    """Startup the endpoint, opening database connections, etc."""
 
 
 async def _next_file_event():
@@ -141,6 +147,7 @@ async def _next_event():
 
 @app.exception_handler(Exception)
 async def internal_server_error_handler(request: fastapi.Request, exc: Exception):
+    """Handle uncaught exceptions and return a JSON response."""
     return JSONResponse(
         status_code=500,
         content={
@@ -152,6 +159,7 @@ async def internal_server_error_handler(request: fastapi.Request, exc: Exception
 
 @app.on_event("startup")
 async def startup_event():
+    """Startup the endpoint, initialize magento, open events file, create accounts, etc."""
     global state
     global events_file_handle
     global next_file_event
@@ -168,7 +176,7 @@ async def startup_event():
     # https://github.com/web-arena-x/webarena/blob/main/environment_docker/README.md#shopping-website-onestopshop
     await asyncio.sleep(60)
 
-    # Connect to the db, initialize settings
+    # Connect to the db, initialize settings    """Handle uncaught exceptions and return a JSON response."""
     _setup_magento()
 
     state = "preinit"
@@ -180,6 +188,7 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
+    """Shutdown the endpoint, closing database connections, etc."""
     if events_file_handle:
         events_file_handle.close()
     print("[shutdown]")
@@ -187,6 +196,7 @@ async def shutdown_event():
 
 @app.get("/status")
 async def status():
+    """Get the current status of the simulation."""
     next_event_time = None
     if next_event is not None:
         next_event_time = next_event["time"]
@@ -204,6 +214,7 @@ async def status():
 
 @app.post("/init")
 async def init(request: fastapi.Request):
+    """Initialize the simulation with custom events."""
     global simulation_time
     global custom_events
     global next_event
@@ -235,7 +246,8 @@ async def init(request: fastapi.Request):
 
 
 @app.get("/advance")
-async def next(t: int):
+async def advance(t: int):
+    """Advance the simulation to a given time."""
     global simulation_time
     global next_event
 
@@ -308,7 +320,8 @@ async def next(t: int):
 
 
 @app.get("/close")
-async def status():
+async def close():
+    """Close the simulation and stop the container."""
     global state
 
     state = "stopping"
@@ -325,6 +338,7 @@ async def status():
 
 @app.get("/play")
 async def play():
+    """Start automatic playback of the simulation."""
     asyncio.create_task(_run_scenario())
 
     if next_event is not None:

@@ -40,7 +40,7 @@ event_types = Enum(
 
 
 def example_api_calls(token):
-    """Example API calls using Bearer token."""
+    """Issue example API calls using Bearer token."""
     print("\n" + "=" * 60)
     print("Example API Calls")
     print("=" * 60)
@@ -233,6 +233,7 @@ def add_events(token, event_type, payload, demo=False):
 
 
 def output_events(events, output_path):
+    """Sort events by time and write events to a JSONL file."""
     # Sort the items by their created_at key
     events.sort(key=lambda x: x["time"])
 
@@ -245,6 +246,13 @@ def output_events(events, output_path):
 
 
 def display_product_pages(sku, product):
+    """Display specific product pages in Edge browser for demo purposes.
+
+    Args:
+        sku (str): The SKU of the product to display
+        product (dict): The product details to display
+
+    """
     url_key = list(
         filter(
             lambda x: x["attribute_code"] == "url_key",
@@ -266,6 +274,13 @@ def display_product_pages(sku, product):
 
 
 def display_product_in_cart(customer_token, sales_rule):
+    """Display specific product added to the cart in Edge browser for demo purposes.
+
+    Args:
+        customer_token (str): The customer token to use for API calls
+        sales_rule (dict): The sales rule to use for the product in the cart
+
+    """
     sku = sales_rule.get("condition", {}).get("conditions", [])[0].get("value")
     if not sku:
         print("✗ Could not determine SKU from sales rule to display in cart.")
@@ -381,7 +396,7 @@ if __name__ == "__main__":
             output_path = Path(__file__).parent.absolute() / Path(args.output_file)
             with open(output_path) as f:
                 lines = f.readlines()
-                events = [json.loads(l) for l in lines]
+                events = [json.loads(line) for line in lines]
 
                 previous_timestamp = None
                 for event in events:

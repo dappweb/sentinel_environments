@@ -1,3 +1,5 @@
+"""Functions to add and remove product sales rules in Magento using the REST API."""
+
 from datetime import datetime, timedelta
 
 from store_requests import make_authenticated_request
@@ -49,6 +51,7 @@ def remove_product_sales_rule(token, product_id):
             print(f"✗ Failed to remove sales rule with ID: {rule_id}")
 
     # # Find the sales rule ID for the given product_id
+    # KEEP FOR LATER -- This is not working as expected and is commented out for now, and instead we are removing all sales rules istead of product specific ones.
     # rule_id = None
     # for rule in sales_rules.get("items", []):
     #     product_ids = rule.get("product_ids", [])
@@ -86,7 +89,7 @@ def generate_sales_rule_for_product(product):
             "name": f"Huge discount on {name}",
             "store_labels": [{"store_id": 1, "store_label": "HalfPrice"}],
             "description": f"Automatic sale rule for product {sku}",
-            # "condition": {
+            # "condition": { # This part is commented out as it is not working as expected to apply the discount to the specific product
             #     "condition_type": "Magento\\SalesRule\\Model\\Rule\\Condition\\Combine",
             #     "conditions": [
             #         {

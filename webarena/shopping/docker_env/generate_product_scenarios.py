@@ -1,3 +1,8 @@
+"""Functions to search for products and generate product add events.
+
+Used for generation of shopping scenarios.
+"""
+
 import base64
 import json
 
