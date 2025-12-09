@@ -5,7 +5,7 @@ import gzip
 import json
 import os
 import signal
-from datetime import UTC, datetime, timedelta
+from datetime import timezone, datetime, timedelta
 
 import fastapi
 import psycopg2
@@ -194,7 +194,7 @@ async def init(request: fastapi.Request):
     # TODO validate data
 
     # Compute the simulation reference time, and then shift the database accordingly
-    simulation_reference_time = datetime.now(UTC)
+    simulation_reference_time = datetime.now(timezone.utc)
     simulation_time = 0
 
     # Shift about 2 days of data forward (we don't shift it all, as this would be too slow)
@@ -366,7 +366,7 @@ def insert_submission(conn, cur, data):
     # Change from relative to absolute times
     # NOTE: If running the simulation faster than real-time, events might be in
     # the future and this will look weird in the UI. Max out at now() if necessary
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     if data["timestamp"] is not None:
         data["timestamp"] = min(
             now, simulation_reference_time + timedelta(seconds=data["timestamp"])
@@ -437,7 +437,7 @@ def insert_comment(conn, cur, data):
     data = json.loads(json.dumps(data))
 
     # Change from relative to absolute times
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     if data["timestamp"] is not None:
         data["timestamp"] = min(
             now, simulation_reference_time + timedelta(seconds=data["timestamp"])
