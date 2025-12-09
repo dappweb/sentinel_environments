@@ -1,3 +1,9 @@
+"""Functions to generate product review events for products matching a search query.
+
+Used in scenario generation for shopping scenarios.
+
+"""
+
 import json
 
 from auth import get_admin_token

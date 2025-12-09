@@ -1,3 +1,5 @@
+"""Functions for managing products in a magento catalog using the REST API."""
+
 import base64
 import copy
 import random
@@ -44,7 +46,7 @@ def post_product_image(token, sku, img_data):
 
     Args:
         token: Bearer token
-        product_id: ID of the product to which the image will be added
+        sku: Product SKU of the product to which the image will be added
         img_data: Base64 encoded image data
 
     Returns:
@@ -80,6 +82,13 @@ def post_product_image(token, sku, img_data):
 
 
 def remove_product(token, sku):
+    """Remove a product from the catalog using the REST API.
+
+    Args:
+        token: Bearer token
+        sku: Product SKU to be removed
+
+    """
     print(f"\nRemoving product with SKU: {sku}...")
     endpoint = f"/rest/V1/products/{sku}"
     result = make_authenticated_request(token, endpoint, method="DELETE")
@@ -90,7 +99,14 @@ def remove_product(token, sku):
 
 
 def add_product(token, sku, product):
-    """Add a new product to the catalog, along with its image data."""
+    """Add a new product to the catalog, along with its image data encoded in base64.
+
+    Args:
+        token: Bearer token
+        sku: Product SKU
+        product: Product data as a JSON object
+
+    """
     img_data = product.get("image_data_base64", None)
     if img_data:
         # Remove image data from product payload before adding the product
@@ -109,7 +125,7 @@ def add_product(token, sku, product):
         print(f"  SKU: {result.get('sku')}")
         print(f"  ID: {result.get('id')}")
 
-        # Post product image after creating the product
+        # Post product image as a separate REST call after creating the product
         if not img_data:
             # If no image data provided, try to read from local file for default events
             image_path = Path.cwd() / Path(f"product_images/{sku}.jpg")
@@ -128,9 +144,11 @@ def get_random_product_from_catalog(token, in_stock=True):
     """Get a random product from the catalog.
 
     Args:
-        token: Bearer token
+        token: Bearer token for authentication
+        in_stock: Boolean indicating whether to filter for in-stock products (not implemented yet)
+
     Returns:
-        List of products or None
+        Random product from the catalog or None if no product is found.
 
     """
     print("Fetching products from catalog...")
@@ -154,7 +172,7 @@ def get_random_product_from_catalog(token, in_stock=True):
         if result:
             items = result.get("items", [])
 
-            # filter out products that are not simple
+            # filter out products that are not simple products
             print("Filtering for simple products...")
             all_types = {item.get("type_id") for item in items}
             print(f"Found product types on this page: {all_types}")
@@ -190,14 +208,15 @@ def get_product_name_from_description(original_name, description):
     return response.strip()
 
 
-def download_product_image(url_key, new_sku):
+def download_product_image(url_key, sku):
     """Download the main product image for a given SKU.
 
     Args:
-        token: Bearer token
-        sku: Product SKU
+        url_key: The URL key of the product page.
+        sku: The SKU for the product to be used for naming the image.
+
     Returns:
-        Path to downloaded image or None
+        Path to the downloaded image file or None if no image is found.
 
     """
     # Get the image data using the product URL and beautifulsoup
@@ -214,7 +233,7 @@ def download_product_image(url_key, new_sku):
             Path.cwd().joinpath("product_images").mkdir(parents=True, exist_ok=True)
 
             # Save the image under the new SKU name
-            image_path = Path.cwd() / Path(f"product_images/{new_sku}.jpg")
+            image_path = Path.cwd() / Path(f"product_images/{sku}.jpg")
             with open(image_path, "wb") as f:
                 f.write(response.content)
             print(f"✓ Downloaded image to {image_path}")

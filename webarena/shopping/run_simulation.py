@@ -1,3 +1,5 @@
+"""A script to play back shopping events in the WebArena OneStopShop environment, against a sentinel server running in a Docker container."""
+
 import argparse
 import json
 import os
@@ -28,6 +30,7 @@ event_types = Enum(
 
 
 def generate_shopping_init_events():
+    """Generate test events for shopping scenario initialization."""
     events = [
         {
             "type": event_types.ADD_PRODUCT_REVIEW.name,
@@ -132,6 +135,11 @@ def _poll_until(target_states, valid_states=None):
 
 
 def main():
+    """Run simulation against Docker Sentinel server.
+
+    The script reads the scenario from a JSON file and runs the simulation in a loop.
+    The script can also be used to close the server or run a demo scenario.
+    """
     parser = argparse.ArgumentParser(
         description="Run shopping simulation against Docker Sentinel server."
     )

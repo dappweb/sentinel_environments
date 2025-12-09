@@ -1,3 +1,5 @@
+"""Module for acquiring and creating Magento tokens to interact with the Magento REST API endpoints."""
+
 import os
 
 import requests
@@ -15,7 +17,12 @@ CUSTOMER_PASSWORD = "test1234!"
 
 
 def create_customer_account():
-    """Use the Magento REST API to create a new customer account."""
+    """Get customer account using customer email and password.
+
+    Returns:
+        Customer account details in JSON format.
+
+    """
     url = f"{STORE_URL}/rest/V1/customers"
 
     payload = {
@@ -71,10 +78,9 @@ def get_customer_token():
 
 def get_admin_token():
     """Get admin token using username and password.
-    This is the simplest authentication method for testing.
 
     Returns:
-        Bearer token string
+        Bearer token string for the admin account.
 
     """
     url = f"{STORE_URL}/rest/V1/integration/admin/token"
