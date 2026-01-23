@@ -1,6 +1,6 @@
 {
-    "start_page": "HOST_ADDRESS/f/aww",
-    "prompt": "People have been cross-posting to /f/aww and /f/pics -- which is not allowed. Whenever a new post is made to /f/pics, check if the same post was very recently also posted to /f/aww. If such a post is found, please provide the title.",
+    "start_page": "HOST_ADDRESS/f/aww/new",
+    "prompt": "People have been cross-posting to /f/aww and /f/pics -- which is not allowed. Whenever a new post is made to /f/pics, check if the same post was very recently also posted to /f/aww. If such a post is found, please provide the title. When monitoring these forums, sort by newest post first, to make sure you're catching cross-posts earl.",
      "events": [
         {
             "time": 78,

@@ -1,16 +1,16 @@
 {
-    "start_page": "HOST_ADDRESS/f/aww",
-    "prompt": "People have been cross-posting to /f/aww and /f/pics -- which is not allowed. Check if recent posts made to /f/pics, also occur on /f/aww. If such a post is found, please provide the title.",
+    "start_page": "HOST_ADDRESS/f/aww/new",
+    "prompt": "People have been cross-posting to /f/aww and /f/pics -- which is not allowed. Whenever a new post is made to /f/pics, check if the same post was very recently also posted to /f/aww. If such a post is found, please provide the title. When monitoring these forums, sort by newest post first, to make sure you're catching cross-posts early.",
      "events": [
         {
-            "time": 0,
+            "time": 1,
             "type": "submission",
             "payload": {
                 "id": 200001,
                 "forum_id": 10072,
                 "user_id": 71826,
                 "title": "He's modeling the lil bandana I made for him",
-                "timestamp": 0,
+                "timestamp": 1,
                 "url": null, 
                 "body": "",
                 "image_id": "6c826480-fb04-4f4c-9c16-1b4f1fa164c7",
@@ -22,7 +22,7 @@
                 "user_flag": "t3_115w23z",
                 "locked": false,
                 "search_doc": "",
-                "last_active": 0,
+                "last_active": 78,
                 "comment_count": 0,
                 "net_score": 1,
                 "visibility": "visible",
@@ -31,8 +31,8 @@
         }
     ],
     "answer": "He's modeling the lil bandana I made for him",
-    "answer_time": 0,
-    "annotator_notes": "Both posts basically already exist. Sentinel tasks aren't even required.",
+    "answer_time": 1,
+    "annotator_notes": "Both the images in /f/pics and /f/aww already exist and have the same title. This should be trivial.",
     "taxonomy": {
         "criteria": "objective",
         "milestone_type": "absolute",
