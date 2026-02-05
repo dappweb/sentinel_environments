@@ -203,8 +203,7 @@ def main():
     with open(args.scenario) as f:
         scenario_data = json.load(f)
 
-    # Wait for things to start up
-    response_data = _poll_until(target_states=["preinit"], valid_states=["starting"])
+    _startup()
 
     # Initialize the server
     init_events = {
@@ -214,7 +213,8 @@ def main():
     _raise_for_status_with_body(response)
     response_data = response.json()
 
-    assert response_data["status"] == "ready"
+    if not response_data["status"] == "ready":
+        raise Exception(f"Failed to initialize server: {response_data}")
 
     print("Done init()")
 
