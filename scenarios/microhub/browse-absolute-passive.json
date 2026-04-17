@@ -1,0 +1,61 @@
+{
+  "id": "microhub-browse-absolute-passive",
+  "environment": "microhub",
+  "start_page": "HOST_ADDRESS/microhub",
+  "prompt": "Keep an eye on the Issues tab and tell me when there are 8 open issues.",
+  "condition_at": 300,
+  "duration": 600,
+  "events": [
+    {
+      "time": 0,
+      "type": "preload_repo",
+      "payload": {
+        "issue_ids": [
+          "i1",
+          "i2",
+          "i3",
+          "i4",
+          "i5"
+        ]
+      }
+    },
+    {
+      "time": 100,
+      "type": "new_issue",
+      "payload": {
+        "issue_id": "i6"
+      }
+    },
+    {
+      "time": 200,
+      "type": "new_issue",
+      "payload": {
+        "issue_id": "i7"
+      }
+    },
+    {
+      "time": 300,
+      "type": "new_issue",
+      "payload": {
+        "issue_id": "i9"
+      }
+    },
+    {
+      "time": 450,
+      "type": "new_issue",
+      "payload": {
+        "issue_id": "i10"
+      }
+    }
+  ],
+  "annotator_notes": "",
+  "taxonomy": {
+    "criteria": "objective",
+    "milestone_type": "absolute",
+    "event_persistence": "persistent",
+    "monitoring_approach": "passive",
+    "difficulty": "easy",
+    "distraction_level": "low"
+  },
+  "eval_sql": "SELECT (SELECT COUNT(*) FROM issue_states WHERE state='open') >= 8"
+}

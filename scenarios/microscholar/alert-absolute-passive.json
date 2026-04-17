@@ -1,0 +1,47 @@
+{
+  "id": "microscholar-alert-absolute-passive",
+  "environment": "microscholar",
+  "start_page": "HOST_ADDRESS/microscholar",
+  "prompt": "Keep an eye on my alerts and let me know if one comes in about large language models.",
+  "condition_at": 300,
+  "duration": 600,
+  "events": [
+    {
+      "time": 0,
+      "type": "preload_papers",
+      "payload": {
+        "alert_ids": [
+          "alert-1",
+          "alert-2",
+          "alert-3",
+          "alert-4",
+          "alert-5"
+        ]
+      }
+    },
+    {
+      "time": 300,
+      "type": "new_alert",
+      "payload": {
+        "alert_id": "alert-6"
+      }
+    },
+    {
+      "time": 450,
+      "type": "new_alert",
+      "payload": {
+        "alert_id": "alert-7"
+      }
+    }
+  ],
+  "annotator_notes": "",
+  "taxonomy": {
+    "criteria": "objective",
+    "milestone_type": "absolute",
+    "event_persistence": "persistent",
+    "monitoring_approach": "passive",
+    "difficulty": "easy",
+    "distraction_level": "medium"
+  },
+  "eval_sql": "SELECT EXISTS(SELECT 1 FROM alerts WHERE LOWER(description) LIKE '%large language models%')"
+}

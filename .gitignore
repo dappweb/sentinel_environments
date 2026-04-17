@@ -1,4 +1,4 @@
-# SentinelBench .gitignore
+# Sentinel Environments .gitignore
 # =======================
 
 # Operating System Files
@@ -57,6 +57,7 @@ pnpm-lock.yaml
 
 # Build outputs
 # -------------
+.vite/
 dist/
 dist-ssr/
 build/
@@ -177,7 +178,7 @@ test-results/
 .vercel
 .netlify/
 
-# Large media files (except those in sentinelbench/public/)
+# Large media files (except those in frontend/public/)
 # ---------------------------------------------------------
 *.mp4
 *.avi
@@ -191,7 +192,7 @@ test-results/
 !logo.*
 !icon.*
 !*.svg
-!sentinelbench/public/**
+!frontend/public/**
 
 # AI tools
 # --------

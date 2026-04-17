@@ -1,19 +1,18 @@
 <div align="center">
 
 <!-- Replace with your own banner/logo path -->
-<img src="banner.svg" alt="SentinelBench Logo">
+<img src="banner.svg" alt="Sentinel Environments Logo">
 
 *A benchmark for evaluating AI agents on long-horizon monitoring tasks.*
 
 [![Citation](https://img.shields.io/badge/Cite-BibTeX-blue)](#citation)
-[![Website](https://img.shields.io/badge/Website-Live-brightgreen)](https://sentinel-bench.vercel.app/)
 [![Blog](https://img.shields.io/badge/Blog-Post-6f42c1)](https://www.microsoft.com/en-us/research/blog/tell-me-when-building-agents-that-can-wait-monitor-and-act/)
 
 </div>
 
 ---
 
-**SentinelBench** is a benchmark for evaluating AI agents on **long-horizon monitoring tasks**. SentinelBench addresses a critical gap in current evaluations by testing whether agents can *wait*, *monitor*, and *act* over extended periods of time.
+**Sentinel Environments** is a benchmark for evaluating AI agents on **long-horizon monitoring tasks**, addressing a critical gap in current evaluations by testing whether agents can *wait*, *monitor*, and *act* over extended periods of time.
 
 > **Status**: Under active development. Part of ongoing research on enabling agents to complete long-duration tasks.
 
@@ -28,15 +27,11 @@ Current agents fail at long-duration monitoring due to:
 - **Rate limiting**: Aggressive polling triggers API and website limits
 - **Attention drift**: Agents lose focus, hallucinate, or deviate from instructions
 
-SentinelBench provides a controlled testbed to evaluate these failure modes and measure progress on long-horizon agent capabilities.
+This benchmark provides a controlled testbed to evaluate these failure modes and measure progress on long-horizon agent capabilities.
 
 ## Benchmark Structure
 
-SentinelBench consists of **10 high-fidelity web-app environment replicas** (Micro* environments), each exposing **20 objective task variants**, evaluated at **5 durations**:
-
-```
-10 environments × 20 variants × 5 durations = 1,000 task configurations
-```
+The benchmark consists of **10 high-fidelity web-app environment replicas** (Micro* environments), each with a set of monitoring scenarios at configurable durations. The target matrix is **8 scenarios per environment** (80 total when fully populated); see [Task Dimensions](#task-dimensions) below.
 
 ### Environments
 
@@ -57,37 +52,47 @@ SentinelBench consists of **10 high-fidelity web-app environment replicas** (Mic
 
 ### Task Dimensions
 
-Each environment defines **20 task variants** via URL parameters:
+Each environment targets **8 scenarios** via scenario JSON files, spanning the full `criteria × activity` matrix with two distinct monitoring targets per cell:
 
 ```
-5 task types × 2 criteria × 2 activity = 20 variants
+4 cells × 2 targets per cell = 8 scenarios per environment
 ```
 
 | Dimension | Options | Description |
 |-----------|---------|-------------|
-| **Task Type** | 5 per environment | Environment-specific monitoring targets (e.g., unread emails, GitHub stars) |
 | **Criteria** | `absolute` / `relative` | Fixed threshold vs. threshold relative to baseline at task start |
-| **Activity** | `passive` / `active` | Monitor-only vs. monitor + perform verifiable end action |
+| **Activity** | `passive` / `active` | Condition visible from the list/summary view (passive) vs. condition hidden inside detail views, requiring the agent to click into individual items each poll cycle (active). Examples of "active" content: email body past the 140-char preview, song lyrics, PR review comments, paper abstracts. |
+
+The four cells are `passive-absolute`, `passive-relative`, `active-absolute`, `active-relative`. Each is populated with two distinct environment-specific monitoring targets (e.g., MicroMail's `active-absolute` pair is `body-keyword` (keyword past the 140-char body preview) and `attachment-name` (attachment filename only visible when the email is opened)).
+
+Scenario filenames follow `<target>-<criteria>-<activity>.json` under `scenarios/<env>/`. Each scenario's internal `id` is env-prefixed (e.g. `micromail-body-keyword-absolute-active`). Present-day scenario counts per environment are uneven while the matrix is still being filled out.
 
 ### Durations
 
-All tasks are **time-based**: the success condition becomes satisfiable exactly at the specified duration. Tasks cannot complete early.
+All tasks are **time-based**: the success condition becomes satisfiable at `condition_at` seconds of simulation time, and the task times out at `duration` seconds. Tasks cannot complete early. Both fields are configurable per scenario -- scale up for stress-testing persistence or scale down for rapid iteration.
 
-- 15 minutes
-- 30 minutes
-- 1 hour
-- 2 hours
-- 4 hours
+### Example Scenario
 
-The benchmark supports arbitrary durations via URL parameters for stress-testing persistence over longer periods.
+Each task is defined as a JSON file in `scenarios/<env>/`:
 
-### Example Task URL
-
+```json
+{
+  "id": "micromail-junk-relative-passive",
+  "environment": "micromail",
+  "prompt": "Keep an eye on the junk folder for me, tell me when 3 more emails end up there.",
+  "condition_at": 300,
+  "duration": 600,
+  "events": [ { "time": 0, "type": "preload_emails", "payload": { ... } }, ... ],
+  "eval_sql": "SELECT (SELECT COUNT(*) FROM email_states WHERE folder='junk') >= (SELECT CAST(value AS INTEGER) FROM session_meta WHERE key='baseline_junk_count') + 3"
+}
 ```
-/micromail?task=junk&criteria=relative&activity=active&duration=3600
-```
 
-This configures: *Monitor for new junk emails relative to baseline, perform cleanup action when threshold met, 1-hour duration.*
+- `condition_at` -- simulation-time (seconds) at which the success condition first becomes satisfiable.
+- `duration` -- total simulation-time budget before the task times out.
+- `events` -- deterministic list of state changes; `time` is in simulation-seconds.
+- `eval_sql` -- the SQL query run against a materialized snapshot of session state at `/evaluate`; a truthy result counts as success.
+
+The eval harness discovers these scenarios automatically and runs them against an agent subprocess.
 
 ## Evaluation Protocol
 
@@ -95,7 +100,7 @@ This configures: *Monitor for new junk emails relative to baseline, perform clea
 
 Each task has a SQL evaluation query (`eval_sql`). The harness calls `POST /evaluate` after the agent completes, which materializes session state to an in-memory SQLite database and runs the query. Success is determined solely by whether the query returns a truthy value.
 
-For `activity=active` tasks, the SQL query checks whether the required action was performed by examining the database state directly.
+The `eval_sql` is orthogonal to passive/active: it always checks the monitored condition against the materialized session state (e.g., "at least 10 unread emails in inbox", "a paper titled X exists"). Passive vs. active only changes what the agent must do during monitoring -- list-view polling vs. detail-view drilldown -- not what the evaluator checks.
 
 ### Metrics
 
@@ -107,57 +112,79 @@ For `activity=active` tasks, the SQL query checks whether the required action wa
 
 ### Anti-Gaming Measures
 
-- **URL parameter stripping**: Parameters are captured on first render, then stripped from the URL to prevent agents from reading their assignment
-- **State persistence**: Task state persists across browser refreshes via localStorage
-- **Deterministic timing**: Events occur at predictable intervals based on duration parameter
+- **Server-side state**: All task state is managed by the API server, not exposed to the agent
+- **Deterministic timing**: Events occur at predictable intervals based on scenario duration
+- **SQL-based evaluation**: Success is determined by `eval_sql` queries against materialized session state
 
 ### Recommended Dataset Splits
 
 For system development, split at the **environment level**:
 
-| Split | Environments | Configurations | Purpose |
-|-------|--------------|----------------|---------|
-| Reporting | 7 | 700 | Main results |
-| Validation | 2 | 200 | System selection/tuning |
-| Held-out Test | 1 | 100 | Blind evaluation (not released) |
+| Split | Environments | Scenarios | Purpose |
+|-------|--------------|-----------|---------|
+| Reporting | 7 | 56 | Main results |
+| Validation | 2 | 16 | System selection/tuning |
+| Held-out Test | 1 | 8 | Blind evaluation (not released) |
+
+Scenario counts assume the 8-per-env target matrix. Per-environment scaling comes from configurable scenario durations, not from adding more variants.
 
 ## Quick Start
 
-### Run the Frontend (Manual Testing)
+A convenience script launches all components in a single tmux session:
 
 ```bash
-cd sentinelbench
-npm install
-npm run dev
+./start.sh
 ```
 
-Visit `http://localhost:5173` to interact with tasks manually.
+This opens 3 tmux windows: **server** (API on `:8000`), **frontend** (Vite on `:5173`), and **harness** (shell ready for eval runs).
 
-### Run the Backend
+### 1. API Server
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r sentinel_api/requirements.txt
+pip install -r server/requirements.txt
 
 # Build the SQLite databases from JSONL catalogs (required on first setup)
-python -m sentinel_api.scripts.build_db
+python -m server.scripts.build_db
 
-uvicorn sentinel_api.server:app --host 0.0.0.0 --port 8000
+uvicorn server.server:app --host 0.0.0.0 --port 8000
 ```
 
 > **Note:** The `.db` files are not checked into git. You must run `build_db` before starting the server. Re-run it whenever the JSONL catalogs in `data/catalogs/` change.
 
-The frontend proxies API requests to `localhost:8000`, so the backend must be running for full functionality.
+### 2. Frontend
 
-## Running the Eval Harness
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-The eval harness runs all benchmark tasks against an agent and collects results.
+Visit `http://localhost:5173` to interact with environments manually. The frontend proxies API requests to `localhost:8000`, so the API server must be running.
 
-### Setup
+### Dev Mode
 
-1. In one terminal, ensure the frontend and backend are running (navigate to `sentinelbench` and run 'npm run dev:full' to start both).
-2. In another terminal, create an `eval_config.yaml` in your working directory (e.g, repo root) with the following content:
+Set `SENTINEL_DEV` to skip the `/init` flow and preload environment data on startup:
+
+```bash
+# Backend -- preload all environments
+SENTINEL_DEV=all uvicorn server.server:app --reload --port 8000
+
+# Backend -- preload a single environment
+SENTINEL_DEV=microfy uvicorn server.server:app --reload --port 8000
+
+# Frontend (separate terminal)
+cd frontend && npm run dev
+```
+
+Each environment has a `scenarios/dev.json` that uses `["*"]` wildcards to load all catalog data. New catalog entries are picked up automatically.
+
+### 3. Eval Harness
+
+The eval harness discovers all scenario JSON files, runs each against an agent subprocess, and collects results.
+
+**Configure your agent** by creating an `eval_config.yaml` in the repo root:
 
 ```yaml
 host: http://localhost:8000
@@ -170,10 +197,10 @@ host: http://localhost:8000
 agent_subprocess: ["your-agent-command", "--url", "__TASK_URL__", "--prompt", "__TASK_PROMPT__"]
 ```
 
-### Running
+**Run:**
 
 ```bash
-python -m sentinel_api.eval_harness <run_name> [--config eval_config.yaml] [--host http://localhost:8000]
+python -m server.eval_harness <run_name> [--config eval_config.yaml] [--api-url http://localhost:8000]
 ```
 
 Results are written to `results/<run_name>/<environment>/<scenario_id>/`:
@@ -186,13 +213,13 @@ Results are written to `results/<run_name>/<environment>/<scenario_id>/`:
 
 Tasks with an existing `results.json` or `error.txt` are skipped, so runs can be resumed after interruption.
 
-### Example
+**Example:**
 
 ```bash
-python -m sentinel_api.eval_harness my_first_run
-# Found 62 tasks. Results -> results/my_first_run
-#   Running micromail-inbox-absolute-active ...
-#   Running micromail-cc-absolute-active ...
+python -m server.eval_harness my_first_run
+# Found 32 tasks. Results -> results/my_first_run
+#   Running micromail-attachment-name-absolute-active ...
+#   Running micromail-body-december-relative-active ...
 #   ...
 # Done.
 ```
@@ -207,7 +234,7 @@ python -m sentinel_api.eval_harness my_first_run
 
 ## Related Work
 
-SentinelBench is designed to complement existing agent benchmarks:
+This benchmark is designed to complement existing agent benchmarks:
 
 | Benchmark | Focus | Long-Horizon Aspect |
 |-----------|-------|---------------------|
@@ -215,11 +242,11 @@ SentinelBench is designed to complement existing agent benchmarks:
 | WebVoyager | Real web browsing | Multi-step navigation, one session |
 | AssistantBench | User-like web tasks | Time-consuming but continuous runs |
 | WebGames | Interactive web challenges | Complex tasks, no idle periods |
-| **SentinelBench** | Monitoring tasks | 15min–4h waits with periodic checking |
+| **Sentinel Environments** | Monitoring tasks | Configurable-duration waits with periodic checking |
 
 ## Research Context
 
-SentinelBench is part of research on **SentinelSteps**, a method for enabling multi-agent orchestration systems to handle long-duration conditional tasks. SentinelSteps extend standard plan steps with:
+This benchmark is part of research on **SentinelSteps**, a method for enabling multi-agent orchestration systems to handle long-duration conditional tasks. SentinelSteps extend standard plan steps with:
 
 - A natural-language termination condition
 - An adaptive sleep schedule between checks
@@ -231,28 +258,32 @@ The approach is implemented in [Magentic-UI](https://github.com/microsoft/magent
 
 ```
 sentinel_environments/
-├── sentinel_api/          # FastAPI backend (handlers, scenarios, SQLite databases)
+├── server/                # FastAPI backend
 │   ├── handlers/          # Per-environment request handlers
-│   ├── scripts/           # build_db.py (JSONL → SQLite)
-│   ├── <env>/             # .db file + scenarios/*.json per environment
+│   ├── scripts/           # build_db.py (JSONL/JSON → SQLite)
+│   ├── <env>/             # .db file per environment (generated, gitignored)
 │   ├── server.py          # Main FastAPI app
-│   └── run_simulation.py  # CLI evaluation harness
-├── sentinelbench/         # React/Vite frontend
+│   ├── eval_harness.py    # CLI evaluation harness (discovers scenarios/)
+│   └── run_simulation.py  # Scenario playback tool for local testing
+├── scenarios/             # Scenario JSON files per environment
+│   └── <env>/             # <target>-<criteria>-<activity>.json + dev.json
+├── data/catalogs/         # Immutable catalogs (users.json, per-env JSONL files)
+├── frontend/              # React/Vite frontend
 │   ├── src/
 │   │   ├── environments/  # Micro* UI components
 │   │   ├── hooks/         # API data hooks
-│   │   └── data/          # Type definitions and JSONL source data
+│   │   └── types/         # Shared TypeScript types
 │   └── public/            # Static media (images, audio, video)
 ├── data_generation/       # Synthetic data generation scripts and prompts
 │   ├── scripts/           # Generation scripts (batch_image_gen.py, SLURM jobs)
 │   ├── prompts/           # Prompt files organized by environment
 │   └── docs/              # REPRODUCTION.md, COMPLIANCE.md
-└── tests/                 # Integration, E2E, and eval_sql tests
+└── tests/                 # Backend pytest integration + eval_sql tests
 ```
 
 ## Synthetic Data Generation
 
-The `data_generation/` folder contains all scripts and prompts used to generate synthetic media for SentinelBench environments.
+The `data_generation/` folder contains all scripts and prompts used to generate synthetic media for Sentinel Environments.
 
 ### Generated Asset Types
 
@@ -274,7 +305,7 @@ The following environments use **text-only JSONL data** and do not require AI-ge
 - **MicroLendar** (calendar) - Uses calendar event data
 - **MicroScholar** (academic search) - Uses academic paper metadata
 
-These environments rely solely on the JSONL files in `sentinelbench/src/data/content/` which contain all necessary text-based content for benchmark tasks.
+These environments rely solely on the JSONL/JSON files in `data/catalogs/<env>/` which contain all necessary text-based content for benchmark tasks.
 
 ### Running Data Generation
 
@@ -306,8 +337,9 @@ Citation information will be provided upon publication.
 
 ## 👥 Authors
 
-- Matheus Kunzler Maldaner — [GitHub](https://github.com/matheusmaldaner)
-- Adam Fourney — [GitHub](https://github.com/afourney)
-- Hussein Mozannar — [GitHub](https://github.com/husseinmozannar)
-- Gagan Bansal — [GitHub](https://github.com/gagb)
-- Maya Murad — [GitHub](https://github.com/mmurad2)
+- Matheus Kunzler Maldaner -- [GitHub](https://github.com/matheusmaldaner)
+- Adam Fourney -- [GitHub](https://github.com/afourney)
+- Amanda Swearngin -- [GitHub](https://github.com/amaswea)
+- Hussein Mozannar -- [GitHub](https://github.com/husseinmozannar)
+- Gagan Bansal -- [GitHub](https://github.com/gagb)
+- Maya Murad -- [GitHub](https://github.com/mmurad2)

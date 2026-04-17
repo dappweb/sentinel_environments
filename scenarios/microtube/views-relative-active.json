@@ -1,0 +1,80 @@
+{
+  "id": "microtube-views-relative-active",
+  "environment": "microtube",
+  "start_page": "HOST_ADDRESS/microtube",
+  "prompt": "I already watched a couple videos from my subscriptions earlier. Keep watching that feed and watch 3 more new uploads for me as they appear.",
+  "condition_at": 300,
+  "duration": 600,
+  "events": [
+    {
+      "time": 0,
+      "type": "preload_videos",
+      "payload": {
+        "video_ids": [
+          "vid-news-01",
+          "vid-news-02",
+          "vid-self-01",
+          "vid-self-02",
+          "vid-travel-01",
+          "vid-travel-02",
+          "vid-comedy-01",
+          "vid-comedy-02"
+        ],
+        "channel_ids": [
+          "ch-news",
+          "ch-self",
+          "ch-travel",
+          "ch-comedy"
+        ],
+        "subscribed_channel_ids": [
+          "ch-news",
+          "ch-self",
+          "ch-travel",
+          "ch-comedy"
+        ],
+        "watched_video_ids": [
+          "vid-news-01",
+          "vid-self-01"
+        ]
+      }
+    },
+    {
+      "time": 100,
+      "type": "new_video",
+      "payload": {
+        "video_id": "vid-news-03"
+      }
+    },
+    {
+      "time": 200,
+      "type": "new_video",
+      "payload": {
+        "video_id": "vid-self-03"
+      }
+    },
+    {
+      "time": 300,
+      "type": "new_video",
+      "payload": {
+        "video_id": "vid-travel-03"
+      }
+    },
+    {
+      "time": 400,
+      "type": "new_video",
+      "payload": {
+        "video_id": "vid-comedy-03"
+      }
+    }
+  ],
+  "annotator_notes": "",
+  "taxonomy": {
+    "criteria": "objective",
+    "milestone_type": "relative",
+    "event_persistence": "persistent",
+    "monitoring_approach": "active",
+    "difficulty": "medium",
+    "distraction_level": "low"
+  },
+  "eval_sql": "SELECT (SELECT COUNT(*) FROM watched_videos) - CAST((SELECT value FROM session_meta WHERE key='baseline_watched_count') AS REAL) >= 3"
+}

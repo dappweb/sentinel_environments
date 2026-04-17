@@ -6,7 +6,7 @@ the full lifecycle (init -> advance all events -> simulate user actions ->
 evaluate -> assert success), and reports pass/fail.
 
 Usage:
-    cd SentinelBench
+    cd sentinel_environments
     .venv/bin/python tests/test_eval_sql.py             # positive tests only
     .venv/bin/python tests/test_eval_sql.py --negative   # also run negative tests
 
@@ -26,6 +26,7 @@ TIMEOUT = 10
 # Scenarios whose eval_sql checks user-created state that events alone cannot satisfy.
 # The agent must interact with items delivered by events to meet these thresholds.
 NEEDS_USER_ACTION = {
+    "microdin-notifications-absolute-active",
     "microhub-contribute-absolute-active",
     "microhood-orders-absolute-active",
     "microgram-follows-absolute-active",
@@ -34,16 +35,13 @@ NEEDS_USER_ACTION = {
     "microfy-followers-absolute-active",
     "microfy-likes-absolute-passive",
     "microfy-plays-absolute-passive",
-    "microlendar-tasks-absolute-passive",
+    "microscholar-search-absolute-active",
+    "microtube-notifications-absolute-active",
     "microtube-views-relative-active",
-    "microtube-subscribers-absolute-passive",
 }
 
 # Scenarios exempt from negative testing (eval_sql passes from preload alone by design).
-NEGATIVE_EXEMPT = {
-    "microhub-browse-absolute-passive",       # placeholder: SELECT 1 >= 1
-    "microhood-portfolio-absolute-passive",    # preloaded portfolio already meets $15k threshold
-}
+NEGATIVE_EXEMPT = set()
 
 
 # ---------------------------------------------------------------------------
@@ -94,70 +92,75 @@ def advance_all():
 def simulate_actions(scenario_id):
     """Simulate agent actions for scenarios whose eval_sql needs user interaction."""
 
-    if scenario_id == "microhub-contribute-absolute-active":
-        # Comment on an issue (eval: user_created_comments >= 1)
-        issues = get("/data/microhub-issues")["issues"]
-        post(f"/data/microhub-issues/{issues[0]['id']}/comment", {"body": "test comment"})
+    if scenario_id == "microdin-notifications-absolute-active":
+        # Apply to the Kubernetes role after it appears.
+        post("/data/microdin-jobs/job-6/apply")
+
+    elif scenario_id == "microhub-contribute-absolute-active":
+        # Comment on the target TOTP issue.
+        post("/data/microhub-issues/i14/comment", {"body": "test comment"})
 
     elif scenario_id == "microhood-orders-absolute-active":
-        # Place 3 buy orders (eval: orders >= 3)
-        stocks = get("/data/microhood-stocks")["stocks"]
-        for i in range(3):
-            sym = stocks[i % len(stocks)]["symbol"]
-            post(f"/data/microhood-stocks/{sym}/order",
-                 {"action": "buy", "quantity": 1, "type": "market"})
+        # Buy 2 shares of DRNE once it reaches the target price.
+        post("/data/microhood-stocks/DRNE/order",
+             {"action": "buy", "quantity": 2, "type": "market"})
 
     elif scenario_id == "microgram-follows-absolute-active":
-        # Follow 5 users (eval: followed_users >= 5)
-        for i in range(5):
-            post(f"/data/microgram-users/test-user-{i}/follow")
+        # Follow the 3 target creators.
+        for user_id in ("user097", "user098", "user099"):
+            post(f"/data/microgram-users/{user_id}/follow")
 
     elif scenario_id == "microgram-likes-absolute-passive":
-        # Like 10 posts (eval: post_states WHERE isLiked=1 >= 10)
-        posts = get("/data/microgram-posts")["posts"]
-        for p in posts[:10]:
-            post(f"/data/microgram-posts/{p['id']}/like")
+        # Like the 3 target posts that arrive.
+        for post_id in (
+            "post-phoenix-camelback-mountain-sunrise",
+            "post-urdu-calligraphy-practice",
+            "post-vienna-state-opera-interior",
+        ):
+            post(f"/data/microgram-posts/{post_id}/like")
 
     elif scenario_id == "microgram-stories-absolute-passive":
-        # View 10 stories (eval: story_states WHERE isViewed=1 >= 10)
-        stories = get("/data/microgram-stories")["stories"]
-        for s in stories[:10]:
-            post(f"/data/microgram-stories/{s['id']}/view")
+        # View the 3 target stories that arrive.
+        for story_id in (
+            "story-drone-sunset-photography",
+            "story-user-interview-session",
+            "story-coffee-roasting-home",
+        ):
+            post(f"/data/microgram-stories/{story_id}/view")
 
     elif scenario_id == "microfy-followers-absolute-active":
-        # Follow 5 artists (eval: followed_artists >= 5)
-        artists = get("/data/microfy-artists")["artists"]
-        for a in artists[:5]:
-            post(f"/data/microfy-artists/{a['id']}/follow")
+        # Follow the 4 target artists from the new release feed.
+        for artist_id in ("artist-040", "artist-041", "artist-042", "artist-043"):
+            post(f"/data/microfy-artists/{artist_id}/follow")
 
     elif scenario_id == "microfy-likes-absolute-passive":
-        # Like 10 tracks (eval: track_states WHERE isLiked=1 >= 10)
-        tracks = get("/data/microfy-tracks")["tracks"]
-        for t in tracks[:10]:
-            post(f"/data/microfy-tracks/{t['id']}/like")
+        # Like the 4 target tracks as they arrive.
+        for track_id in ("track-041", "track-042", "track-043", "track-044"):
+            post(f"/data/microfy-tracks/{track_id}/like")
 
     elif scenario_id == "microfy-plays-absolute-passive":
-        # Play 5 tracks (eval: SUM(userPlayCount) >= 5)
-        tracks = get("/data/microfy-tracks")["tracks"]
-        for t in tracks[:5]:
-            post(f"/data/microfy-tracks/{t['id']}/play")
+        # Play the first 3 new tracks that arrive.
+        for track_id in ("track-061", "track-062", "track-063"):
+            post(f"/data/microfy-tracks/{track_id}/play")
 
-    elif scenario_id == "microlendar-tasks-absolute-passive":
-        # Create 2 extra tasks to reach 12 (eval: tasks >= 12, events deliver 10)
-        post("/data/microlendar-tasks", {"title": "Test task 1", "dueDate": "2026-03-25"})
-        post("/data/microlendar-tasks", {"title": "Test task 2", "dueDate": "2026-03-26"})
+    elif scenario_id == "microscholar-search-absolute-active":
+        # Cite the target paper once it appears.
+        post("/data/microscholar-papers/paper-target-1/cite")
+
+    elif scenario_id == "microtube-notifications-absolute-active":
+        # Like the new Science Explained upload.
+        post("/data/microtube-videos/vid-science-03/like")
 
     elif scenario_id == "microtube-views-relative-active":
-        # Watch 5 videos (eval: watched_videos - baseline >= 5)
-        videos = get("/data/microtube-videos")["videos"]
-        for v in videos[:5]:
-            post(f"/data/microtube-videos/{v['id']}/watch")
+        # Watch the 3 target uploads from subscribed channels.
+        for video_id in ("vid-news-03", "vid-self-03", "vid-travel-03"):
+            post(f"/data/microtube-videos/{video_id}/watch")
 
-    elif scenario_id == "microtube-subscribers-absolute-passive":
-        # Subscribe to 3 channels (eval: channel_states WHERE isSubscribed=1 >= 3)
-        channels = get("/data/microtube-channels")["channels"]
-        for c in channels[:3]:
-            post(f"/data/microtube-channels/{c['id']}/subscribe")
+    else:
+        raise ValueError(
+            f"Scenario '{scenario_id}' is in NEEDS_USER_ACTION but has no "
+            f"simulation defined in simulate_actions(). Add an elif branch."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -218,7 +221,7 @@ def run_negative(scenario_path: Path) -> tuple:
         if not init_resp.get("success"):
             return (sid, False, f"init failed: {init_resp}")
 
-        # No advance, no actions — just evaluate immediately after preload
+        # No advance, no actions -- just evaluate immediately after preload
         result = post("/evaluate")
         if result.get("success"):
             return (sid, False, "NEGATIVE: eval_sql passes without events")
@@ -237,11 +240,11 @@ def run_negative(scenario_path: Path) -> tuple:
 
 def discover_scenarios() -> list:
     """Find all scenario JSONs across environment subdirectories."""
-    base = Path("sentinel_api")
+    base = Path(__file__).resolve().parent.parent / "scenarios"
     # Exclude webarena reference implementations
     scenarios = sorted(
-        p for p in base.glob("*/scenarios/*.json")
-        if "webarena" not in str(p)
+        p for p in base.glob("*/*.json")
+        if "webarena" not in str(p) and p.name != "dev.json"
     )
     return scenarios
 
@@ -261,7 +264,7 @@ def main():
         requests.get(f"{HOST}/status", timeout=3)
     except requests.ConnectionError:
         print("ERROR: Server not running on localhost:8000")
-        print("Start with: .venv/bin/uvicorn sentinel_api.server:app --port 8000")
+        print("Start with: .venv/bin/uvicorn server.server:app --port 8000")
         sys.exit(1)
 
     # Ensure clean state
@@ -269,7 +272,7 @@ def main():
 
     scenarios = discover_scenarios()
     if not scenarios:
-        print("ERROR: No scenario files found. Run from SentinelBench/ directory.")
+        print("ERROR: No scenario files found. Run from sentinel_environments/ directory.")
         sys.exit(1)
 
     print(f"Discovered {len(scenarios)} scenarios\n")
@@ -285,7 +288,7 @@ def main():
         status = "\033[32mPASS\033[0m" if passed else "\033[31mFAIL\033[0m"
         line = f"  [{status}] {sid}"
         if not passed:
-            line += f" — {detail}"
+            line += f" -- {detail}"
         print(line)
 
     pos_passed = sum(1 for _, p, _ in results if p)
@@ -302,7 +305,7 @@ def main():
     neg_total = 0
     if args.negative:
         print(f"\n{'=' * 60}")
-        print("NEGATIVE TESTS (init only, no advance — eval should fail)")
+        print("NEGATIVE TESTS (init only, no advance -- eval should fail)")
         print("=" * 60)
         neg_results = []
         for s in scenarios:
@@ -311,7 +314,7 @@ def main():
             status = "\033[32mPASS\033[0m" if passed else "\033[31mFAIL\033[0m"
             line = f"  [{status}] {sid}"
             if not passed:
-                line += f" — {detail}"
+                line += f" -- {detail}"
             print(line)
 
         neg_total = len(neg_results)

@@ -1,0 +1,24 @@
+{
+  "id": "micromail-junk-relative-passive",
+  "environment": "micromail",
+  "start_page": "HOST_ADDRESS/micromail",
+  "prompt": "Keep an eye on the junk folder for me, tell me when 3 more emails end up there.",
+  "condition_at": 300,
+  "duration": 600,
+  "events": [
+    {"time": 0, "type": "preload_emails", "payload": {"email_ids": ["junk-01", "junk-02", "junk-03"]}},
+    {"time": 50, "type": "new_email", "payload": {"email_id": "base-01"}},
+    {"time": 100, "type": "new_email", "payload": {"email_id": "junk-04"}},
+    {"time": 180, "type": "new_email", "payload": {"email_id": "base-02"}},
+    {"time": 240, "type": "new_email", "payload": {"email_id": "junk-05"}},
+    {"time": 300, "type": "new_email", "payload": {"email_id": "junk-06"}},
+    {"time": 380, "type": "new_email", "payload": {"email_id": "base-03"}},
+    {"time": 460, "type": "new_email", "payload": {"email_id": "junk-07"}},
+    {"time": 540, "type": "new_email", "payload": {"email_id": "base-04"}}
+  ],
+  "taxonomy": {
+    "milestone_type": "relative",
+    "monitoring_approach": "passive"
+  },
+  "eval_sql": "SELECT (SELECT COUNT(*) FROM email_states WHERE folder='junk') >= (SELECT CAST(value AS INTEGER) FROM session_meta WHERE key='baseline_junk_count') + 3"
+}

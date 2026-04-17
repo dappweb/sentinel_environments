@@ -1,0 +1,76 @@
+{
+  "id": "microtube-subscribers-absolute-passive",
+  "environment": "microtube",
+  "start_page": "HOST_ADDRESS/microtube",
+  "prompt": "Keep the Subscriptions feed open and tell me when 3 new videos from channels I already follow have appeared.",
+  "condition_at": 300,
+  "duration": 600,
+  "events": [
+    {
+      "time": 0,
+      "type": "preload_videos",
+      "payload": {
+        "video_ids": [
+          "vid-tech-01",
+          "vid-tech-02",
+          "vid-science-01",
+          "vid-science-02",
+          "vid-cooking-01",
+          "vid-cooking-02",
+          "vid-gaming-01",
+          "vid-gaming-02"
+        ],
+        "channel_ids": [
+          "ch-tech",
+          "ch-science",
+          "ch-cooking",
+          "ch-gaming"
+        ],
+        "subscribed_channel_ids": [
+          "ch-tech",
+          "ch-science",
+          "ch-cooking",
+          "ch-gaming"
+        ]
+      }
+    },
+    {
+      "time": 129,
+      "type": "new_video",
+      "payload": {
+        "video_id": "vid-tech-03"
+      }
+    },
+    {
+      "time": 214,
+      "type": "new_video",
+      "payload": {
+        "video_id": "vid-science-03"
+      }
+    },
+    {
+      "time": 300,
+      "type": "new_video",
+      "payload": {
+        "video_id": "vid-cooking-03"
+      }
+    },
+    {
+      "time": 386,
+      "type": "new_video",
+      "payload": {
+        "video_id": "vid-gaming-03"
+      }
+    }
+  ],
+  "annotator_notes": "",
+  "taxonomy": {
+    "criteria": "objective",
+    "milestone_type": "absolute",
+    "event_persistence": "persistent",
+    "monitoring_approach": "passive",
+    "difficulty": "easy",
+    "distraction_level": "low"
+  },
+  "eval_sql": "SELECT (SELECT COUNT(*) FROM videos v JOIN channel_states cs ON v.channel_id=cs.channel_id WHERE cs.isSubscribed=1 AND v.id IN ('vid-tech-03','vid-science-03','vid-cooking-03')) >= 3"
+}

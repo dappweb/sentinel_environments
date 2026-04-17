@@ -1,0 +1,24 @@
+{
+  "id": "micromail-cc-relative-active",
+  "environment": "micromail",
+  "start_page": "HOST_ADDRESS/micromail",
+  "prompt": "I'm expecting a few more emails where I'm CC'd. Let me know when 3 more come in.",
+  "condition_at": 300,
+  "duration": 600,
+  "events": [
+    {"time": 0, "type": "preload_emails", "payload": {"email_ids": ["cc-01", "cc-02", "base-01", "base-02"]}},
+    {"time": 40, "type": "new_email", "payload": {"email_id": "base-03"}},
+    {"time": 100, "type": "new_email", "payload": {"email_id": "cc-03"}},
+    {"time": 150, "type": "new_email", "payload": {"email_id": "base-04"}},
+    {"time": 220, "type": "new_email", "payload": {"email_id": "cc-04"}},
+    {"time": 300, "type": "new_email", "payload": {"email_id": "cc-05"}},
+    {"time": 380, "type": "new_email", "payload": {"email_id": "base-05"}},
+    {"time": 460, "type": "new_email", "payload": {"email_id": "base-06"}},
+    {"time": 540, "type": "new_email", "payload": {"email_id": "base-07"}}
+  ],
+  "taxonomy": {
+    "milestone_type": "relative",
+    "monitoring_approach": "active"
+  },
+  "eval_sql": "SELECT (SELECT COUNT(*) FROM emails e JOIN email_states es ON e.id=es.email_id WHERE e.isCC=1 AND es.folder='inbox') >= (SELECT CAST(value AS INTEGER) FROM session_meta WHERE key='baseline_cc_count') + 3"
+}
