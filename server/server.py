@@ -268,10 +268,10 @@ def _require_session() -> Session:
     return _session
 
 
-def _next_event_time(session: Session) -> Optional[int]:
+def _next_event_time(session: Session) -> Optional[float]:
     idx = session.next_event_index
     if idx < len(session.events):
-        return int(session.events[idx]["time"])
+        return float(session.events[idx]["time"])
     return None
 
 
@@ -301,7 +301,7 @@ def _dispatch_process_event(session: Session, event: dict) -> None:
 
 
 
-def _advance_session(session: Session, up_to_time: int) -> list[dict]:
+def _advance_session(session: Session, up_to_time: float) -> list[dict]:
     processed = []
     while session.next_event_index < len(session.events):
         event = session.events[session.next_event_index]
@@ -333,7 +333,7 @@ async def status() -> JSONResponse:
     result: dict = {
         "success": True,
         "status": _state,
-        "simulation_time": int(_session.simulation_time) if _session else 0,
+        "simulation_time": round(_session.simulation_time, 2) if _session else 0,
         "next_event_time": net,
     }
     return JSONResponse(content=result)
@@ -377,7 +377,7 @@ async def init(payload: InitPayload) -> JSONResponse:
 
 
 @app.get("/advance")
-async def advance(time: int) -> JSONResponse:
+async def advance(time: float) -> JSONResponse:
     global _state
     session = _require_session()
 
