@@ -55,21 +55,21 @@
       }
     },
     {
-      "time": 559.86,
+      "time": 526.98,
       "type": "new_email",
       "payload": {
         "email_id": "base-05"
       }
     },
     {
-      "time": 618.09,
+      "time": 552.33,
       "type": "new_email",
       "payload": {
         "email_id": "base-06"
       }
     },
     {
-      "time": 676.33,
+      "time": 577.68,
       "type": "new_email",
       "payload": {
         "email_id": "base-07"

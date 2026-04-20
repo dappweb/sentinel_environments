@@ -75,28 +75,28 @@
       }
     },
     {
-      "time": 231.3,
+      "time": 1620.24,
       "type": "new_connection",
       "payload": {
         "connection_id": "conn-7"
       }
     },
     {
-      "time": 339.9,
+      "time": 2654.79,
       "type": "new_job",
       "payload": {
         "job_id": "job-12"
       }
     },
     {
-      "time": 448.5,
+      "time": 3689.35,
       "type": "new_job",
       "payload": {
         "job_id": "job-13"
       }
     },
     {
-      "time": 589.68,
+      "time": 5034.28,
       "type": "new_post",
       "payload": {
         "post_id": "post-15"

@@ -97,14 +97,14 @@
       }
     },
     {
-      "time": 280.36,
+      "time": 344.78,
       "type": "new_post",
       "payload": {
         "post_id": "post-7"
       }
     },
     {
-      "time": 336.34,
+      "time": 467.13,
       "type": "new_notification",
       "payload": {
         "notification_id": "notif-5"

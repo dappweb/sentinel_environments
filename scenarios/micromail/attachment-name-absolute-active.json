@@ -50,21 +50,21 @@
       }
     },
     {
-      "time": 608.73,
+      "time": 579.07,
       "type": "new_email",
       "payload": {
         "email_id": "att-24"
       }
     },
     {
-      "time": 649.19,
+      "time": 589.88,
       "type": "new_email",
       "payload": {
         "email_id": "base-03"
       }
     },
     {
-      "time": 689.65,
+      "time": 600.68,
       "type": "new_email",
       "payload": {
         "email_id": "base-04"

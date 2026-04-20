@@ -78,28 +78,28 @@
       }
     },
     {
-      "time": 616.93,
+      "time": 592.76,
       "type": "new_email",
       "payload": {
         "email_id": "base-11"
       }
     },
     {
-      "time": 648.3,
+      "time": 599.96,
       "type": "new_email",
       "payload": {
         "email_id": "base-12"
       }
     },
     {
-      "time": 679.67,
+      "time": 607.17,
       "type": "new_email",
       "payload": {
         "email_id": "base-14"
       }
     },
     {
-      "time": 711.04,
+      "time": 614.37,
       "type": "new_email",
       "payload": {
         "email_id": "base-15"
