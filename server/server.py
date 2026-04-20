@@ -360,6 +360,7 @@ async def init(payload: InitPayload) -> JSONResponse:
         event_timeline_end=payload.event_timeline_end,
         eval_sql=payload.eval_sql,
         condition_at=payload.condition_at,
+        speed_factor=payload.speed_factor,
         baseline_metrics={},
     )
 
@@ -472,6 +473,7 @@ async def data_config(request: Request) -> ConfigResponse:
     return ConfigResponse(
         environment=env,
         event_timeline_end=session.event_timeline_end,
+        speed_factor=session.speed_factor,
         selfUser=self_user,
     )
 

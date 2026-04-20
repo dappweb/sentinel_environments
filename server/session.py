@@ -31,6 +31,7 @@ class Session:
     baseline_metrics: dict
     eval_sql: str = ""
     condition_at: Optional[float] = None
+    speed_factor: float = 1.0
 
     # MicroMail
     micromail_emails: list[dict] = field(default_factory=list)
