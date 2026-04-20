@@ -74,7 +74,7 @@ def close():
 def build_init_body(scenario):
     return {
         "environment": scenario["environment"],
-        "duration": scenario["duration"],
+        "event_timeline_end": scenario["event_timeline_end"],
         "eval_sql": scenario.get("eval_sql", ""),
         "events": scenario["events"],
     }

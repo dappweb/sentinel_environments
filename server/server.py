@@ -215,7 +215,7 @@ def _build_dev_session(dev_value: str) -> Optional[Session]:
         events=[],
         next_event_index=0,
         environment=env_names[0],
-        duration=9999,
+        event_timeline_end=9999,
         eval_sql="",
         baseline_metrics={},
     )
@@ -357,7 +357,7 @@ async def init(payload: InitPayload) -> JSONResponse:
         events=events,
         next_event_index=0,
         environment=payload.environment,
-        duration=payload.duration,
+        event_timeline_end=payload.event_timeline_end,
         eval_sql=payload.eval_sql,
         condition_at=payload.condition_at,
         baseline_metrics={},
@@ -471,7 +471,7 @@ async def data_config(request: Request) -> ConfigResponse:
     self_user = next((u for u in USER_CATALOG.values() if u.get("isSelf")), None)
     return ConfigResponse(
         environment=env,
-        duration=session.duration,
+        event_timeline_end=session.event_timeline_end,
         selfUser=self_user,
     )
 
@@ -523,7 +523,7 @@ async def evaluate() -> EvaluateResponse:
         )
         conn.execute(
             "INSERT INTO session_meta VALUES (?, ?)",
-            ("duration", str(session.duration)),
+            ("event_timeline_end", str(session.event_timeline_end)),
         )
         for k, v in session.baseline_metrics.items():
             conn.execute(

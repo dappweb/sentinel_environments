@@ -21,7 +21,7 @@ class EventPayload(BaseModel):
 
 class InitPayload(BaseModel):
     environment: str
-    duration: float
+    event_timeline_end: float
     eval_sql: str = ""
     condition_at: Optional[float] = None
     events: list[EventPayload]
@@ -33,7 +33,7 @@ class InitPayload(BaseModel):
 
 class ConfigResponse(BaseModel):
     environment: str
-    duration: float
+    event_timeline_end: float
     selfUser: Optional[dict] = None
 
 

@@ -27,7 +27,7 @@ class Session:
     next_event_index: int
 
     environment: str
-    duration: float
+    event_timeline_end: float
     baseline_metrics: dict
     eval_sql: str = ""
     condition_at: Optional[float] = None

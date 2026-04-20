@@ -85,17 +85,17 @@ def build_init_body(scenario):
     """Build POST /init body from a scenario JSON."""
     return {
         "environment": scenario["environment"],
-        "duration": scenario["duration"],
+        "event_timeline_end": scenario["event_timeline_end"],
         "eval_sql": scenario.get("eval_sql", ""),
         "events": scenario["events"],
     }
 
 
-def build_manual_init_body(environment, events, duration=120, eval_sql="SELECT 1"):
+def build_manual_init_body(environment, events, event_timeline_end=120, eval_sql="SELECT 1"):
     """Build POST /init body for targeted branch coverage tests."""
     return {
         "environment": environment,
-        "duration": duration,
+        "event_timeline_end": event_timeline_end,
         "eval_sql": eval_sql,
         "events": events,
     }
@@ -153,7 +153,7 @@ def test_micromail():
         # 5. Advance past condition_at to deliver enough emails for the eval
         #    (must happen BEFORE mutations that reduce unread count)
         expected_emails = len(scenario["events"])
-        adv2 = get("/advance", params={"time": scenario["duration"]})
+        adv2 = get("/advance", params={"time": scenario["event_timeline_end"]})
         t.check("GET /advance to end", adv2["success"],
                 f"sim_time={adv2.get('simulation_time')}")
 
@@ -267,7 +267,7 @@ def test_microchat():
                     f"count={len(filtered.get('messages', []))}")
 
         # 6. Advance to end and evaluate BEFORE mutations (reads would reduce unread count)
-        adv2 = get("/advance", params={"time": scenario["duration"]})
+        adv2 = get("/advance", params={"time": scenario["event_timeline_end"]})
         t.check("GET /advance to end", adv2["success"])
 
         eval_resp = post("/evaluate")

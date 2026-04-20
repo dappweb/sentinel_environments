@@ -83,7 +83,7 @@ export interface ApiTubePlaylist {
 
 export interface ApiTaskConfig {
   environment: string;
-  duration: number;
+  event_timeline_end: number;
   selfUser?: ApiSelfUser;
 }
 

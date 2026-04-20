@@ -69,7 +69,7 @@ def main():
     # POST /init with full scenario payload
     init_payload = {
         "environment": scenario["environment"],
-        "duration": scenario["duration"],
+        "event_timeline_end": scenario["event_timeline_end"],
         "eval_sql": scenario.get("eval_sql", ""),
         "condition_at": scenario.get("condition_at"),
         "events": scenario["events"],
