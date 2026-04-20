@@ -117,6 +117,8 @@ def transform(scenario: dict) -> tuple[dict, dict]:
     new_ca = round(rng.uniform(MIN_CONDITION_AT, MAX_CONDITION_AT), 2)
 
     old_events = scenario.get("events", [])
+    if old_events:
+        old_end = max(old_end, max(float(e["time"]) for e in old_events))
     new_events = []
     n_waypoints = 0
     for ev in old_events:

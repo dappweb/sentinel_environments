@@ -61,14 +61,14 @@
       }
     },
     {
-      "time": 826.57,
+      "time": 422.98,
       "type": "new_event",
       "payload": {
         "event_id": "work10"
       }
     },
     {
-      "time": 1527.16,
+      "time": 720.0,
       "type": "new_event",
       "payload": {
         "event_id": "noise02"

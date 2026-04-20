@@ -64,6 +64,10 @@ def test_benchmark_schema(path):
 
     times = [e.get("time", 0) for e in scenario.get("events", [])]
     assert times == sorted(times), f"{path.stem}: events not sorted by time"
+    if times:
+        assert max(times) <= end, (
+            f"{path.stem}: max event time ({max(times)}) > event_timeline_end ({end})"
+        )
 
 
 @pytest.mark.parametrize("path", _discover_devs(), ids=lambda p: p.parent.name)

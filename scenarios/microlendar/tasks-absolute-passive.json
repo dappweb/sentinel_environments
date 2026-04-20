@@ -57,14 +57,14 @@
       }
     },
     {
-      "time": 501.96,
+      "time": 470.76,
       "type": "new_event",
       "payload": {
         "event_id": "today01"
       }
     },
     {
-      "time": 782.4,
+      "time": 720.0,
       "type": "new_event",
       "payload": {
         "event_id": "today02"
