@@ -130,9 +130,11 @@ def test_micromail():
         t.check("POST /init", init_resp["success"] and init_resp["status"] == "ready",
                 f"status={init_resp.get('status')}")
 
-        # 3. Advance a few ticks -- bring in some emails
-        adv = get("/advance", params={"time": 30})
-        t.check("GET /advance?time=30", adv["success"],
+        # 3. Advance past the first event -- bring in some emails
+        first_event_time = scenario["events"][0]["time"]
+        adv_time = first_event_time + 5
+        adv = get("/advance", params={"time": adv_time})
+        t.check(f"GET /advance?time={adv_time}", adv["success"],
                 f"sim_time={adv.get('simulation_time')}, processed={len(adv.get('processed_events', []))}")
         events_processed = len(adv.get("processed_events", []))
         t.check("Events processed > 0", events_processed > 0, f"count={events_processed}")
