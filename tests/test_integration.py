@@ -153,7 +153,7 @@ def test_micromail():
         # 5. Advance past condition_at to deliver enough emails for the eval
         #    (must happen BEFORE mutations that reduce unread count)
         expected_emails = len(scenario["events"])
-        adv2 = get("/advance", params={"time": scenario["event_timeline_end"]})
+        adv2 = get("/advance", params={"time": scenario["kill_at"]})
         t.check("GET /advance to end", adv2["success"],
                 f"sim_time={adv2.get('simulation_time')}")
 
@@ -267,7 +267,7 @@ def test_microchat():
                     f"count={len(filtered.get('messages', []))}")
 
         # 6. Advance to end and evaluate BEFORE mutations (reads would reduce unread count)
-        adv2 = get("/advance", params={"time": scenario["event_timeline_end"]})
+        adv2 = get("/advance", params={"time": scenario["kill_at"]})
         t.check("GET /advance to end", adv2["success"])
 
         eval_resp = post("/evaluate")
@@ -393,7 +393,7 @@ def test_microdin():
             t.check(f"POST /data/microdin-jobs/{jid}/apply", apply_resp.get("success"))
 
         # Advance to end
-        adv2 = get("/advance", params={"time": 120})
+        adv2 = get("/advance", params={"time": scenario["kill_at"]})
         t.check("GET /advance?time=120", adv2["success"])
 
         # 7. Evaluate
@@ -494,7 +494,7 @@ def test_microfy():
                     f"isFollowed={follow_resp.get('isFollowed')}")
 
         # Advance to end
-        adv2 = get("/advance", params={"time": 120})
+        adv2 = get("/advance", params={"time": scenario["kill_at"]})
         t.check("GET /advance?time=120", adv2["success"])
 
         # 7. Evaluate
@@ -594,7 +594,7 @@ def test_microgram():
                 f"isFollowed={follow_resp.get('isFollowed')}")
 
         # Advance to end
-        adv2 = get("/advance", params={"time": 120})
+        adv2 = get("/advance", params={"time": scenario["kill_at"]})
         t.check("GET /advance?time=120", adv2["success"])
 
         # 7. Evaluate
@@ -696,7 +696,7 @@ def test_microhood():
                     f"inWatchlist={toggle_resp.get('inWatchlist')}")
 
         # Advance to end
-        adv2 = get("/advance", params={"time": 120})
+        adv2 = get("/advance", params={"time": scenario["kill_at"]})
         t.check("GET /advance?time=120", adv2["success"])
 
         # 7. Evaluate
@@ -826,7 +826,7 @@ def test_microhub():
             t.check(f"POST /data/microhub-pulls/{prid}/comment", pr_comment.get("success"))
 
         # Advance to end
-        adv2 = get("/advance", params={"time": 120})
+        adv2 = get("/advance", params={"time": scenario["kill_at"]})
         t.check("GET /advance?time=120", adv2["success"])
 
         # 6. Evaluate
@@ -918,7 +918,7 @@ def test_microlendar():
             t.check(f"POST /data/microlendar-tasks/{tid}/complete", complete_resp.get("success"))
 
         # Advance to end
-        adv2 = get("/advance", params={"time": 120})
+        adv2 = get("/advance", params={"time": scenario["kill_at"]})
         t.check("GET /advance?time=120", adv2["success"])
 
         # 6. Evaluate
@@ -1008,7 +1008,7 @@ def test_microscholar():
             t.check(f"POST /data/microscholar-alerts/{aid}/read", read_resp.get("success"))
 
         # Advance to end
-        adv2 = get("/advance", params={"time": 120})
+        adv2 = get("/advance", params={"time": scenario["kill_at"]})
         t.check("GET /advance?time=120", adv2["success"])
 
         # 6. Evaluate
@@ -1134,7 +1134,7 @@ def test_microtube():
             t.check(f"POST /data/microtube-notifications/{nid}/read", nread_resp.get("success"))
 
         # Advance to end
-        adv2 = get("/advance", params={"time": 120})
+        adv2 = get("/advance", params={"time": scenario["kill_at"]})
         t.check("GET /advance?time=120", adv2["success"])
 
         # 6. Evaluate

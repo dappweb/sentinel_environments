@@ -80,9 +80,9 @@ def build_init_body(scenario):
     }
 
 
-def advance_all():
-    """Advance simulation time to 999999 to process all events at once."""
-    return get("/advance", params={"time": 999999})
+def advance_all(scenario):
+    """Advance simulation time to the scenario's kill_at so all events fire."""
+    return get("/advance", params={"time": scenario["kill_at"]})
 
 
 # ---------------------------------------------------------------------------
@@ -182,7 +182,7 @@ def run_one(scenario_path: Path) -> tuple:
         if not init_resp.get("success"):
             return (sid, False, f"init failed: {init_resp}")
 
-        advance_all()
+        advance_all(scenario)
 
         if sid in NEEDS_USER_ACTION:
             simulate_actions(sid)
