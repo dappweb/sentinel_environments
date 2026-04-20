@@ -104,7 +104,7 @@ def run_task(config, task_json_file, task_result_folder):
     # 2. Init the scenario
     init_payload = {
         "environment": scenario["environment"],
-        "duration": scenario["duration"],
+        "event_timeline_end": scenario["event_timeline_end"],
         "eval_sql": scenario.get("eval_sql", ""),
         "condition_at": scenario.get("condition_at"),
         "events": scenario["events"],

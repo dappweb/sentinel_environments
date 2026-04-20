@@ -25,7 +25,6 @@ from server.catalogs import (
     MICRODIN_COMPANY_CATALOG,
     MICROFY_ARTIST_CATALOG,
     MICROHOOD_STOCK_CATALOG,
-    MICROHOOD_TRACE_CATALOG,
     USER_CATALOG,
     load_catalogs,
 )
@@ -216,7 +215,7 @@ def _build_dev_session(dev_value: str) -> Optional[Session]:
         events=[],
         next_event_index=0,
         environment=env_names[0],
-        duration=9999,
+        event_timeline_end=9999,
         eval_sql="",
         baseline_metrics={},
     )
@@ -268,10 +267,10 @@ def _require_session() -> Session:
     return _session
 
 
-def _next_event_time(session: Session) -> Optional[int]:
+def _next_event_time(session: Session) -> Optional[float]:
     idx = session.next_event_index
     if idx < len(session.events):
-        return int(session.events[idx]["time"])
+        return float(session.events[idx]["time"])
     return None
 
 
@@ -301,7 +300,7 @@ def _dispatch_process_event(session: Session, event: dict) -> None:
 
 
 
-def _advance_session(session: Session, up_to_time: int) -> list[dict]:
+def _advance_session(session: Session, up_to_time: float) -> list[dict]:
     processed = []
     while session.next_event_index < len(session.events):
         event = session.events[session.next_event_index]
@@ -333,7 +332,7 @@ async def status() -> JSONResponse:
     result: dict = {
         "success": True,
         "status": _state,
-        "simulation_time": int(_session.simulation_time) if _session else 0,
+        "simulation_time": round(_session.simulation_time, 2) if _session else 0,
         "next_event_time": net,
     }
     return JSONResponse(content=result)
@@ -358,7 +357,7 @@ async def init(payload: InitPayload) -> JSONResponse:
         events=events,
         next_event_index=0,
         environment=payload.environment,
-        duration=payload.duration,
+        event_timeline_end=payload.event_timeline_end,
         eval_sql=payload.eval_sql,
         condition_at=payload.condition_at,
         baseline_metrics={},
@@ -377,7 +376,7 @@ async def init(payload: InitPayload) -> JSONResponse:
 
 
 @app.get("/advance")
-async def advance(time: int) -> JSONResponse:
+async def advance(time: float) -> JSONResponse:
     global _state
     session = _require_session()
 
@@ -472,7 +471,7 @@ async def data_config(request: Request) -> ConfigResponse:
     self_user = next((u for u in USER_CATALOG.values() if u.get("isSelf")), None)
     return ConfigResponse(
         environment=env,
-        duration=session.duration,
+        event_timeline_end=session.event_timeline_end,
         selfUser=self_user,
     )
 
@@ -524,7 +523,7 @@ async def evaluate() -> EvaluateResponse:
         )
         conn.execute(
             "INSERT INTO session_meta VALUES (?, ?)",
-            ("duration", str(session.duration)),
+            ("event_timeline_end", str(session.event_timeline_end)),
         )
         for k, v in session.baseline_metrics.items():
             conn.execute(
@@ -1166,9 +1165,7 @@ async def data_hood_stocks() -> MicrohoodStocksResponse:
         symbol = stock["symbol"]
         st = states.get(symbol, {})
         current_price = prices.get(symbol, 0)
-        # Compute change from starting price (trace index 0)
-        trace = MICROHOOD_TRACE_CATALOG.get(symbol, [])
-        starting_price = trace[0] if trace else current_price
+        starting_price = session.microhood_starting_prices.get(symbol, current_price)
         change = current_price - starting_price
         change_percent = (change / starting_price * 100) if starting_price else 0
         result.append({
@@ -1193,8 +1190,7 @@ async def data_hood_watchlist() -> MicrohoodWatchlistResponse:
         st = session.microhood_watchlist_states.get(symbol, {})
         if st.get("inWatchlist", True):
             current_price = prices.get(symbol, item.get("price", 0))
-            trace = MICROHOOD_TRACE_CATALOG.get(symbol, [])
-            starting_price = trace[0] if trace else current_price
+            starting_price = session.microhood_starting_prices.get(symbol, current_price)
             change = current_price - starting_price
             change_percent = (change / starting_price * 100) if starting_price else 0
             result.append({

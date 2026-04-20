@@ -14,16 +14,16 @@ from pydantic import BaseModel
 
 
 class EventPayload(BaseModel):
-    time: int
+    time: float
     type: str
     payload: dict = {}
 
 
 class InitPayload(BaseModel):
     environment: str
-    duration: int
+    event_timeline_end: float
     eval_sql: str = ""
-    condition_at: Optional[int] = None
+    condition_at: Optional[float] = None
     events: list[EventPayload]
 
 
@@ -33,7 +33,7 @@ class InitPayload(BaseModel):
 
 class ConfigResponse(BaseModel):
     environment: str
-    duration: int
+    event_timeline_end: float
     selfUser: Optional[dict] = None
 
 
@@ -44,8 +44,8 @@ class UsersResponse(BaseModel):
 class EvaluateResponse(BaseModel):
     success: bool
     detail: str = ""
-    simulation_time: Optional[int] = None
-    condition_at: Optional[int] = None
+    simulation_time: Optional[float] = None
+    condition_at: Optional[float] = None
 
 
 # --- Shared POST response models ---

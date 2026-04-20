@@ -21,16 +21,16 @@ from typing import Optional
 @dataclass
 class Session:
     status: str  # preinit | ready | running_auto | running_manual | completed
-    simulation_time: int
+    simulation_time: float
     start_wall_time: Optional[float]
     events: list[dict]
     next_event_index: int
 
     environment: str
-    duration: int
+    event_timeline_end: float
     baseline_metrics: dict
     eval_sql: str = ""
-    condition_at: Optional[int] = None
+    condition_at: Optional[float] = None
 
     # MicroMail
     micromail_emails: list[dict] = field(default_factory=list)
@@ -84,6 +84,8 @@ class Session:
     microhood_news: list[dict] = field(default_factory=list)
     microhood_buying_power: float = 10000.0
     microhood_orders: list[dict] = field(default_factory=list)
+    microhood_price_waypoints: dict[str, list[list[float]]] = field(default_factory=dict)  # symbol → [[time, price], ...] sorted by time
+    microhood_starting_prices: dict[str, float] = field(default_factory=dict)  # symbol → price at t=0 (from catalog)
 
     # MicroHub
     microhub_repository: dict = field(default_factory=dict)
