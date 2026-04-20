@@ -785,13 +785,6 @@ CREATE TABLE IF NOT EXISTS stocks (
 );
 """
 
-MICROHOOD_TRACES_DDL = """\
-CREATE TABLE IF NOT EXISTS price_traces (
-    symbol TEXT PRIMARY KEY,
-    trace_points TEXT NOT NULL
-);
-"""
-
 MICROHOOD_WATCHLIST_DDL = """\
 CREATE TABLE IF NOT EXISTS watchlist (
     symbol TEXT PRIMARY KEY,
@@ -822,7 +815,6 @@ def build_microhood_db() -> None:
     conn = sqlite3.connect(MICROHOOD_DB)
 
     conn.execute(MICROHOOD_STOCKS_DDL)
-    conn.execute(MICROHOOD_TRACES_DDL)
     conn.execute(MICROHOOD_WATCHLIST_DDL)
     conn.execute(MICROHOOD_NEWS_DDL)
 
@@ -850,17 +842,6 @@ def build_microhood_db() -> None:
             ),
         )
     print(f"  stocks: {len(stocks)} rows")
-
-    # --- Price Traces ---
-    traces_path = hood_dir / "stock_price_traces.json"
-    with open(traces_path, encoding="utf-8") as fh:
-        traces = json.load(fh)
-    for symbol, points in traces.items():
-        conn.execute(
-            "INSERT INTO price_traces (symbol, trace_points) VALUES (?,?)",
-            (symbol, json.dumps(points)),
-        )
-    print(f"  price_traces: {len(traces)} rows")
 
     # --- Watchlist ---
     watchlist = _load_jsonl(hood_dir / "watchlist.jsonl")

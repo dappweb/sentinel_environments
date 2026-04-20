@@ -10,16 +10,15 @@ Per-scenario transformation:
 - Stretch distractor events piecewise-linearly. Pre-target events scale by
   (new_condition_at / old_condition_at). Post-target events scale to fill
   (new_condition_at, EVENT_TIMELINE_END].
-- Round all event times to 2 decimals.
+- Scale `price_waypoints` times inside preload_stocks payloads using the same
+  piecewise-linear rule. Waypoints at the old condition_at move to the new
+  condition_at; other waypoints stretch around them. This keeps microhood
+  prices in sync with condition_at without any manual alignment.
+- Round all event / waypoint times to 2 decimals.
 - Overwrite JSON with: condition_at = new_condition_at, event_timeline_end =
   EVENT_TIMELINE_END, kill_at = KILL_AT. Drop the old `duration` field.
 
 Skips scenarios without `condition_at` (the 10 dev.json fallback scenarios).
-
-For microhood-orders-absolute-active the target is driven by a stock-price
-trace rather than a discrete event; the script still rewrites the scenario
-JSON but prints a warning so stock_price_traces.json can be edited manually
-to align the 42.2 crossing with the new condition_at.
 """
 from __future__ import annotations
 
@@ -75,26 +74,59 @@ def scale_pre_target(t: float, old_ca: float, new_ca: float) -> float:
     return t * (new_ca / old_ca)
 
 
+def rescale_time(t: float, old_ca: float, new_ca: float, old_end: float) -> float:
+    if t == old_ca:
+        return new_ca
+    if t < old_ca:
+        return scale_pre_target(t, old_ca, new_ca)
+    return scale_post_target(t, old_ca, new_ca, old_end)
+
+
+def rescale_price_waypoints(
+    payload: dict, old_ca: float, new_ca: float, old_end: float
+) -> int:
+    """Mutate preload_stocks.payload.price_waypoints in place. Returns count."""
+    waypoints = payload.get("price_waypoints")
+    if not waypoints:
+        return 0
+    total = 0
+    for symbol, points in waypoints.items():
+        rescaled = []
+        for point in points:
+            t, price = float(point[0]), float(point[1])
+            rescaled.append([round(rescale_time(t, old_ca, new_ca, old_end), 2), price])
+            total += 1
+        waypoints[symbol] = rescaled
+    return total
+
+
 def transform(scenario: dict) -> tuple[dict, dict]:
     """Return (updated_scenario, summary)."""
     scenario_id = scenario["id"]
     old_ca = float(scenario["condition_at"])
-    old_end = float(scenario.get("duration", old_ca * 2))
+    # First-time authoring uses `duration`; re-runs after the script has
+    # already run use `event_timeline_end`. Both define the right-edge the
+    # scenario was authored against for post-target scaling.
+    old_end = float(
+        scenario.get("duration")
+        or scenario.get("event_timeline_end")
+        or old_ca * 2
+    )
 
     rng = seeded_rng(scenario_id)
     new_ca = round(rng.uniform(MIN_CONDITION_AT, MAX_CONDITION_AT), 2)
 
     old_events = scenario.get("events", [])
     new_events = []
+    n_waypoints = 0
     for ev in old_events:
         t = float(ev["time"])
-        if t == old_ca:
-            new_t = new_ca
-        elif t < old_ca:
-            new_t = scale_pre_target(t, old_ca, new_ca)
-        else:
-            new_t = scale_post_target(t, old_ca, new_ca, old_end)
-        new_events.append({**ev, "time": round(new_t, 2)})
+        new_ev = {**ev, "time": round(rescale_time(t, old_ca, new_ca, old_end), 2)}
+        if ev.get("type") == "preload_stocks":
+            payload = dict(ev.get("payload", {}))
+            n_waypoints += rescale_price_waypoints(payload, old_ca, new_ca, old_end)
+            new_ev["payload"] = payload
+        new_events.append(new_ev)
 
     updated = {k: v for k, v in scenario.items() if k != "duration"}
     updated["condition_at"] = new_ca
@@ -114,6 +146,7 @@ def transform(scenario: dict) -> tuple[dict, dict]:
         "new_condition_at": new_ca,
         "n_targets": len(targets),
         "n_events": len(old_events),
+        "n_waypoints": n_waypoints,
         "max_event_time_old": max((float(e["time"]) for e in old_events), default=0.0),
         "max_event_time_new": max((e["time"] for e in new_events), default=0.0),
     }
@@ -126,8 +159,8 @@ def run(dry_run: bool) -> int:
     skipped = 0
     warnings = []
 
-    print(f"{'id':<48} {'old_ca':>8} {'new_ca':>8} {'tgts':>5} {'events':>7} {'max_t_new':>10}")
-    print("-" * 96)
+    print(f"{'id':<48} {'old_ca':>8} {'new_ca':>8} {'tgts':>5} {'events':>7} {'wps':>5} {'max_t_new':>10}")
+    print("-" * 102)
 
     for path in scenario_paths:
         with path.open() as fh:
@@ -143,14 +176,14 @@ def run(dry_run: bool) -> int:
             f"{summary['new_condition_at']:>8.2f} "
             f"{summary['n_targets']:>5} "
             f"{summary['n_events']:>7} "
+            f"{summary['n_waypoints']:>5} "
             f"{summary['max_event_time_new']:>10.2f}"
         )
 
-        if summary["n_targets"] == 0:
+        if summary["n_targets"] == 0 and summary["n_waypoints"] == 0:
             warnings.append(
-                f"  {summary['id']}: 0 events at old condition_at — price-trace scenario; "
-                f"edit data/catalogs/microhood/stock_price_traces.json to shift the "
-                f"42.2 crossing to sim-time {summary['new_condition_at']}"
+                f"  {summary['id']}: 0 events at old condition_at AND no price waypoints — "
+                f"likely nothing hits the target at condition_at. Check the scenario."
             )
 
         if not dry_run:
