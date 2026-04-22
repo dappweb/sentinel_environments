@@ -10,7 +10,9 @@
 from __future__ import annotations
 
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+from server.timing import validate_speed_factor
 
 
 class EventPayload(BaseModel):
@@ -24,7 +26,13 @@ class InitPayload(BaseModel):
     event_timeline_end: float
     eval_sql: str = ""
     condition_at: Optional[float] = None
+    speed_factor: float = 1.0
     events: list[EventPayload]
+
+    @field_validator("speed_factor")
+    @classmethod
+    def _check_speed_factor(cls, v: float) -> float:
+        return validate_speed_factor(v)
 
 
 # ---------------------------------------------------------------------------
@@ -34,6 +42,7 @@ class InitPayload(BaseModel):
 class ConfigResponse(BaseModel):
     environment: str
     event_timeline_end: float
+    speed_factor: float = 1.0
     selfUser: Optional[dict] = None
 
 

@@ -18,6 +18,8 @@ from urllib.parse import urlencode, urlparse, urlunparse
 import requests
 import yaml
 
+from server.timing import kill_at_wall, validate_speed_factor
+
 DEFAULT_API_URL = "http://localhost:8000"
 
 
@@ -94,6 +96,7 @@ def _build_task_url(api_url, frontend_url=None):
 def run_task(config, task_json_file, task_result_folder):
     api_url = config.get("api_url", DEFAULT_API_URL)
     frontend_url = config.get("frontend_url")
+    speed_factor = validate_speed_factor(float(config.get("speed_factor", 1.0)))
 
     with open(task_json_file) as f:
         scenario = json.load(f)
@@ -107,6 +110,7 @@ def run_task(config, task_json_file, task_result_folder):
         "event_timeline_end": scenario["event_timeline_end"],
         "eval_sql": scenario.get("eval_sql", ""),
         "condition_at": scenario.get("condition_at"),
+        "speed_factor": speed_factor,
         "events": scenario["events"],
     }
     resp = requests.post(f"{api_url}/init", json=init_payload)
@@ -151,7 +155,7 @@ def run_task(config, task_json_file, task_result_folder):
             t = threading.Thread(target=_tee, args=(proc.stdout, out))
             t.start()
             try:
-                proc.wait(timeout=630)  # 10.5 minutes
+                proc.wait(timeout=kill_at_wall(speed_factor))
             except subprocess.TimeoutExpired:
                 print("Agent subprocess timed out, killing process group...", flush=True)
                 os.killpg(proc.pid, signal.SIGKILL)

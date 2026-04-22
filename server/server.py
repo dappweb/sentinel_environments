@@ -315,10 +315,12 @@ def _advance_session(session: Session, up_to_time: float) -> list[dict]:
 
 async def _run_auto(session: Session) -> None:
     global _state
+    tick = min(1.0, session.speed_factor)
     while session.next_event_index < len(session.events):
-        await asyncio.sleep(1)
-        elapsed = int(time.time() - (session.start_wall_time or time.time()))
-        _advance_session(session, elapsed)
+        await asyncio.sleep(tick)
+        wall_elapsed = time.time() - (session.start_wall_time or time.time())
+        sim_time = wall_elapsed / session.speed_factor
+        _advance_session(session, sim_time)
     _state = "completed"
 
 
@@ -360,6 +362,7 @@ async def init(payload: InitPayload) -> JSONResponse:
         event_timeline_end=payload.event_timeline_end,
         eval_sql=payload.eval_sql,
         condition_at=payload.condition_at,
+        speed_factor=payload.speed_factor,
         baseline_metrics={},
     )
 
@@ -472,6 +475,7 @@ async def data_config(request: Request) -> ConfigResponse:
     return ConfigResponse(
         environment=env,
         event_timeline_end=session.event_timeline_end,
+        speed_factor=session.speed_factor,
         selfUser=self_user,
     )
 

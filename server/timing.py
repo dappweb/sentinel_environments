@@ -48,3 +48,23 @@ EVENT_TIMELINE_END: float = MAX_CONDITION_AT + EVENT_BUFFER
 KILL_AT: float = MAX_CONDITION_AT + REACTION_WINDOW
 
 SCENARIO_SEED: int = 42
+
+
+def validate_speed_factor(x: float) -> float:
+    """Raise if non-positive or below MIN_SPEED_FACTOR. Return x unchanged."""
+    if not (x > 0):
+        raise ValueError(f"speed_factor must be positive, got {x!r}")
+    if x < MIN_SPEED_FACTOR:
+        raise ValueError(
+            f"speed_factor {x} below MIN_SPEED_FACTOR {MIN_SPEED_FACTOR}"
+        )
+    return x
+
+
+def kill_at_wall(speed_factor: float) -> float:
+    """Wall-clock kill time for a run at the given speed_factor.
+
+    Formula: MAX_CONDITION_AT * speed_factor + REACTION_WINDOW.
+    The reaction window stays constant in wall-clock across all speeds.
+    """
+    return MAX_CONDITION_AT * speed_factor + REACTION_WINDOW

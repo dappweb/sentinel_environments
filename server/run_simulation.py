@@ -13,6 +13,8 @@ import time
 
 import requests
 
+from server.timing import validate_speed_factor
+
 DEFAULT_HOST = "http://localhost:8000"
 
 
@@ -51,7 +53,7 @@ def main():
     parser = argparse.ArgumentParser(description="Run MicroMail simulation.")
     parser.add_argument("scenario", help="Path to scenario JSON file")
     parser.add_argument("--host", default=DEFAULT_HOST)
-    parser.add_argument("--speed", type=float, default=1.0)
+    parser.add_argument("--speed", type=float, default=1.0, help="speed_factor (Convention B: >1 slower, <1 faster)")
     parser.add_argument("--close", action="store_true", help="Just send /close and exit")
     args = parser.parse_args()
 
@@ -59,6 +61,8 @@ def main():
         requests.get(f"{args.host}/close")
         print("Sent /close.")
         return
+
+    speed_factor = validate_speed_factor(args.speed)
 
     with open(args.scenario) as f:
         scenario = json.load(f)
@@ -72,6 +76,7 @@ def main():
         "event_timeline_end": scenario["event_timeline_end"],
         "eval_sql": scenario.get("eval_sql", ""),
         "condition_at": scenario.get("condition_at"),
+        "speed_factor": speed_factor,
         "events": scenario["events"],
     }
     resp = requests.post(f"{args.host}/init", json=init_payload)
@@ -82,10 +87,10 @@ def main():
     sim_time = data["simulation_time"]
     next_time = data["next_event_time"]
 
-    print(f"Initialized. Playback at {args.speed}x speed")
+    print(f"Initialized. speed_factor={speed_factor} (1 sim-sec = {speed_factor} wall-sec)")
 
     while next_time is not None:
-        sleep_for = (next_time - sim_time) / args.speed
+        sleep_for = (next_time - sim_time) * speed_factor
         print(f"  Sleeping {sleep_for:.1f}s (sim -> {next_time}s)")
         time.sleep(sleep_for)
 
