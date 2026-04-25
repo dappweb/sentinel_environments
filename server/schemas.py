@@ -44,6 +44,7 @@ class ConfigResponse(BaseModel):
     event_timeline_end: float
     speed_factor: float = 1.0
     selfUser: Optional[dict] = None
+    initial_date: Optional[str] = None
 
 
 class UsersResponse(BaseModel):
@@ -238,6 +239,11 @@ class MicrodinConversationsResponse(BaseModel):
     conversations: list[dict]
 
 
+class MicrodinCreateConversationResponse(BaseModel):
+    conversationId: str
+    created: bool
+
+
 class MicrodinNotificationsResponse(BaseModel):
     notifications: list[dict]
 
@@ -252,6 +258,14 @@ class MicrodinCompaniesResponse(BaseModel):
 
 class MicrodinNetworkResponse(BaseModel):
     users: list[dict]
+
+
+class MicrodinProfileSectionsResponse(BaseModel):
+    sections: list[dict]
+
+
+class MicrodinProfileSectionResponse(BaseModel):
+    section: dict
 
 
 # ---------------------------------------------------------------------------
@@ -437,6 +451,33 @@ class MicrohubCommentRequest(BaseModel):
 
 class MicrohubMergeRequest(BaseModel):
     strategy: str = "merge"  # "merge" | "squash" | "rebase"
+
+
+class MicrohubCreateRepoRequest(BaseModel):
+    name: str
+    description: str = ""
+    visibility: str = "public"  # "public" | "private"
+    addReadme: bool = False
+    addGitignore: bool = False
+
+
+class MicrohubCreateIssueRequest(BaseModel):
+    title: str
+    body: str = ""
+
+
+class MicrohubUserCreatedReposResponse(BaseModel):
+    repositories: list[dict]
+
+
+class MicrohubCreateRepoResponse(BaseModel):
+    success: bool
+    repository: dict
+
+
+class MicrohubCreateIssueResponse(BaseModel):
+    success: bool
+    issue: dict
 
 
 # ---------------------------------------------------------------------------

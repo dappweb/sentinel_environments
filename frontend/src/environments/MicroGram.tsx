@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 
-import { useMicrogramData, type ApiGramPost, type ApiGramUser } from "../hooks/useMicrogramData";
+import { useHashRoute } from "../hooks/useHashRoute";
+import { useMicrogramData, type ApiGramPost, type ApiGramUser, type ApiGramMessage } from "../hooks/useMicrogramData";
 import {
   Home,
   Search,
@@ -225,8 +226,9 @@ const MicroGram = () => {
   const [isSignedOut, setIsSignedOut] = useState(false);
 
   // Navigation
-  const [navSection, setNavSection] = useState<NavSection>("home");
-  const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
+  const [route, setRoute] = useHashRoute<NavSection>(["home", "explore", "create", "activity", "profile", "direct", "search"] as const, "home");
+  const navSection = route.view;
+  const selectedProfile = navSection === "profile" ? route.id : null;
   const [selectedPost, setSelectedPost] = useState<string | null>(null);
   const [selectedDM, setSelectedDM] = useState<string | null>(null);
   const [currentStoryIndex, setCurrentStoryIndex] = useState<number | null>(null);
@@ -264,6 +266,9 @@ const MicroGram = () => {
 
   // New DM modal
   const [showNewDMModal, setShowNewDMModal] = useState(false);
+
+  // Locally-started conversations (created via the "New message" modal)
+  const [localConversations, setLocalConversations] = useState<ApiGramMessage[]>([]);
 
   // Profile tabs
   const [profileTab, setProfileTab] = useState<"posts" | "reels" | "saved">("posts");
@@ -367,10 +372,9 @@ const MicroGram = () => {
   }, [commentText, replyToComment, commentOnPost]);
 
   const navigateToProfile = useCallback((userId: string) => {
-    setSelectedProfile(userId);
-    setNavSection("profile");
+    setRoute("profile", userId);
     setProfileTab("posts");
-  }, []);
+  }, [setRoute]);
 
   const openPostModal = useCallback((postId: string) => {
     setSelectedPost(postId);
@@ -504,6 +508,29 @@ const MicroGram = () => {
     apiReadConversation(dmId);
   }, [apiReadConversation]);
 
+  const handleStartConversation = useCallback((userId: string) => {
+    const selfId = config?.selfUser?.id || "user000";
+    const existing = [...apiMessages, ...localConversations].find(dm =>
+      dm.participantIds.includes(userId) && dm.participantIds.includes(selfId)
+    );
+    if (existing) {
+      setSelectedDM(existing.id);
+      return;
+    }
+    const target = users[userId];
+    const newConversation: ApiGramMessage = {
+      id: `local-dm-${userId}-${Date.now()}`,
+      participantIds: [selfId, userId],
+      participants: target ? [{ id: userId, name: target.name, avatarUrl: target.avatarUrl }] : [],
+      lastMessage: "",
+      unreadCount: 0,
+      messages: [],
+      order: Number.MAX_SAFE_INTEGER,
+    };
+    setLocalConversations(prev => [...prev, newConversation]);
+    setSelectedDM(newConversation.id);
+  }, [apiMessages, localConversations, users, config?.selfUser?.id]);
+
   // ---------------------------------------------------------------------------
   // Derived Values
   // ---------------------------------------------------------------------------
@@ -511,6 +538,12 @@ const MicroGram = () => {
   const feedPosts = useMemo(() =>
     posts.slice().sort((a, b) => a.order - b.order),
     [posts]
+  );
+
+  // Merge server-backed conversations with locally-started ones for display.
+  const allConversations = useMemo<ApiGramMessage[]>(
+    () => [...apiMessages, ...localConversations],
+    [apiMessages, localConversations]
   );
 
   const searchResults = useMemo(() => {
@@ -1023,7 +1056,7 @@ const MicroGram = () => {
   const renderDirect = () => {
     // If a DM is selected, show the conversation view
     if (selectedDM) {
-      const dm = apiMessages.find(d => d.id === selectedDM);
+      const dm = allConversations.find(d => d.id === selectedDM);
       if (!dm) return null;
 
       const otherUserId = dm.participantIds.find(id => id !== "user000");
@@ -1157,7 +1190,7 @@ const MicroGram = () => {
         </div>
         <div className="divide-y">
           {/* Sort DMs by most recent activity (user messages first, then original order) */}
-          {[...apiMessages].sort((a, b) => {
+          {[...allConversations].sort((a, b) => {
             const aReplies = dmReplies[a.id] || [];
             const bReplies = dmReplies[b.id] || [];
             const aLastTimestamp = aReplies.length > 0 ? aReplies[aReplies.length - 1].timestamp : 0;
@@ -1459,29 +1492,29 @@ const MicroGram = () => {
       <header className="fixed left-0 right-0 bg-white border-b border-gray-200 z-40 top-0">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <button
-            onClick={() => { setNavSection("home"); setSelectedProfile(null); }}
+            onClick={() => { setRoute("home"); }}
             className="flex items-center gap-2 hover:opacity-70 transition-opacity"
           >
             <img src="desktop/microgram-icon.png" alt="MicroGram" className="w-7 h-7 object-contain" />
             <h1 className="text-xl font-semibold italic">MicroGram</h1>
           </button>
           <nav className="flex items-center gap-6">
-            <button onClick={() => { setNavSection("home"); setSelectedProfile(null); }}>
+            <button onClick={() => { setRoute("home"); }}>
               <Home size={24} className={navSection === "home" ? "fill-gray-900" : ""} />
             </button>
-            <button onClick={() => setNavSection("search")}>
+            <button onClick={() => setRoute("search")}>
               <Search size={24} className={navSection === "search" ? "fill-gray-900" : ""} />
             </button>
-            <button onClick={() => setNavSection("explore")}>
+            <button onClick={() => setRoute("explore")}>
               <Compass size={24} className={navSection === "explore" ? "fill-gray-900" : ""} />
             </button>
-            <button onClick={() => setNavSection("direct")}>
+            <button onClick={() => setRoute("direct")}>
               <Send size={24} className={navSection === "direct" ? "fill-gray-900" : ""} />
             </button>
-            <button onClick={() => setNavSection("activity")}>
+            <button onClick={() => setRoute("activity")}>
               <Heart size={24} className={navSection === "activity" ? "fill-gray-900" : ""} />
             </button>
-            <button onClick={() => { setNavSection("profile"); setSelectedProfile(null); }}>
+            <button onClick={() => { setRoute("profile"); }}>
               <User size={24} className={navSection === "profile" ? "fill-gray-900" : ""} />
             </button>
           </nav>
@@ -1728,7 +1761,8 @@ const MicroGram = () => {
 
       {/* New DM Modal */}
       {showNewDMModal && (() => {
-        const existingDMUserIds = apiMessages.flatMap(dm => dm.participantIds).filter(id => id !== "user000");
+        const selfId = config?.selfUser?.id || "user000";
+        const existingDMUserIds = allConversations.flatMap(dm => dm.participantIds).filter(id => id !== selfId);
         const usersWithoutDMs = MICROGRAM_USERS.filter(u => !u.isSelf && !existingDMUserIds.includes(u.id));
 
         return (
@@ -1743,8 +1777,12 @@ const MicroGram = () => {
                   <button
                     key={user.id}
                     onClick={() => {
+                      if (!followedUserIds.includes(user.id)) {
+                        showToast("Start a conversation by following " + user.username + " first", "info");
+                        return;
+                      }
                       setShowNewDMModal(false);
-                      showToast("Start a conversation by following " + user.username + " first", "info");
+                      handleStartConversation(user.id);
                     }}
                     className="w-full p-3 flex items-center gap-3 hover:bg-gray-50"
                   >

@@ -60,6 +60,11 @@ class Session:
     microdin_notification_states: dict[str, dict] = field(default_factory=dict)
     microdin_jobs: list[dict] = field(default_factory=list)
     microdin_job_states: dict[str, dict] = field(default_factory=dict)
+    microdin_profile_view_count: int = 52
+    microdin_page_visitor_count: int = 276
+    microdin_connections_count: int = 0
+    microdin_initial_connection_ids: list[str] = field(default_factory=list)
+    microdin_profile_sections: list[dict] = field(default_factory=list)
 
     # MicroFy
     microfy_tracks: list[dict] = field(default_factory=list)
@@ -123,6 +128,9 @@ class Session:
     microhub_following_users: set[str] = field(default_factory=set)        # usernames followed by user
     microhub_user_created_issues: list[dict] = field(default_factory=list)
     microhub_user_created_prs: list[dict] = field(default_factory=list)
+    microhub_user_created_repos: list[dict] = field(default_factory=list)
+    microhub_star_waypoints: list[list[float]] = field(default_factory=list)  # [[time, stars], ...]
+    microhub_star_offset: int = 0                                             # user star bump, added on top of interpolated value
 
     # MicroScholar
     microscholar_papers: list[dict] = field(default_factory=list)
@@ -138,6 +146,8 @@ class Session:
     microlendar_task_states: dict[str, dict] = field(default_factory=dict)
     microlendar_user_created_events: list[dict] = field(default_factory=list)
     microlendar_user_created_tasks: list[dict] = field(default_factory=list)
+    microlendar_today: str = "2026-03-18"
+    microlendar_initial_date: Optional[str] = None
 
     # MicroTube
     microtube_videos: list[dict] = field(default_factory=list)
