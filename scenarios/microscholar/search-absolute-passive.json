@@ -2,12 +2,13 @@
   "id": "microscholar-search-absolute-passive",
   "environment": "microscholar",
   "start_page": "HOST_ADDRESS/microscholar",
-  "prompt": "Keep an eye on these search results and tell me if 'Autonomous AI Agents for Complex Task Execution' shows up.",
-  "condition_at": 300,
-  "duration": 600,
+  "prompt": "I'm expecting the paper 'Autonomous AI Agents for Complex Task Execution' to be indexed soon. Please let me know as soon as it shows up in the search results.",
+  "condition_at": 154.6,
+  "event_timeline_end": 720.0,
+  "kill_at": 630.0,
   "events": [
     {
-      "time": 0,
+      "time": 0.0,
       "type": "preload_papers",
       "payload": {
         "paper_ids": [
@@ -35,28 +36,28 @@
       }
     },
     {
-      "time": 100,
+      "time": 51.53,
       "type": "new_paper",
       "payload": {
         "paper_id": "paper-021"
       }
     },
     {
-      "time": 200,
+      "time": 103.07,
       "type": "new_paper",
       "payload": {
         "paper_id": "paper-022"
       }
     },
     {
-      "time": 300,
+      "time": 154.6,
       "type": "new_paper",
       "payload": {
         "paper_id": "paper-target-1"
       }
     },
     {
-      "time": 450,
+      "time": 720.0,
       "type": "new_paper",
       "payload": {
         "paper_id": "paper-023"

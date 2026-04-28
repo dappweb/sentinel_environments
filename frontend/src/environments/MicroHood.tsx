@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useHashRoute } from "../hooks/useHashRoute";
 import { useMicrohoodData } from "../hooks/useMicrohoodData";
 import {
   Search,
@@ -146,7 +147,13 @@ const MicroHood = () => {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [orderQuantity, setOrderQuantity] = useState("1");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"home" | "search" | "transfers" | "profile">("home");
+  const [hoodRoute, setHoodRoute] = useHashRoute(
+    ["home", "search", "transfers", "profile", "crypto", "spending", "retirement"] as const,
+    "home",
+  );
+  const activeTab = hoodRoute.view;
+  type HoodTab = "home" | "search" | "transfers" | "profile" | "crypto" | "spending" | "retirement";
+  const setActiveTab = useCallback((tab: HoodTab) => setHoodRoute(tab), [setHoodRoute]);
 
   // UI Panel States
   const [showSearchModal, setShowSearchModal] = useState(false);
@@ -157,7 +164,18 @@ const MicroHood = () => {
   const [showCardModal, setShowCardModal] = useState(false);
   const [buyingPowerExpanded, setBuyingPowerExpanded] = useState(false);
   const [showAllStocks, setShowAllStocks] = useState(false);
-  const [activeNavSection, setActiveNavSection] = useState<"investing" | "crypto" | "spending" | "retirement">("investing");
+  // Derived from the route so the desktop top nav (Investing/Crypto/Spending/
+  // Retirement) survives refresh and shareable URLs. "home" maps to investing.
+  const activeNavSection: "investing" | "crypto" | "spending" | "retirement" =
+    activeTab === "crypto" || activeTab === "spending" || activeTab === "retirement"
+      ? activeTab
+      : "investing";
+  const setActiveNavSection = useCallback(
+    (section: "investing" | "crypto" | "spending" | "retirement") => {
+      setHoodRoute(section === "investing" ? "home" : section);
+    },
+    [setHoodRoute],
+  );
   const [editingWatchlist, setEditingWatchlist] = useState(false);
 
   // Selected stock for detail view
@@ -273,7 +291,8 @@ const MicroHood = () => {
   const handleConfirmOrder = useCallback(async () => {
     const qty = parseInt(orderQuantity) || 1;
     const tradingSymbol = selectedStock?.symbol || "MCRO";
-    const effectivePrice = orderTypeSelection === "limit" && limitPrice ? parseFloat(limitPrice) : currentPrice;
+    const stockPrice = selectedStock?.price || currentPrice;
+    const effectivePrice = orderTypeSelection === "limit" && limitPrice ? parseFloat(limitPrice) : stockPrice;
     const orderCost = effectivePrice * qty;
 
     if (!orderType) return;
@@ -339,6 +358,20 @@ const MicroHood = () => {
     const padding = { top: 20, right: 20, bottom: 30, left: 20 };
     const chartWidth = width - padding.left - padding.right;
     const chartHeight = height - padding.top - padding.bottom;
+
+    // Need at least two points for a polyline; otherwise the x denominator
+    // (length - 1) is 0 and Math.min(...[]) is Infinity, both of which
+    // produce NaN coordinates and SVG warnings.
+    if (priceHistory.length < 2) {
+      return (
+        <svg
+          width="100%"
+          height={height}
+          viewBox={`0 0 ${width} ${height}`}
+          preserveAspectRatio="xMidYMid meet"
+        />
+      );
+    }
 
     const minPrice = Math.min(...priceHistory) - 5;
     const maxPrice = Math.max(...priceHistory) + 5;
@@ -502,12 +535,6 @@ const MicroHood = () => {
                   className={`${activeNavSection === "retirement" ? `${themeClasses.navActive} font-medium` : themeClasses.textSecondary} hover:text-[#00C805] transition-colors`}
                 >
                   Retirement
-                </button>
-                <button
-                  onClick={() => setShowNotificationsPanel(!showNotificationsPanel)}
-                  className={`${themeClasses.textSecondary} hover:text-[#00C805] transition-colors`}
-                >
-                  Notifications
                 </button>
               </nav>
             </div>
@@ -861,7 +888,6 @@ const MicroHood = () => {
                           shares: stock.shares,
                           avgCost: stock.avgCost,
                         });
-                        handlePlaceOrder("buy");
                       }}
                       className="w-full flex items-center justify-between p-4 hover:bg-gray-900 rounded-xl transition-colors group"
                     >
@@ -1006,9 +1032,9 @@ const MicroHood = () => {
                 <div className="grid grid-cols-2 gap-3 mt-5">
                   <button
                     onClick={() => handlePlaceOrder("buy")}
-                    disabled={hasPlacedOrder || !!selectedStock}
+                    disabled={hasPlacedOrder}
                     className={`py-3 rounded-full font-bold text-sm transition-all ${
-                      hasPlacedOrder || selectedStock
+                      hasPlacedOrder
                         ? "bg-gray-700 text-gray-500 cursor-not-allowed"
                         : "bg-[#00C805] text-black hover:bg-[#00B504] active:scale-[0.98]"
                     }`}
@@ -1017,9 +1043,9 @@ const MicroHood = () => {
                   </button>
                   <button
                     onClick={() => handlePlaceOrder("sell")}
-                    disabled={hasPlacedOrder || !!selectedStock}
+                    disabled={hasPlacedOrder}
                     className={`py-3 rounded-full font-bold text-sm transition-all ${
-                      hasPlacedOrder || selectedStock
+                      hasPlacedOrder
                         ? "bg-gray-700 text-gray-500 cursor-not-allowed"
                         : "bg-gray-800 text-white hover:bg-gray-700 active:scale-[0.98]"
                     }`}
@@ -1307,7 +1333,7 @@ const MicroHood = () => {
                 )}
                 <h3 className="text-xl font-bold">
                   {orderStep === "quantity"
-                    ? `${orderType === "buy" ? "Buy" : "Sell"} MCRO`
+                    ? `${orderType === "buy" ? "Buy" : "Sell"} ${selectedStock?.symbol || "MCRO"}`
                     : "Review Order"}
                 </h3>
               </div>
@@ -1361,7 +1387,7 @@ const MicroHood = () => {
                         type="number"
                         value={limitPrice}
                         onChange={(e) => setLimitPrice(e.target.value)}
-                        placeholder={currentPrice.toFixed(2)}
+                        placeholder={(selectedStock?.price || currentPrice).toFixed(2)}
                         className={`w-full ${themeClasses.bgInput} border ${themeClasses.borderSecondary} rounded-lg pl-8 pr-4 py-3 text-lg font-medium focus:border-[#00C805] focus:outline-none ${themeClasses.text}`}
                         step="0.01"
                       />
@@ -1388,14 +1414,14 @@ const MicroHood = () => {
                       {orderTypeSelection === "market" ? "Market Price" : "Limit Price"}
                     </span>
                     <span>
-                      {formatCurrency(orderTypeSelection === "limit" && limitPrice ? parseFloat(limitPrice) : currentPrice)}
+                      {formatCurrency(orderTypeSelection === "limit" && limitPrice ? parseFloat(limitPrice) : (selectedStock?.price || currentPrice))}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className={themeClasses.textSecondary}>Estimated {orderType === "buy" ? "Cost" : "Credit"}</span>
                     <span className="font-medium">
                       {formatCurrency(
-                        (orderTypeSelection === "limit" && limitPrice ? parseFloat(limitPrice) : currentPrice) *
+                        (orderTypeSelection === "limit" && limitPrice ? parseFloat(limitPrice) : (selectedStock?.price || currentPrice)) *
                         parseInt(orderQuantity || "0")
                       )}
                     </span>
@@ -1452,7 +1478,7 @@ const MicroHood = () => {
                         {orderTypeSelection === "market" ? "Market Price" : "Limit Price"}
                       </span>
                       <span>
-                        {formatCurrency(orderTypeSelection === "limit" && limitPrice ? parseFloat(limitPrice) : currentPrice)}
+                        {formatCurrency(orderTypeSelection === "limit" && limitPrice ? parseFloat(limitPrice) : (selectedStock?.price || currentPrice))}
                       </span>
                     </div>
                     <div className={`flex justify-between text-sm pt-2 border-t ${themeClasses.borderSecondary}`}>
@@ -1461,7 +1487,7 @@ const MicroHood = () => {
                       </span>
                       <span className="font-bold text-lg">
                         {formatCurrency(
-                          (orderTypeSelection === "limit" && limitPrice ? parseFloat(limitPrice) : currentPrice) *
+                          (orderTypeSelection === "limit" && limitPrice ? parseFloat(limitPrice) : (selectedStock?.price || currentPrice)) *
                           parseInt(orderQuantity || "0")
                         )}
                       </span>
@@ -1505,10 +1531,18 @@ const MicroHood = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}>
           <div className="bg-white rounded-lg shadow-2xl p-8 w-[360px] flex flex-col items-center">
             <div className="text-2xl font-bold mb-6" style={{ color: "#00C805" }}>MicroHood</div>
-            <div className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-4" style={{ backgroundColor: "#00C805" }}>
-              U
-            </div>
-            <div className="text-lg font-semibold text-gray-900 mb-1">Investor</div>
+            {currentUser.avatarUrl ? (
+              <img
+                src={currentUser.avatarUrl}
+                alt={currentUser.name}
+                className="w-20 h-20 rounded-full object-cover mb-4"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-4" style={{ backgroundColor: "#00C805" }}>
+                {currentUser.name.split(" ").map((n: string) => n[0]).join("")}
+              </div>
+            )}
+            <div className="text-lg font-semibold text-gray-900 mb-1">{currentUser.name}</div>
             <div className="text-sm text-gray-500 mb-6">Portfolio Account</div>
             <input type="password" readOnly value="••••••••" className="w-full px-4 py-2 border border-gray-300 rounded mb-4 text-center text-gray-400 bg-gray-50" />
             <button onClick={() => setIsSignedOut(false)} className="w-full py-2 text-white rounded-full font-semibold hover:opacity-90 transition-opacity" style={{ backgroundColor: "#00C805" }}>
