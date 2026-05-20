@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const API = process.env.PLAYWRIGHT_API_URL ?? "http://localhost:8000";
+const API = process.env.PLAYWRIGHT_SERVER_URL ?? "http://localhost:8000";
 
 async function apiGet(path: string) {
   const res = await fetch(`${API}${path}`);

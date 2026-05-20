@@ -64,9 +64,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r server/requirements.txt
           # pytest is a test-only dep -- not in server/requirements.txt because
-          # the server itself doesn't need it. Pin nothing for now; tighten if
-          # CI flakes against a new pytest release.
-          pip install pytest
+          # the server itself doesn't need it. httpx is required by
+          # fastapi.testclient.TestClient (used by the in-process schema /
+          # speed_factor / search tests below).
+          pip install pytest httpx
 
       - name: Build SQLite catalogs (shared.db + per-env)
         # The server expects server/*/shared.db to exist before it can serve
@@ -84,6 +85,25 @@ jobs:
         # env-specific catalogs. Runs before server boot because it only
         # reads source JSON/JSONL files.
         run: pytest tests/test_catalog_user_identity.py -v
+
+      - name: Run scenario schema invariants
+        # Enforces the 0 < condition_at <= kill_at <= event_timeline_end
+        # invariant (and the dev.json schema) per scenario. Pure file-based,
+        # runs before server boot.
+        run: pytest tests/test_scenario_schema.py -v
+
+      - name: Run speed_factor tests
+        # In-process tests via fastapi.testclient.TestClient. No live uvicorn
+        # needed -- TestClient spins up the app inside the pytest process.
+        # Guards the wall-clock vs sim-clock scaling math in server/timing.py.
+        run: pytest tests/test_speed_factor.py -v
+
+      - name: Run microscholar search tests
+        # In-process unit tests for the fuzzy-match shingling algorithm used
+        # by microscholar paper search. The other nine environments do direct
+        # field matching covered by the integration suite, which is why no
+        # comparable per-env search test file exists.
+        run: pytest tests/test_microscholar_search.py -v
 
       - name: Start API server (background)
         # nohup + & detaches the process so the step can finish; the PID is
@@ -116,11 +136,11 @@ jobs:
         # /close lifecycle for each environment.
         run: pytest tests/test_integration.py -v
 
-      - name: Run eval_sql scenario suite (positive)
-        # Exercises every scenario's eval_sql against a fresh session. Add
-        # `--negative` once the negative-path harness is stable enough to
-        # run on every PR.
-        run: python tests/test_eval_sql.py
+      - name: Run eval_sql scenario suite (positive + no-action + negative)
+        # Exercises every scenario's eval_sql against a fresh session. The
+        # parametrized pytest entry points cover all three phases (242 cases
+        # total: 100 positive + 42 no-action + 100 negative).
+        run: pytest tests/test_eval_sql.py -v
 
       - name: Stop API server
         # `always()` so the server is killed even when an earlier step

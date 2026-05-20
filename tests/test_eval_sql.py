@@ -5,14 +5,19 @@ Auto-discovers all scenario JSONs across 10 environments, runs each through
 the full lifecycle (init -> advance all events -> simulate user actions ->
 evaluate -> assert success), and reports pass/fail.
 
-Usage:
+Usage (CI / pytest):
+    pytest tests/test_eval_sql.py -v
+
+Usage (standalone, all phases at once):
     cd sentinel_environments
     .venv/bin/python tests/test_eval_sql.py
-        # runs positive, no-action, and negative phases
+        # runs positive, no-action, and negative phases with colored output
 
-Requires: server running on localhost:8000
+Requires: server running. Override the URL with
+SENTINEL_SERVER_URL=http://host:port (default: http://localhost:8000).
 """
 import json
+import os
 import sys
 import time
 import random
@@ -20,7 +25,7 @@ from pathlib import Path
 
 import requests
 
-HOST = "http://localhost:8000"
+HOST = os.environ.get("SENTINEL_SERVER_URL", "http://localhost:8000")
 TIMEOUT = 10
 
 # Scenarios whose eval_sql checks user-created state that events alone cannot satisfy.
@@ -491,6 +496,46 @@ def discover_scenarios() -> list:
         if "webarena" not in str(p) and p.name != "dev.json"
     )
     return scenarios
+
+
+# ---------------------------------------------------------------------------
+# Pytest entry points (parametrized over every scenario)
+# ---------------------------------------------------------------------------
+
+try:
+    import pytest
+except ImportError:  # standalone CLI use without pytest installed
+    pytest = None
+
+_SCENARIO_PATHS = discover_scenarios()
+_ACTION_REQUIRED_PATHS = [
+    s for s in _SCENARIO_PATHS
+    if json.loads(s.read_text()).get("id")
+    in NEEDS_USER_ACTION | MIDFLIGHT_ACTION_TIMES.keys()
+]
+
+
+def _id(p: Path) -> str:
+    return p.stem
+
+
+if pytest is not None:
+    @pytest.mark.parametrize("scenario_path", _SCENARIO_PATHS, ids=_id)
+    def test_positive(scenario_path: Path) -> None:
+        sid, passed, detail = run_one(scenario_path)
+        assert passed, f"{sid}: {detail}"
+
+    @pytest.mark.parametrize("scenario_path", _ACTION_REQUIRED_PATHS, ids=_id)
+    def test_no_action_fails(scenario_path: Path) -> None:
+        # For scenarios that require a user action, omitting the action must fail eval.
+        sid, passed, detail = run_no_action(scenario_path)
+        assert passed, f"{sid}: {detail}"
+
+    @pytest.mark.parametrize("scenario_path", _SCENARIO_PATHS, ids=_id)
+    def test_negative(scenario_path: Path) -> None:
+        # Init only, no advance: eval must fail.
+        sid, passed, detail = run_negative(scenario_path)
+        assert passed, f"{sid}: {detail}"
 
 
 # ---------------------------------------------------------------------------
