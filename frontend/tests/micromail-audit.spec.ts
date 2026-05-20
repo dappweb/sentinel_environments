@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 test.setTimeout(60_000); // 60s per test to account for polling waits
 test.use({ viewport: { width: 1440, height: 900 } }); // Ensure lg+xl breakpoints
 
-const API = process.env.PLAYWRIGHT_API_URL ?? "http://localhost:8000";
+const API = process.env.PLAYWRIGHT_SERVER_URL ?? "http://localhost:8000";
 const SCENARIO_PATH =
   "../scenarios/micromail/inbox-relative-passive.json";
 const SCREENSHOTS = "../.cache/audit_screenshots/micromail";

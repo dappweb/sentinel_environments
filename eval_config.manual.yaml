@@ -5,6 +5,6 @@
 # is executed (and they will be automatically shell-escaped as needed).
 #
 
-api_url: http://localhost:8000
+server_url: http://localhost:8000
 frontend_url: http://localhost:5173
 agent_subprocess: "google-chrome __TASK_URL__ 2> /dev/null"

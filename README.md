@@ -196,11 +196,12 @@ The eval harness discovers all scenario JSON files, runs each against an agent s
 **Configure your agent** by creating an `eval_config.yaml` in the repo root:
 
 ```yaml
-host: http://localhost:8000
+server_url: http://localhost:8000
+frontend_url: http://localhost:5173
 
-# Wall-clock vs sim-clock exchange rate. 1.0 = real-time (default), >1 is slower,
-# <1 is faster, floor is 0.25. Harness sizes the per-task subprocess timeout as
-# MAX_CONDITION_AT * speed_factor + REACTION_WINDOW (see Runtime tuning below).
+# Wall-clock vs sim-clock exchange rate. 1.0 = real-time (default), >1 is faster,
+# <1 is slower. Harness sizes the per-task subprocess timeout as
+# MAX_CONDITION_AT / speed_factor + REACTION_WINDOW (see Runtime tuning below).
 speed_factor: 1.0
 
 # Command to launch your agent. Placeholders:
@@ -228,7 +229,7 @@ The harness exposes two subcommands: `run` (execute scenarios) and `grade` (summ
 **Run:**
 
 ```bash
-python -m server.eval_harness run <run_name> [--config eval_config.yaml] [--api-url http://localhost:8000]
+python -m server.eval_harness run <run_name> [--config eval_config.yaml] [--server-url http://localhost:8000]
 ```
 
 Results are written to `results/<run_name>/<environment>/<scenario_id>/`:

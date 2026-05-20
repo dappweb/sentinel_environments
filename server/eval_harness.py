@@ -1,7 +1,7 @@
 # eval harness cli for running all sentinel environments tasks and collecting results.
 #
 # flow: enumerate all scenario json files -> create result folders -> call run_task() for each
-# example: python -m server.eval_harness my_run --config eval_config.yaml
+# example: python -m server.eval_harness run my_run --config eval_config.yaml
 import argparse
 import csv
 import json
@@ -23,7 +23,7 @@ import yaml
 from server.server import STATE_COMPLETED, STATE_RUNNING_AUTO
 from server.timing import kill_at_wall, validate_speed_factor
 
-DEFAULT_API_URL = "http://localhost:8000"
+DEFAULT_SERVER_URL = "http://localhost:8000"
 
 
 def _raise_for_status_with_body(resp):
@@ -34,9 +34,9 @@ def _raise_for_status_with_body(resp):
         raise requests.HTTPError(f"{e}\n\nResponse body:\n{body}", response=resp) from e
 
 
-def _poll_until(api_url, target_states, valid_states=None):
+def _poll_until(server_url, target_states, valid_states=None):
     while True:
-        resp = requests.get(f"{api_url}/status")
+        resp = requests.get(f"{server_url}/status")
         _raise_for_status_with_body(resp)
         data = resp.json()
         if data["status"] in target_states:
@@ -46,15 +46,15 @@ def _poll_until(api_url, target_states, valid_states=None):
         time.sleep(1)
 
 
-def _startup(api_url):
+def _startup(server_url):
     # Always close any existing session first so we start clean,
     # regardless of what state the server is in (completed, ready, running, etc.)
-    resp = requests.get(f"{api_url}/status")
+    resp = requests.get(f"{server_url}/status")
     _raise_for_status_with_body(resp)
     if resp.json()["status"] != "preinit":
-        requests.get(f"{api_url}/close")
+        requests.get(f"{server_url}/close")
         time.sleep(1)
-    return _poll_until(api_url, target_states=["preinit"], valid_states=["stopping"])
+    return _poll_until(server_url, target_states=["preinit"], valid_states=["stopping"])
 
 
 def load_config(config_path):
@@ -85,24 +85,24 @@ def discover_tasks(name_filter=None, task_id=None):
         yield scenario["environment"], scenario["id"], path
 
 
-def _build_server_url(api_url, path, frontend_url=None, query=None):
+def _build_server_url(server_url, path, frontend_url=None, query=None):
     # The agent must connect to the same hostname it uses for the frontend,
-    # but hit the API server's endpoint on the API port.
+    # but hit the server's endpoint on the server's port.
     if not frontend_url:
-        base = f"{api_url}{path}"
+        base = f"{server_url}{path}"
         if query:
             return f"{base}?{urlencode(query)}"
         return base
-    api_parts = urlparse(api_url)
+    server_parts = urlparse(server_url)
     frontend_parts = urlparse(frontend_url)
     netloc = (
-        f"{frontend_parts.hostname}:{api_parts.port}"
-        if api_parts.port
-        else (frontend_parts.hostname or api_parts.netloc)
+        f"{frontend_parts.hostname}:{server_parts.port}"
+        if server_parts.port
+        else (frontend_parts.hostname or server_parts.netloc)
     )
     return urlunparse(
         (
-            frontend_parts.scheme or api_parts.scheme,
+            frontend_parts.scheme or server_parts.scheme,
             netloc,
             path,
             "",
@@ -112,17 +112,17 @@ def _build_server_url(api_url, path, frontend_url=None, query=None):
     )
 
 
-def _build_task_url(api_url, frontend_url=None):
+def _build_task_url(server_url, frontend_url=None):
     query = {"frontend_url": frontend_url} if frontend_url else None
-    return _build_server_url(api_url, "/redirect", frontend_url, query=query)
+    return _build_server_url(server_url, "/redirect", frontend_url, query=query)
 
 
-def _build_contact_url(api_url, frontend_url=None):
-    return _build_server_url(api_url, "/contact", frontend_url)
+def _build_contact_url(server_url, frontend_url=None):
+    return _build_server_url(server_url, "/contact", frontend_url)
 
 
 def run_task(config, task_json_file, task_result_folder):
-    api_url = config.get("api_url", DEFAULT_API_URL)
+    server_url = config.get("server_url", DEFAULT_SERVER_URL)
     frontend_url = config.get("frontend_url")
     speed_factor = validate_speed_factor(float(config.get("speed_factor", 1.0)))
 
@@ -130,7 +130,7 @@ def run_task(config, task_json_file, task_result_folder):
         scenario = json.load(f)
 
     # 1. Close any existing session and wait for preinit
-    _startup(api_url)
+    _startup(server_url)
 
     # 2. Init the scenario
     init_payload = {
@@ -142,14 +142,14 @@ def run_task(config, task_json_file, task_result_folder):
         "events": scenario["events"],
         "start_page": scenario.get("start_page"),
     }
-    resp = requests.post(f"{api_url}/init", json=init_payload)
+    resp = requests.post(f"{server_url}/init", json=init_payload)
     _raise_for_status_with_body(resp)
     data = resp.json()
     assert data["status"] == "ready", f"Expected ready, got {data}"
 
     # 3. Build agent subprocess command, substituting __TASK_URL__ and __TASK_PROMPT__.
-    task_url = _build_task_url(api_url, frontend_url)
-    contact_url = _build_contact_url(api_url, frontend_url)
+    task_url = _build_task_url(server_url, frontend_url)
+    contact_url = _build_contact_url(server_url, frontend_url)
     task_prompt = scenario.get("prompt", "")
     task_prompt = (
         f"{task_prompt}\n\n"
@@ -202,7 +202,7 @@ def run_task(config, task_json_file, task_result_folder):
                 try:
                     proc.wait(kill_at_wall(speed_factor))
                 except subprocess.TimeoutExpired:
-                    resp = requests.get(f"{api_url}/status", timeout=5)
+                    resp = requests.get(f"{server_url}/status", timeout=5)
                     resp.raise_for_status()
 
                     # Throw errors if keys are missing, to help debugging if the server is not responding as expected.
@@ -251,7 +251,7 @@ def run_task(config, task_json_file, task_result_folder):
         os.chdir(prev_cwd)
 
     # 4. Evaluate and write results as JSON
-    resp = requests.post(f"{api_url}/evaluate")
+    resp = requests.post(f"{server_url}/evaluate")
     _raise_for_status_with_body(resp)
     result = resp.json()
 
@@ -260,8 +260,8 @@ def run_task(config, task_json_file, task_result_folder):
 
 def cmd_run(args):
     config = load_config(args.config)
-    if args.api_url != DEFAULT_API_URL:
-        config["api_url"] = args.api_url
+    if args.server_url != DEFAULT_SERVER_URL:
+        config["server_url"] = args.server_url
     if args.frontend_url:
         config["frontend_url"] = args.frontend_url
     if args.speed_factor is not None:
@@ -451,7 +451,7 @@ def main():
     p_run = sub.add_parser("run", help="Run all scenarios and collect results")
     p_run.add_argument("run_name", help="Name of this evaluation run")
     p_run.add_argument("--config", default="eval_config.yaml", help="Path to eval config YAML")
-    p_run.add_argument("--api-url", default=DEFAULT_API_URL, help="Sentinel API base URL")
+    p_run.add_argument("--server-url", default=DEFAULT_SERVER_URL, help="Sentinel server base URL")
     p_run.add_argument("--frontend-url", help="Frontend base URL passed to /redirect")
     p_run.add_argument(
         "--speed-factor",

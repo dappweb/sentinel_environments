@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const API = process.env.PLAYWRIGHT_API_URL ?? "http://localhost:8000";
+const API = process.env.PLAYWRIGHT_SERVER_URL ?? "http://localhost:8000";
 const SCENARIO_PATH = "../scenarios/micromail/inbox-relative-passive.json";
 
 async function apiGet(path: string) {

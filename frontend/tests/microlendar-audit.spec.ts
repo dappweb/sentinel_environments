@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 test.setTimeout(60_000);
 test.use({ viewport: { width: 1440, height: 900 } });
 
-const API = process.env.PLAYWRIGHT_API_URL ?? "http://localhost:8000";
+const API = process.env.PLAYWRIGHT_SERVER_URL ?? "http://localhost:8000";
 const SCENARIO_PATH =
   "../scenarios/microlendar/events-absolute-passive.json";
 const SCREENSHOTS = "../.cache/audit_screenshots/microlendar";
