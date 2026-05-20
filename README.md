@@ -96,7 +96,7 @@ Each task is defined as a JSON file in `scenarios/<env>/`:
 }
 ```
 
-- `condition_at`, `kill_at`, `event_timeline_end` -- as above. Don't hand-edit; re-run `python server/scripts/randomize_condition_at.py` if `scenario_id` changes.
+- `condition_at`, `kill_at`, `event_timeline_end` -- as above. `condition_at` is the per-scenario randomized timing target; the released values are frozen and should not be hand-edited.
 - `events` -- deterministic list of state changes; `time` is in simulation-seconds.
 - `eval_sql` -- the SQL query run against a materialized snapshot of session state at `/evaluate`; a truthy result counts as success.
 
@@ -214,15 +214,17 @@ agent_subprocess: ["your-agent-command", "--url", "__TASK_URL__", "--prompt", "_
 
 ### Runtime tuning
 
-`speed_factor` controls the exchange rate between wall-clock time and simulation time: `sim_time = wall_elapsed / speed_factor`. It's a top-level key in `eval_config.yaml` (and `run_simulation --speed` for local playback) -- never stored in scenario JSON.
+`speed_factor` controls how fast the simulation clock advances relative to wall-clock. It's a top-level key in `eval_config.yaml` (and `--speed` on `run_simulation` for local playback) -- never stored in scenario JSON. The harness sizes the per-task subprocess timeout as `kill_at_wall = MAX_CONDITION_AT / speed_factor + REACTION_WINDOW`. `speed_factor > 1` compresses the timeline (less wall-clock time per scenario); `speed_factor < 1` stretches it.
 
 | speed_factor | Effect | kill_at_wall (subprocess timeout) |
 |--------------|--------|-----------------------------------|
-| `1.0` (default) | Real-time | 630s |
-| `2.0` | 1 sim-sec = 2 wall-sec (slower) | 1230s |
-| `0.25` (floor) | 1 wall-sec = 4 sim-sec (fastest allowed) | 180s |
+| `4.0` (max allowed) | 4x faster than real-time | 180s (3 min) |
+| `2.0` | 2x faster than real-time | 330s (5.5 min) |
+| `1.0` (default) | Real-time | 630s (10.5 min) |
+| `0.5` | 2x slower than real-time | 1230s (20.5 min) |
+| `0.25` | 4x slower than real-time | 2430s (40.5 min) |
 
-The 30-second reaction window past `condition_at` stays constant in wall-clock across all speeds; only the pre-target portion scales. All constants live in `server/timing.py`.
+The 30-second reaction window past `condition_at` stays constant in wall-clock across all speeds; only the pre-target portion scales. `MAX_SPEED_FACTOR = 4.0` is enforced by `server/timing.py`; the lower bound is only `speed_factor > 0`. All constants live in `server/timing.py`.
 
 The harness exposes two subcommands: `run` (execute scenarios) and `grade` (summarize a completed run).
 
