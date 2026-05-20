@@ -521,7 +521,10 @@ async def contact_get() -> HTMLResponse:
         )
     _state = STATE_COMPLETED
     if session.contact_get_time is None:
-        session.contact_get_time = int(session.simulation_time)
+        # Float resolution preserves the sub-second part of condition_at so
+        # the `>= condition_at` gate in /evaluate is correct on randomized
+        # scenarios where condition_at is e.g. 297.75.
+        session.contact_get_time = session.simulation_time
     return HTMLResponse(content=_CONTACT_FORM_HTML)
 
 
@@ -537,7 +540,7 @@ async def contact_post(message: str = Form("")) -> HTMLResponse:
         )
     _state = STATE_COMPLETED
     if session.contact_post_time is None:
-        session.contact_post_time = int(session.simulation_time)
+        session.contact_post_time = session.simulation_time
         session.contact_message = message
     return HTMLResponse(content=_CONTACT_THANKS_HTML)
 
