@@ -38,13 +38,18 @@ The benchmark ships 10 environments (`Micro*`), each with 10 monitoring scenario
 
 ## Quick Start
 
-Run all three components (API server, frontend, harness shell) in one tmux session:
+Set up local dependencies, build the SQLite databases, and run all three
+components (API server, frontend, harness shell) in one tmux session:
 
 ```bash
 ./start.sh
 ```
 
-This opens windows for the **server** (API on `:8000`), the **frontend** (Vite on `:5173`), and a **harness** shell ready for eval runs. To set things up manually instead, follow the three steps below.
+On the first run, this creates `.venv`, installs Python and Node dependencies,
+and builds the gitignored `.db` files. It then opens windows for the **server**
+(API on `:8000`), the **frontend** (Vite on `:5173`), and a **harness** shell
+ready for eval runs. To set things up manually instead, follow the three steps
+below.
 
 ### 1. API server
 
@@ -64,7 +69,7 @@ uvicorn server.server:app --host 0.0.0.0 --port 8000
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
@@ -93,7 +98,10 @@ Run all scenarios, then grade:
 
 ```bash
 # Execute scenarios (resumable: tasks with an existing result are skipped)
-python -m server.eval_harness run my_first_run [--config eval_config.yaml] [--server-url http://localhost:8000]
+python -m server.eval_harness run my_first_run --config eval_config.yaml
+
+# Optional: override the API URL from the config file
+python -m server.eval_harness run my_first_run --config eval_config.yaml --server-url http://localhost:8000
 
 # Summarize a completed run as a per-task table + aggregate stats
 python -m server.eval_harness grade my_first_run
