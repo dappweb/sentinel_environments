@@ -73,7 +73,12 @@ def _build_email_row(email_id: str, backdated: bool = False) -> dict:
         "importance": raw.get("importance", "normal"),
         "mentionsMe": bool(raw.get("mentionsMe", False)),
         "attachment": (
-            {"id": attachment["id"], "name": attachment["name"], "size": attachment["size"]}
+            {
+                "id": attachment["id"],
+                "name": attachment["name"],
+                "size": attachment["size"],
+                "url": f"/images/micromail/attachments/{attachment['name']}",
+            }
             if attachment
             else None
         ),
