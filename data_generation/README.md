@@ -19,6 +19,16 @@ We used an NVIDIA B200 (183GB VRAM) with CUDA 12.8 for all generation.
 | Videos | Wan2.2-T2V-14B | 50 steps, 81 frames, 720p | Apache 2.0 |
 | Audio | ACE-Step-HQ | 150 steps, 2 min, 44.1kHz | Apache 2.0 |
 
+## Scope
+
+This directory documents the media generation entry point,
+`scripts/batch_image_gen.py`, and the prompt/name files it consumes. The
+commands below generate files into an output directory; they do not validate or
+repair already-installed benchmark media under `data/public/`.
+
+Catalog-to-asset integrity checks for shipped files, such as missing or
+zero-byte files in `data/public/`, are a separate release audit concern.
+
 ## Prompt Inventory
 
 All prompts are checked into `prompts/` with one prompt per line. Assets that
@@ -26,10 +36,10 @@ need deterministic filenames include paired name files.
 
 | Environment | Asset Type | Prompts | Names | Dimensions |
 |-------------|-----------|---------|-------|------------|
-| Users | avatars | 100 | 100 | 800x800 |
-| Users | banners | 26 | 26 | 1584x396 |
-| MicroDin | company logos | 90 | - | 800x800 |
-| MicroDin | company banners | 90 | - | 1584x384 |
+| Users | avatars | 100 | 100 | 1024x1024 |
+| Users | banners | 26 | 26 | 1584x384 |
+| MicroDin | company logos | 90 | 90 | 800x800 |
+| MicroDin | company banners | 90 | 90 | 1584x384 |
 | MicroDin | posts | 20 | 20 | 1200x800 |
 | MicroMail | attachments | 25 | 25 | 1024x768 |
 | MicroTube | channel logos | 19 | 19 | 800x800 |
@@ -37,6 +47,10 @@ need deterministic filenames include paired name files.
 | MicroTube | videos | 50 | 50 | 1280x720 |
 | MicroTube | video thumbnails | 50 | 50 | 1280x720 |
 | MicroFy | mood images | 6 | 6 | 1072x1072 |
+| MicroFy | track covers | - | - | 1072x1072 |
+| MicroFy | playlist logos | - | - | 1072x1072 |
+| MicroFy | band logos | - | - | 1072x1072 |
+| MicroFy | band banners | - | - | 1488x496 |
 | MicroFy | music tracks | 100 | 100 | 2 min, 44.1kHz |
 | MicroGram | posts | 300 | 300 | 1072x1072 |
 | MicroGram | stories | 50 | 50 | 1072x1920 |
@@ -62,7 +76,9 @@ huggingface-cli login
 
 ## Usage
 
-The main generation script is `scripts/batch_image_gen.py`. It supports three modes: image, video, and audio.
+The canonical generation command is `python scripts/batch_image_gen.py` from
+the `data_generation/` directory. The script supports three modes: image,
+video, and audio.
 
 ```bash
 # images (FLUX.2-dev)
@@ -71,7 +87,7 @@ python scripts/batch_image_gen.py \
     --prompt_file prompts/users/avatars-prompts.txt \
     --names_file prompts/users/avatars-names.txt \
     --output_dir output/users/avatars \
-    --width 800 --height 800 --steps 28
+    --width 1024 --height 1024 --steps 28
 
 # videos (Wan2.2-T2V-14B, requires 80GB+ VRAM)
 python scripts/batch_image_gen.py \
@@ -98,7 +114,15 @@ Key flags:
 
 ## SLURM (cluster usage)
 
-Three SLURM scripts are provided for cluster environments. You must override account and partition settings for your cluster.
+The SLURM files under `scripts/` are examples from the original cluster
+workflow. They may require local edits for module names, virtualenv activation,
+cache locations, script paths, account, partition, and QOS. They are not
+required to use `scripts/batch_image_gen.py`, and should not be treated as a
+clean-clone reproduction interface.
+
+For cluster use, prefer adapting the local commands above inside your own job
+script. If you use the provided wrappers, review and override their environment
+variables first:
 
 ```bash
 # image generation (A100)
@@ -113,7 +137,7 @@ SLURM_PARTITION=YOUR_GPU_PARTITION SLURM_ACCOUNT=YOUR_ACCOUNT SLURM_QOS=YOUR_QOS
 ```
 
 Environment variables for SLURM scripts:
-- `HF_ROOT` - root directory containing the HuggingFace cache and venv (default: `$HOME/huggingface`)
+- `HF_ROOT` - root directory used by some historical wrappers for a HuggingFace cache, virtualenv, and script checkout
 - `HF_CACHE_DIR` - HuggingFace cache directory (default: `$HOME/.cache/huggingface`)
 - `PROJECT_DIR` - working directory for the generation script (default: `.`)
 - `SLURM_PARTITION` - GPU partition name (default: `gpu`)
@@ -121,13 +145,15 @@ Environment variables for SLURM scripts:
 
 ## Post-generation
 
-After generating assets, install them into the benchmark's `data/public/` directory:
+The optional install helper copies selected files from `data_generation/_generated/`
+into `data/public/` and creates `.webp` companions for PNG images:
 
 ```bash
 bash scripts/install_generated_assets.sh
 ```
 
-This copies generated files from `_generated/` into the correct `data/public/` paths and creates `.webp` companions for PNG images.
+Review the script before using it on a release checkout. It is an installation
+helper, not a catalog/media validator.
 
 ## Time Estimates (B200, 183GB VRAM)
 
@@ -143,7 +169,7 @@ This copies generated files from `_generated/` into the correct `data/public/` p
 data_generation/
   prompts/           # prompt + name files organized by environment
     users/           # avatars-prompts.txt, avatars-names.txt, banners-prompts.txt, banners-names.txt
-    microdin/        # company-logos-prompts.txt, company-banners-prompts.txt, posts-prompts.txt, posts-names.txt
+    microdin/        # company-logos-prompts.txt, company-logos-names.txt, company-banners-prompts.txt, company-banners-names.txt, posts-prompts.txt, posts-names.txt
     micromail/       # prompts.txt, promptnames.txt
     microtube/       # videoprompts.txt, videopromptnames.txt, channel-*, video-thumbnails-*
     microfy/         # songprompts.txt, songnames.txt, moods-prompts.txt, moods-names.txt
@@ -151,16 +177,16 @@ data_generation/
     microchat/       # teamnames.txt, team-names.txt
   scripts/
     batch_image_gen.py          # main generation script (image/video/audio)
-    gen_missing_assets.sh       # orchestrates generation of all missing assets
-    submit_video_shards.sh      # shards video generation across SLURM jobs
-    install_generated_assets.sh # moves generated assets into data/public/
-    run_batch_gen.slurm         # SLURM job for image generation (A100)
-    run_video_gen.slurm         # SLURM job for video generation (B200)
-    run_video_shard.slurm       # SLURM job for a single video shard
+    gen_missing_assets.sh       # historical cluster helper for selected second-pass assets
+    submit_video_shards.sh      # historical helper for sharded SLURM video generation
+    install_generated_assets.sh # optional helper to copy generated files into data/public/
+    run_batch_gen.slurm         # example SLURM job for image generation
+    run_video_gen.slurm         # example SLURM job for video generation
+    run_video_shard.slurm       # example SLURM job for one video shard
     requirements.txt            # Python dependencies
   docs/
     COMPLIANCE.md               # licensing and data provenance
-    REPRODUCTION.md             # step-by-step reproduction guide
+    REPRODUCTION.md             # generation command guide
 ```
 
 ## Attribution
