@@ -46,7 +46,7 @@ python scripts/batch_image_gen.py --mode image --model flux2-dev \
     --width 1024 --height 1024 --steps 28 --resume
 ```
 
-**User banners (26 images, 1584x384)**
+**User banners (100 images, 1584x384)**
 ```bash
 python scripts/batch_image_gen.py --mode image --model flux2-dev \
     --prompt_file prompts/users/banners-prompts.txt \
@@ -55,7 +55,7 @@ python scripts/batch_image_gen.py --mode image --model flux2-dev \
     --width 1584 --height 384 --steps 28 --resume
 ```
 
-**MicroDin company logos (90 images, 800x800)**
+**MicroDin company logos (91 images, 800x800)**
 ```bash
 python scripts/batch_image_gen.py --mode image --model flux2-dev \
     --prompt_file prompts/microdin/company-logos-prompts.txt \
@@ -64,7 +64,7 @@ python scripts/batch_image_gen.py --mode image --model flux2-dev \
     --width 800 --height 800 --steps 28 --resume
 ```
 
-**MicroDin company banners (90 images, 1584x384)**
+**MicroDin company banners (91 images, 1584x384)**
 ```bash
 python scripts/batch_image_gen.py --mode image --model flux2-dev \
     --prompt_file prompts/microdin/company-banners-prompts.txt \

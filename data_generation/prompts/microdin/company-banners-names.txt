@@ -88,3 +88,4 @@ org-forge-banner
 org-helx-banner
 org-omni-banner
 org-themicrocorporate-banner
+org-neos-banner

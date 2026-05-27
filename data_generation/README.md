@@ -37,9 +37,9 @@ need deterministic filenames include paired name files.
 | Environment | Asset Type | Prompts | Names | Dimensions |
 |-------------|-----------|---------|-------|------------|
 | Users | avatars | 100 | 100 | 1024x1024 |
-| Users | banners | 26 | 26 | 1584x384 |
-| MicroDin | company logos | 90 | 90 | 800x800 |
-| MicroDin | company banners | 90 | 90 | 1584x384 |
+| Users | banners | 100 | 100 | 1584x384 |
+| MicroDin | company logos | 91 | 91 | 800x800 |
+| MicroDin | company banners | 91 | 91 | 1584x384 |
 | MicroDin | posts | 20 | 20 | 1200x800 |
 | MicroMail | attachments | 25 | 25 | 1024x768 |
 | MicroTube | channel logos | 19 | 19 | 800x800 |

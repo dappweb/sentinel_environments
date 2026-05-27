@@ -88,3 +88,4 @@ org-forge-logo
 org-helx-logo
 org-omni-logo
 org-themicrocorporate-logo
+org-neos-logo
