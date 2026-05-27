@@ -52,9 +52,11 @@ tmux send-keys -t "$SESSION:frontend" "npm run dev -- --port $FRONTEND_PORT --st
 
 # Third window: eval harness / free shell
 tmux new-window -t "$SESSION" -n "harness" -c "$ROOT"
-tmux send-keys -t "$SESSION:harness" "# Ready. Example:" ""
+tmux send-keys -t "$SESSION:harness" "# Ready. Single-task smoke test:" ""
 tmux send-keys -t "$SESSION:harness" "" Enter
-tmux send-keys -t "$SESSION:harness" "# .venv/bin/python -m server.eval_harness run my_run --config eval_config.yaml" ""
+tmux send-keys -t "$SESSION:harness" "# .venv/bin/python -m server.eval_harness run micromail_smoke --config eval_config.yaml --task micromail-unread-absolute-passive" ""
+tmux send-keys -t "$SESSION:harness" "" Enter
+tmux send-keys -t "$SESSION:harness" "# Full benchmark: .venv/bin/python -m server.eval_harness run my_run --config eval_config.yaml" ""
 
 # Focus the harness window
 tmux select-window -t "$SESSION:harness"
