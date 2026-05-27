@@ -47,10 +47,10 @@ need deterministic filenames include paired name files.
 | MicroTube | videos | 50 | 50 | 1280x720 |
 | MicroTube | video thumbnails | 50 | 50 | 1280x720 |
 | MicroFy | mood images | 6 | 6 | 1072x1072 |
-| MicroFy | track covers | - | - | 1072x1072 |
-| MicroFy | playlist logos | - | - | 1072x1072 |
-| MicroFy | band logos | - | - | 1072x1072 |
-| MicroFy | band banners | - | - | 1488x496 |
+| MicroFy | track covers | 100 | 100 | 1072x1072 |
+| MicroFy | playlist logos | 20 | 20 | 1072x1072 |
+| MicroFy | band logos | 50 | 50 | 1072x1072 |
+| MicroFy | band banners | 50 | 50 | 1488x496 |
 | MicroFy | music tracks | 100 | 100 | 2 min, 44.1kHz |
 | MicroGram | posts | 300 | 300 | 1072x1072 |
 | MicroGram | stories | 50 | 50 | 1072x1920 |
@@ -172,7 +172,7 @@ data_generation/
     microdin/        # company-logos-prompts.txt, company-logos-names.txt, company-banners-prompts.txt, company-banners-names.txt, posts-prompts.txt, posts-names.txt
     micromail/       # prompts.txt, promptnames.txt
     microtube/       # videoprompts.txt, videopromptnames.txt, channel-*, video-thumbnails-*
-    microfy/         # songprompts.txt, songnames.txt, moods-prompts.txt, moods-names.txt
+    microfy/         # songprompts.txt, songnames.txt, moods-*, track-covers-*, playlist-logos-*, band-logos-*, band-banners-*
     microgram/       # posts-prompts.txt, posts-names.txt, storyprompts.txt, storypromptnames.txt
     microchat/       # teamnames.txt, team-names.txt
   scripts/
