@@ -107,6 +107,23 @@ python -m server.eval_harness run my_first_run --config eval_config.yaml --serve
 python -m server.eval_harness grade my_first_run
 ```
 
+For a first smoke test, run a single scenario with `--task`:
+
+```bash
+python -m server.eval_harness run micromail_smoke \
+  --config eval_config.yaml \
+  --task micromail-unread-absolute-passive
+
+python -m server.eval_harness grade micromail_smoke \
+  --task micromail-unread-absolute-passive
+```
+
+To list available task IDs:
+
+```bash
+find scenarios -maxdepth 2 -name '*.json' ! -name dev.json -printf '%f\n' | sed 's/.json$//'
+```
+
 Results are written to `results/<run_name>/<environment>/<scenario_id>/`:
 
 | File | Description |
