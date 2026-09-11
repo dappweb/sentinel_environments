@@ -410,14 +410,19 @@ const MicroHood = () => {
     bgCard: theme === "dark" ? "bg-gray-900" : "bg-gray-50",
     bgInput: theme === "dark" ? "bg-gray-800" : "bg-gray-100",
     text: theme === "dark" ? "text-white" : "text-gray-900",
-    textSecondary: theme === "dark" ? "text-gray-400" : "text-gray-600",
-    textMuted: theme === "dark" ? "text-gray-500" : "text-gray-500",
+    textSecondary: theme === "dark" ? "text-gray-400" : "text-gray-700",
+    textMuted: theme === "dark" ? "text-gray-500" : "text-gray-600",
     border: theme === "dark" ? "border-gray-800" : "border-gray-200",
     borderSecondary: theme === "dark" ? "border-gray-700" : "border-gray-300",
     navActive: theme === "dark" ? "text-white" : "text-gray-900",
-    navInactive: theme === "dark" ? "text-gray-500" : "text-gray-400",
+    navInactive: theme === "dark" ? "text-gray-500" : "text-gray-700",
+    accentText: theme === "dark" ? "text-[#00C805]" : "text-[#007A05]",
+    accentHover: theme === "dark" ? "hover:text-[#00C805]" : "hover:text-[#007A05]",
+    negativeText: theme === "dark" ? "text-[#FF5000]" : "text-[#B93800]",
+    linkText: theme === "dark" ? "text-[#7ABEF0]" : "text-[#005EA8]",
+    hoverText: theme === "dark" ? "hover:text-white" : "hover:text-gray-900",
     chartLine: theme === "dark" ? "#4B5563" : "#9CA3AF",
-    chartText: theme === "dark" ? "#6B7280" : "#6B7280",
+    chartText: theme === "dark" ? "#9CA3AF" : "#4B5563",
   }), [theme]);
 
   // Toast helper
@@ -731,32 +736,32 @@ const MicroHood = () => {
             <div className="flex items-center gap-8">
               <div className="flex items-center gap-2">
                 <img src={`${import.meta.env.BASE_URL}desktop/microhood-icon.png`} alt="MicroHood" className="w-8 h-8 object-contain" />
-                <span className="text-xl font-bold text-white">MicroHood</span>
+                <span className={`text-xl font-bold ${themeClasses.text}`}>MicroHood</span>
               </div>
 
               {/* Navigation */}
               <nav className="hidden lg:flex items-center gap-6 text-sm">
                 <button
                   onClick={() => setActiveNavSection("investing")}
-                  className={`${activeNavSection === "investing" ? `${themeClasses.navActive} font-medium` : themeClasses.textSecondary} hover:text-[#00C805] transition-colors`}
+                  className={`${activeNavSection === "investing" ? `${themeClasses.navActive} font-medium` : themeClasses.textSecondary} ${themeClasses.accentHover} transition-colors`}
                 >
                   Investing
                 </button>
                 <button
                   onClick={() => setActiveNavSection("crypto")}
-                  className={`${activeNavSection === "crypto" ? `${themeClasses.navActive} font-medium` : themeClasses.textSecondary} hover:text-[#00C805] transition-colors`}
+                  className={`${activeNavSection === "crypto" ? `${themeClasses.navActive} font-medium` : themeClasses.textSecondary} ${themeClasses.accentHover} transition-colors`}
                 >
                   Crypto
                 </button>
                 <button
                   onClick={() => setActiveNavSection("spending")}
-                  className={`${activeNavSection === "spending" ? `${themeClasses.navActive} font-medium` : themeClasses.textSecondary} hover:text-[#00C805] transition-colors`}
+                  className={`${activeNavSection === "spending" ? `${themeClasses.navActive} font-medium` : themeClasses.textSecondary} ${themeClasses.accentHover} transition-colors`}
                 >
                   Spending
                 </button>
                 <button
                   onClick={() => setActiveNavSection("retirement")}
-                  className={`${activeNavSection === "retirement" ? `${themeClasses.navActive} font-medium` : themeClasses.textSecondary} hover:text-[#00C805] transition-colors`}
+                  className={`${activeNavSection === "retirement" ? `${themeClasses.navActive} font-medium` : themeClasses.textSecondary} ${themeClasses.accentHover} transition-colors`}
                 >
                   Retirement
                 </button>
@@ -778,7 +783,7 @@ const MicroHood = () => {
                 rel="noreferrer"
                 aria-label="X @microhood_ai"
                 title="X @microhood_ai"
-                className={`hidden md:flex min-h-10 min-w-10 items-center justify-center rounded-full ${themeClasses.bgHoverSecondary} ${themeClasses.textSecondary} transition-colors hover:text-white`}
+                className={`hidden md:flex min-h-10 min-w-10 items-center justify-center rounded-full ${themeClasses.bgHoverSecondary} ${themeClasses.textSecondary} ${themeClasses.hoverText} transition-colors`}
               >
                 <XBrandIcon />
               </a>
@@ -788,7 +793,7 @@ const MicroHood = () => {
                 rel="noreferrer"
                 aria-label="GitHub source repository"
                 title="GitHub source repository"
-                className={`hidden md:flex min-h-10 min-w-10 items-center justify-center rounded-full ${themeClasses.bgHoverSecondary} ${themeClasses.textSecondary} transition-colors hover:text-white`}
+                className={`hidden md:flex min-h-10 min-w-10 items-center justify-center rounded-full ${themeClasses.bgHoverSecondary} ${themeClasses.textSecondary} ${themeClasses.hoverText} transition-colors`}
               >
                 <Github size={17} />
               </a>
@@ -807,7 +812,7 @@ const MicroHood = () => {
               </button>
               <PrivyAccountButton
                 onUnavailable={() => showToast("Configure VITE_PRIVY_APP_ID to enable Privy login")}
-                className="hidden md:block px-4 py-2 text-sm font-medium text-[#00C805] hover:bg-[#00C805]/10 rounded-full transition-colors"
+                className={`hidden md:block px-4 py-2 text-sm font-medium ${themeClasses.accentText} hover:bg-[#00C805]/10 rounded-full transition-colors`}
               />
               <button className="md:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                 {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -826,7 +831,7 @@ const MicroHood = () => {
               href={`${ROBINHOOD_MAINNET_EXPLORER}/address/${MICROHOOD_PROJECT_TOKEN_ADDRESS}`}
               target="_blank"
               rel="noreferrer"
-              className="min-w-0 flex-1 break-all font-mono text-[10px] text-[#7ABEF0] transition hover:text-white sm:text-xs"
+              className={`min-w-0 flex-1 break-all font-mono text-[10px] ${themeClasses.linkText} transition ${themeClasses.hoverText} sm:text-xs`}
               title="Open MicroHood project contract on Blockscout"
             >
               {MICROHOOD_PROJECT_TOKEN_ADDRESS}
@@ -836,7 +841,7 @@ const MicroHood = () => {
               aria-label="Copy MicroHood project CA"
               title="Copy MicroHood project CA"
               onClick={() => void copyAddress(MICROHOOD_PROJECT_TOKEN_ADDRESS, "Project CA")}
-              className={`flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded-lg ${themeClasses.bgTertiary} ${themeClasses.textSecondary} transition hover:text-[#00C805]`}
+              className={`flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded-lg ${themeClasses.bgTertiary} ${themeClasses.textSecondary} transition ${themeClasses.accentHover}`}
             >
               {copiedAddress === MICROHOOD_PROJECT_TOKEN_ADDRESS ? <Check size={15} /> : <Copy size={15} />}
             </button>
@@ -926,7 +931,7 @@ const MicroHood = () => {
                     <ChevronRight size={16} className={`${themeClasses.textMuted} ml-auto opacity-0 group-hover:opacity-100 transition-opacity`} />
                   </div>
                   <p className="text-xl font-bold">{formatCurrency(crypto.price)}</p>
-                  <p className={`text-sm ${crypto.change >= 0 ? "text-[#00C805]" : "text-[#FF5000]"}`}>
+                  <p className={`text-sm ${crypto.change >= 0 ? themeClasses.accentText : themeClasses.negativeText}`}>
                     {crypto.change >= 0 ? "+" : ""}{crypto.change.toFixed(2)}%
                   </p>
                 </button>
@@ -946,7 +951,7 @@ const MicroHood = () => {
                   <p className="text-3xl font-bold mt-1">{formatCurrency(buyingPower * 0.6)}</p>
                 </div>
                 <div className="w-12 h-12 rounded-full bg-[#00C805]/20 flex items-center justify-center">
-                  <CreditCard size={24} className="text-[#00C805]" />
+                  <CreditCard size={24} className={themeClasses.accentText} />
                 </div>
               </div>
               <div className="space-y-4">
@@ -956,7 +961,7 @@ const MicroHood = () => {
                     <div className="flex items-center gap-3">
                       {tx.type === "order" && (
                         <div className="w-8 h-8 rounded-full bg-[#00C805]/20 flex items-center justify-center">
-                          <BarChart3 size={14} className="text-[#00C805]" />
+                          <BarChart3 size={14} className={themeClasses.accentText} />
                         </div>
                       )}
                       <div>
@@ -964,7 +969,7 @@ const MicroHood = () => {
                         <p className={`text-sm ${themeClasses.textMuted}`}>{tx.date}</p>
                       </div>
                     </div>
-                    <p className={`font-medium ${tx.amount >= 0 ? "text-[#00C805]" : themeClasses.text}`}>
+                    <p className={`font-medium ${tx.amount >= 0 ? themeClasses.accentText : themeClasses.text}`}>
                       {tx.amount >= 0 ? "+" : ""}{formatCurrency(Math.abs(tx.amount))}
                     </p>
                   </div>
@@ -984,7 +989,7 @@ const MicroHood = () => {
                   <p className="text-3xl font-bold mt-1">{formatCurrency(iraBalance)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[#00C805] text-lg font-medium">+12.4%</p>
+                  <p className={`${themeClasses.accentText} text-lg font-medium`}>+12.4%</p>
                   <p className={`${themeClasses.textMuted} text-sm`}>This year</p>
                 </div>
               </div>
@@ -1023,10 +1028,10 @@ const MicroHood = () => {
                   {formatCurrency(portfolioValue)}
                 </h1>
               </div>
-              <div className={`flex items-center gap-2 mt-2 text-lg ${portfolioChange >= 0 ? "text-[#00C805]" : "text-[#FF5000]"}`}>
+              <div className={`flex items-center gap-2 mt-2 text-lg ${portfolioChange >= 0 ? themeClasses.accentText : themeClasses.negativeText}`}>
                 {portfolioChange >= 0 ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
                 <span className="font-medium">{formatChange(portfolioChange, portfolioChangePercent)}</span>
-                <span className="text-gray-500">Today</span>
+                <span className={themeClasses.textMuted}>Today</span>
               </div>
             </div>
 
@@ -1044,7 +1049,7 @@ const MicroHood = () => {
                     className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-colors ${
                       selectedTimeframe === tf
                         ? "bg-[#00C805] text-black"
-                        : "text-gray-400 hover:text-white hover:bg-gray-800"
+                        : `${themeClasses.textSecondary} ${themeClasses.hoverText} ${themeClasses.bgHoverSecondary}`
                     }`}
                   >
                     {tf}
@@ -1059,7 +1064,7 @@ const MicroHood = () => {
                 onClick={() => handlePlaceOrder("buy")}
                 className={`flex flex-col items-center gap-2 p-4 ${themeClasses.bgSecondary} rounded-xl ${themeClasses.bgHoverSecondary} transition-colors`}
               >
-                {isRobinhoodMsft ? <EyeOff size={24} className={themeClasses.textSecondary} /> : <TrendingUp size={24} className="text-[#00C805]" />}
+                {isRobinhoodMsft ? <EyeOff size={24} className={themeClasses.textSecondary} /> : <TrendingUp size={24} className={themeClasses.accentText} />}
                 <span className={`text-sm ${themeClasses.textSecondary}`}>{isRobinhoodMsft ? "Observe" : "Invest"}</span>
               </button>
               <button
@@ -1163,12 +1168,12 @@ const MicroHood = () => {
                         )}
                         <div className="text-left">
                           <p className="font-medium">{stock.symbol}</p>
-                          <p className="text-sm text-gray-500">{stock.shares} shares</p>
+                          <p className={`text-sm ${themeClasses.textMuted}`}>{stock.shares} shares</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="font-medium">{formatCurrency(value)}</p>
-                        <p className={`text-sm ${isPositive ? "text-[#00C805]" : "text-[#FF5000]"}`}>
+                        <p className={`text-sm ${isPositive ? themeClasses.accentText : themeClasses.negativeText}`}>
                           {isPositive ? "+" : ""}{gainPercent.toFixed(2)}%
                         </p>
                       </div>
@@ -1206,7 +1211,7 @@ const MicroHood = () => {
                                 <span className={`block truncate text-[10px] ${themeClasses.textMuted}`}>{displayName}</span>
                               </span>
                             </span>
-                            <span className="flex shrink-0 items-center gap-1 text-[10px] font-mono text-[#7ABEF0]">
+                            <span className={`flex shrink-0 items-center gap-1 text-[10px] font-mono ${themeClasses.linkText}`}>
                               {shortenAddress(deployment.contractAddress)} <ArrowUpRight size={12} />
                             </span>
                           </a>
@@ -1260,7 +1265,7 @@ const MicroHood = () => {
                       }}
                       className={`p-2 rounded-full transition-all ${
                         isInWatchlist(liveSelectedStock?.symbol || "MCRO")
-                          ? "bg-[#00C805]/20 text-[#00C805]"
+                          ? `bg-[#00C805]/20 ${themeClasses.accentText}`
                           : `${themeClasses.bgHoverSecondary} ${themeClasses.textMuted}`
                       }`}
                       title={isInWatchlist(liveSelectedStock?.symbol || "MCRO") ? "Remove from watchlist" : "Add to watchlist"}
@@ -1319,7 +1324,7 @@ const MicroHood = () => {
                             }}
                             className={`w-full flex items-center gap-3 px-4 py-3 ${themeClasses.bgHover} text-left border-t ${themeClasses.borderSecondary}`}
                           >
-                            <EyeOff size={16} className="text-gray-400" />
+                            <EyeOff size={16} className={themeClasses.textSecondary} />
                             <span className="text-sm">Hide</span>
                           </button>
                         </div>
@@ -1341,7 +1346,7 @@ const MicroHood = () => {
                       <>
                         <span>Bid {formatCurrency(robinhoodMsftQuote.bid)}</span>
                         <span>Ask {formatCurrency(robinhoodMsftQuote.ask)}</span>
-                        <span className="text-[#00C805]">Live · public read</span>
+                        <span className={themeClasses.accentText}>Live · public read</span>
                       </>
                     ) : (
                       <span>Waiting for the public Robinhood quote…</span>
@@ -1349,7 +1354,7 @@ const MicroHood = () => {
                   </div>
                 ) : (
                   <div className={`flex items-center gap-1 ${
-                    (liveSelectedStock?.change ?? priceChange) >= 0 ? "text-[#00C805]" : "text-[#FF5000]"
+                    (liveSelectedStock?.change ?? priceChange) >= 0 ? themeClasses.accentText : themeClasses.negativeText
                   }`}>
                     {(liveSelectedStock?.change ?? priceChange) >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                     <span className="font-medium">
@@ -1389,7 +1394,7 @@ const MicroHood = () => {
                       setSelectedStock(DEFAULT_MSFT_STOCK);
                       setHoodRoute("home", null);
                     }}
-                    className="w-full mt-3 py-2 text-sm text-[#00C805] hover:underline"
+                    className={`w-full mt-3 py-2 text-sm ${themeClasses.accentText} hover:underline`}
                   >
                     ← Back to MSFT
                   </button>
@@ -1397,15 +1402,15 @@ const MicroHood = () => {
               </div>
 
               {/* Your Position */}
-              <div className="border-t border-gray-800 p-5">
-                <h4 className="text-sm font-medium text-gray-400 mb-3">{isRobinhoodMsft ? "Portfolio Position" : "Your Position"}</h4>
+              <div className={`border-t ${themeClasses.border} p-5`}>
+                <h4 className={`text-sm font-medium ${themeClasses.textSecondary} mb-3`}>{isRobinhoodMsft ? "Portfolio Position" : "Your Position"}</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-gray-500">Shares</p>
+                    <p className={themeClasses.textMuted}>Shares</p>
                     <p className="font-medium">{liveSelectedStock?.shares ?? ownedShares}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Market Value</p>
+                    <p className={themeClasses.textMuted}>Market Value</p>
                     <p className="font-medium">
                       {isRobinhoodMsft
                         ? "—"
@@ -1413,11 +1418,11 @@ const MicroHood = () => {
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Avg Cost</p>
+                    <p className={themeClasses.textMuted}>Avg Cost</p>
                     <p className="font-medium">{isRobinhoodMsft ? "—" : liveSelectedStock?.avgCost ? formatCurrency(liveSelectedStock.avgCost) : "$380.50"}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Total Return</p>
+                    <p className={themeClasses.textMuted}>Total Return</p>
                     {isRobinhoodMsft ? (
                       <p className={`font-medium ${themeClasses.textMuted}`}>Read-only</p>
                     ) : (() => {
@@ -1427,7 +1432,7 @@ const MicroHood = () => {
                         const returnValue = (price - avgCost) * shares;
                         const returnPercent = ((price - avgCost) / avgCost) * 100;
                         return (
-                          <p className={`font-medium ${returnValue >= 0 ? "text-[#00C805]" : "text-[#FF5000]"}`}>
+                          <p className={`font-medium ${returnValue >= 0 ? themeClasses.accentText : themeClasses.negativeText}`}>
                             {formatCurrency(returnValue)} ({returnPercent.toFixed(2)}%)
                           </p>
                         );
@@ -1437,23 +1442,23 @@ const MicroHood = () => {
               </div>
 
               {isRobinhoodMsft && robinhoodMsftQuote && (
-                <div className="border-t border-gray-800 p-5">
-                  <h4 className="text-sm font-medium text-gray-400 mb-3">Public Quote</h4>
+                <div className={`border-t ${themeClasses.border} p-5`}>
+                  <h4 className={`text-sm font-medium ${themeClasses.textSecondary} mb-3`}>Public Quote</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-gray-500">Bid</p>
+                      <p className={themeClasses.textMuted}>Bid</p>
                       <p className="font-medium">{formatCurrency(robinhoodMsftQuote.bid)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Ask</p>
+                      <p className={themeClasses.textMuted}>Ask</p>
                       <p className="font-medium">{formatCurrency(robinhoodMsftQuote.ask)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Day High</p>
+                      <p className={themeClasses.textMuted}>Day High</p>
                       <p className="font-medium">{formatCurrency(robinhoodMsftQuote.dailyHigh)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Day Low</p>
+                      <p className={themeClasses.textMuted}>Day Low</p>
                       <p className="font-medium">{formatCurrency(robinhoodMsftQuote.dailyLow)}</p>
                     </div>
                   </div>
@@ -1469,39 +1474,39 @@ const MicroHood = () => {
 
               {/* Stats */}
               {stockStats && (
-                <div className="border-t border-gray-800 p-5">
-                  <h4 className="text-sm font-medium text-gray-400 mb-3">Stats</h4>
+                <div className={`border-t ${themeClasses.border} p-5`}>
+                  <h4 className={`text-sm font-medium ${themeClasses.textSecondary} mb-3`}>Stats</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-gray-500">Open</p>
+                      <p className={themeClasses.textMuted}>Open</p>
                       <p className="font-medium">{formatCurrency(stockStats.open)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">High</p>
+                      <p className={themeClasses.textMuted}>High</p>
                       <p className="font-medium">{formatCurrency(stockStats.high)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Low</p>
+                      <p className={themeClasses.textMuted}>Low</p>
                       <p className="font-medium">{formatCurrency(stockStats.low)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Volume</p>
+                      <p className={themeClasses.textMuted}>Volume</p>
                       <p className="font-medium">{stockStats.volume}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Market Cap</p>
+                      <p className={themeClasses.textMuted}>Market Cap</p>
                       <p className="font-medium">{stockStats.marketCap}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">P/E Ratio</p>
+                      <p className={themeClasses.textMuted}>P/E Ratio</p>
                       <p className="font-medium">{stockStats.peRatio}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">52W High</p>
+                      <p className={themeClasses.textMuted}>52W High</p>
                       <p className="font-medium">{formatCurrency(stockStats.high52)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">52W Low</p>
+                      <p className={themeClasses.textMuted}>52W Low</p>
                       <p className="font-medium">{formatCurrency(stockStats.low52)}</p>
                     </div>
                   </div>
@@ -1510,8 +1515,8 @@ const MicroHood = () => {
 
               {/* Analyst Ratings */}
               {stockStats && (
-                <div className="border-t border-gray-800 p-5">
-                  <h4 className="text-sm font-medium text-gray-400 mb-3">Analyst Ratings</h4>
+                <div className={`border-t ${themeClasses.border} p-5`}>
+                  <h4 className={`text-sm font-medium ${themeClasses.textSecondary} mb-3`}>Analyst Ratings</h4>
                   <div className="flex items-center gap-2 mb-3">
                     <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden flex">
                       <div className="bg-[#00C805] h-full" style={{ width: `${stockStats.buyPct}%` }} />
@@ -1520,11 +1525,11 @@ const MicroHood = () => {
                     </div>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span className="text-[#00C805]">{stockStats.buyPct}% Buy</span>
-                    <span className="text-gray-400">{stockStats.holdPct}% Hold</span>
-                    <span className="text-[#FF5000]">{stockStats.sellPct}% Sell</span>
+                    <span className={themeClasses.accentText}>{stockStats.buyPct}% Buy</span>
+                    <span className={themeClasses.textSecondary}>{stockStats.holdPct}% Hold</span>
+                    <span className={themeClasses.negativeText}>{stockStats.sellPct}% Sell</span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">Based on {stockStats.analystCount} analyst ratings</p>
+                  <p className={`text-xs ${themeClasses.textMuted} mt-2`}>Based on {stockStats.analystCount} analyst ratings</p>
                 </div>
               )}
             </div>
@@ -1535,7 +1540,7 @@ const MicroHood = () => {
                 <h3 className={`font-bold ${themeClasses.text}`}>Watchlist</h3>
                 <button
                   onClick={() => setEditingWatchlist(!editingWatchlist)}
-                  className="text-[#00C805] text-sm hover:underline"
+                  className={`${themeClasses.accentText} text-sm hover:underline`}
                 >
                   {editingWatchlist ? "Done" : "Edit"}
                 </button>
@@ -1570,7 +1575,7 @@ const MicroHood = () => {
                       <div className="text-right flex items-center gap-2">
                         <div>
                           <p className={`font-medium ${themeClasses.text}`}>{formatCurrency(item.price)}</p>
-                          <p className={`text-xs ${item.change >= 0 ? "text-[#00C805]" : "text-[#FF5000]"}`}>
+                          <p className={`text-xs ${item.change >= 0 ? themeClasses.accentText : themeClasses.negativeText}`}>
                             {item.change >= 0 ? "+" : ""}{item.changePercent.toFixed(2)}%
                           </p>
                         </div>
@@ -1631,7 +1636,7 @@ const MicroHood = () => {
                   <div key={stock.symbol} className={`flex-shrink-0 ${themeClasses.bgTertiary} rounded-lg p-3 min-w-[100px]`}>
                     <p className={`font-medium text-sm ${themeClasses.text}`}>{stock.symbol}</p>
                     <p className={`text-xs ${themeClasses.textSecondary}`}>{formatCurrency(stock.price)}</p>
-                    <p className={`text-xs mt-1 ${stock.change >= 0 ? "text-[#00C805]" : "text-[#FF5000]"}`}>
+                    <p className={`text-xs mt-1 ${stock.change >= 0 ? themeClasses.accentText : themeClasses.negativeText}`}>
                       {stock.change >= 0 ? "+" : ""}{stock.change.toFixed(2)}%
                     </p>
                   </div>
@@ -1657,7 +1662,7 @@ const MicroHood = () => {
                 )}
                 <div>
                   <p className="font-medium">{currentUser.name}</p>
-                  <p className="text-sm text-gray-500">@{currentUser.username}</p>
+                  <p className={`text-sm ${themeClasses.textMuted}`}>@{currentUser.username}</p>
                 </div>
               </div>
             </div>
@@ -1725,7 +1730,7 @@ const MicroHood = () => {
                       onClick={() => setOrderTypeSelection("market")}
                       className={`py-3 px-4 rounded-lg text-sm font-medium transition-all ${
                         orderTypeSelection === "market"
-                          ? "bg-[#00C805]/20 border-2 border-[#00C805] text-[#00C805]"
+                          ? `bg-[#00C805]/20 border-2 border-[#00C805] ${themeClasses.accentText}`
                           : `${themeClasses.bgTertiary} border-2 border-transparent ${themeClasses.textSecondary} ${themeClasses.bgHoverSecondary}`
                       }`}
                     >
@@ -1735,7 +1740,7 @@ const MicroHood = () => {
                       onClick={() => setOrderTypeSelection("limit")}
                       className={`py-3 px-4 rounded-lg text-sm font-medium transition-all ${
                         orderTypeSelection === "limit"
-                          ? "bg-[#00C805]/20 border-2 border-[#00C805] text-[#00C805]"
+                          ? `bg-[#00C805]/20 border-2 border-[#00C805] ${themeClasses.accentText}`
                           : `${themeClasses.bgTertiary} border-2 border-transparent ${themeClasses.textSecondary} ${themeClasses.bgHoverSecondary}`
                       }`}
                     >
@@ -1837,7 +1842,7 @@ const MicroHood = () => {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className={themeClasses.textSecondary}>Action</span>
-                      <span className={orderType === "buy" ? "text-[#00C805]" : "text-[#FF5000]"}>
+                      <span className={orderType === "buy" ? themeClasses.accentText : themeClasses.negativeText}>
                         {orderType === "buy" ? "Buy" : "Sell"}
                       </span>
                     </div>
@@ -1868,11 +1873,11 @@ const MicroHood = () => {
                 </div>
 
                 {/* Buying Power / Shares Available Notice */}
-                <div className="text-sm text-gray-400 text-center">
+                <div className={`text-sm ${themeClasses.textSecondary} text-center`}>
                   {orderType === "buy" ? (
-                    <>Buying Power: <span className="text-white">{formatCurrency(buyingPower)}</span></>
+                    <>Buying Power: <span className={themeClasses.text}>{formatCurrency(buyingPower)}</span></>
                   ) : (
-                    <>Shares Available: <span className="text-white">{ownedShares}</span></>
+                    <>Shares Available: <span className={themeClasses.text}>{ownedShares}</span></>
                   )}
                 </div>
 
@@ -1882,14 +1887,14 @@ const MicroHood = () => {
                   className={`w-full py-4 rounded-full font-bold text-lg transition-all flex items-center justify-center gap-2 ${
                     orderType === "buy"
                       ? "bg-[#00C805] text-black hover:bg-[#00B504]"
-                      : "bg-[#FF5000] text-white hover:bg-[#E04500]"
+                      : `bg-[#FF5000] text-white hover:bg-[#E04500]`
                   }`}
                 >
                   <Check size={20} />
                   Confirm {orderType === "buy" ? "Purchase" : "Sale"}
                 </button>
 
-                <p className="text-xs text-gray-500 text-center">
+                <p className={`text-xs ${themeClasses.textMuted} text-center`}>
                   By confirming, you agree to execute this {orderTypeSelection} order
                 </p>
               </div>
@@ -1981,7 +1986,7 @@ const MicroHood = () => {
         <div className={`fixed top-16 right-4 w-80 ${themeClasses.bgSecondary} rounded-xl shadow-xl z-50 border ${themeClasses.border}`}>
           <div className={`p-4 border-b ${themeClasses.border} flex items-center justify-between`}>
             <h3 className="font-bold">Notifications</h3>
-            <button onClick={() => setShowNotificationsPanel(false)} className={`${themeClasses.textSecondary} hover:${themeClasses.text}`}>
+            <button onClick={() => setShowNotificationsPanel(false)} className={`${themeClasses.textSecondary} ${themeClasses.hoverText}`}>
               <X size={20} />
             </button>
           </div>
@@ -2034,7 +2039,7 @@ const MicroHood = () => {
           <div className={`p-3 border-t ${themeClasses.border}`}>
             <button
               onClick={() => setShowAllNotifications(true)}
-              className="w-full text-center text-sm text-[#00C805] hover:underline"
+              className={`w-full text-center text-sm ${themeClasses.accentText} hover:underline`}
             >
               View all notifications
             </button>
@@ -2048,7 +2053,7 @@ const MicroHood = () => {
           <div className={`${themeClasses.bgModal} w-full max-w-lg mx-4 rounded-2xl max-h-[80vh] overflow-hidden ${theme === "light" ? "border border-gray-200" : ""}`}>
             <div className={`p-4 border-b ${themeClasses.border} flex items-center justify-between sticky top-0 ${themeClasses.bgModal}`}>
               <h3 className="text-xl font-bold">All Notifications</h3>
-              <button onClick={() => { setShowAllNotifications(false); setShowNotificationsPanel(false); }} className="text-gray-400 hover:text-white">
+              <button onClick={() => { setShowAllNotifications(false); setShowNotificationsPanel(false); }} className={`${themeClasses.textSecondary} ${themeClasses.hoverText}`}>
                 <X size={24} />
               </button>
             </div>
@@ -2084,16 +2089,16 @@ const MicroHood = () => {
                       showToast("Notification viewed");
                     }
                   }}
-                  className={`w-full text-left p-4 border-b border-gray-800 last:border-0 hover:bg-gray-800 transition-colors ${notif.unread ? "bg-[#00C805]/5" : ""}`}
+                  className={`w-full text-left p-4 border-b ${themeClasses.border} last:border-0 ${themeClasses.bgHoverSecondary} transition-colors ${notif.unread ? "bg-[#00C805]/5" : ""}`}
                 >
                   <div className="flex items-start gap-3">
                     {notif.unread && <span className="w-2 h-2 bg-[#00C805] rounded-full mt-2 flex-shrink-0" />}
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-white">{notif.title}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{notif.desc}</p>
-                      <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
+                      <p className={`text-sm font-medium ${themeClasses.text}`}>{notif.title}</p>
+                      <p className={`text-xs ${themeClasses.textSecondary} mt-0.5`}>{notif.desc}</p>
+                      <p className={`text-xs ${themeClasses.textMuted} mt-1`}>{notif.time}</p>
                     </div>
-                    <ChevronRight size={14} className="text-gray-500 mt-1" />
+                    <ChevronRight size={14} className={`${themeClasses.textMuted} mt-1`} />
                   </div>
                 </button>
               ))}
@@ -2295,20 +2300,20 @@ const MicroHood = () => {
 
       {/* Rewards Modal */}
       {showRewardsModal && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-end md:items-center justify-center">
-          <div className="bg-gray-900 w-full md:w-96 md:rounded-2xl rounded-t-2xl p-6">
+        <div className={`fixed inset-0 ${themeClasses.bgOverlay} z-50 flex items-end md:items-center justify-center`}>
+          <div className={`${themeClasses.bgModal} w-full md:w-96 md:rounded-2xl rounded-t-2xl p-6 ${theme === "light" ? "border border-gray-200" : ""}`}>
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold">Rewards</h3>
-              <button onClick={() => setShowRewardsModal(false)} className="text-gray-400 hover:text-white">
+              <button onClick={() => setShowRewardsModal(false)} className={`${themeClasses.textSecondary} ${themeClasses.hoverText}`}>
                 <X size={24} />
               </button>
             </div>
             <div className="text-center py-6">
               <div className="w-16 h-16 rounded-full bg-[#00C805]/20 flex items-center justify-center mx-auto mb-4">
-                <Gift size={32} className="text-[#00C805]" />
+                <Gift size={32} className={themeClasses.accentText} />
               </div>
               <h4 className="text-2xl font-bold mb-2">Earn Free Stocks</h4>
-              <p className="text-gray-400 text-sm mb-6">Invite friends to MicroHood and you'll both get a free stock!</p>
+              <p className={`${themeClasses.textSecondary} text-sm mb-6`}>Invite friends to MicroHood and you'll both get a free stock!</p>
               <button
                 onClick={() => {
                   const referralCode = `MH${currentUser.username.toUpperCase().slice(0, 4)}${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
@@ -2321,17 +2326,17 @@ const MicroHood = () => {
                 <Copy size={18} />
                 Invite Friends
               </button>
-              <p className="text-xs text-gray-500 mt-3">Your referral link will be copied to clipboard</p>
+              <p className={`text-xs ${themeClasses.textMuted} mt-3`}>Your referral link will be copied to clipboard</p>
             </div>
-            <div className="border-t border-gray-800 mt-4 pt-4">
-              <p className="text-sm text-gray-400 mb-2">Your referral stats</p>
+            <div className={`border-t ${themeClasses.border} mt-4 pt-4`}>
+              <p className={`text-sm ${themeClasses.textSecondary} mb-2`}>Your referral stats</p>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Friends invited</span>
-                <span className="text-white">3</span>
+                <span className={themeClasses.textMuted}>Friends invited</span>
+                <span className={themeClasses.text}>3</span>
               </div>
               <div className="flex justify-between text-sm mt-1">
-                <span className="text-gray-500">Free stocks earned</span>
-                <span className="text-[#00C805]">$45.67</span>
+                <span className={themeClasses.textMuted}>Free stocks earned</span>
+                <span className={themeClasses.accentText}>$45.67</span>
               </div>
             </div>
           </div>
@@ -2340,11 +2345,11 @@ const MicroHood = () => {
 
       {/* Card Modal */}
       {showCardModal && !showCardSettingsModal && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-end md:items-center justify-center">
-          <div className="bg-gray-900 w-full md:w-96 md:rounded-2xl rounded-t-2xl p-6">
+        <div className={`fixed inset-0 ${themeClasses.bgOverlay} z-50 flex items-end md:items-center justify-center`}>
+          <div className={`${themeClasses.bgModal} w-full md:w-96 md:rounded-2xl rounded-t-2xl p-6 ${theme === "light" ? "border border-gray-200" : ""}`}>
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold">MicroHood Card</h3>
-              <button onClick={() => setShowCardModal(false)} className="text-gray-400 hover:text-white">
+              <button onClick={() => setShowCardModal(false)} className={`${themeClasses.textSecondary} ${themeClasses.hoverText}`}>
                 <X size={24} />
               </button>
             </div>
@@ -2358,8 +2363,8 @@ const MicroHood = () => {
                 </div>
               )}
               <div className="flex justify-between items-start mb-8">
-                <span className="text-xl font-bold text-[#00C805]">MicroHood</span>
-                <CreditCard size={24} className="text-gray-500" />
+                <span className={`text-xl font-bold ${themeClasses.accentText}`}>MicroHood</span>
+                <CreditCard size={24} className={themeClasses.textMuted} />
               </div>
               <p className="text-gray-400 text-sm mb-1">Card Number</p>
               <p className="text-white font-mono">•••• •••• •••• 4523</p>
@@ -2376,21 +2381,21 @@ const MicroHood = () => {
             </div>
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Available balance</span>
-                <span className="text-white">{formatCurrency(buyingPower * 0.6)}</span>
+                <span className={themeClasses.textSecondary}>Available balance</span>
+                <span className={themeClasses.text}>{formatCurrency(buyingPower * 0.6)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Pending transactions</span>
-                <span className="text-white">$0.00</span>
+                <span className={themeClasses.textSecondary}>Pending transactions</span>
+                <span className={themeClasses.text}>$0.00</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Cashback earned</span>
-                <span className="text-[#00C805]">$23.45</span>
+                <span className={themeClasses.textSecondary}>Cashback earned</span>
+                <span className={themeClasses.accentText}>$23.45</span>
               </div>
             </div>
             <button
               onClick={() => setShowCardSettingsModal(true)}
-              className="w-full py-3 mt-6 bg-gray-800 text-white font-medium rounded-full hover:bg-gray-700"
+              className={`w-full py-3 mt-6 ${themeClasses.bgTertiary} ${themeClasses.text} font-medium rounded-full ${themeClasses.bgHoverSecondary}`}
             >
               Manage Card
             </button>
@@ -2400,16 +2405,16 @@ const MicroHood = () => {
 
       {/* Card Settings Modal */}
       {showCardSettingsModal && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-end md:items-center justify-center">
-          <div className="bg-gray-900 w-full md:w-96 md:rounded-2xl rounded-t-2xl p-6">
+        <div className={`fixed inset-0 ${themeClasses.bgOverlay} z-50 flex items-end md:items-center justify-center`}>
+          <div className={`${themeClasses.bgModal} w-full md:w-96 md:rounded-2xl rounded-t-2xl p-6 ${theme === "light" ? "border border-gray-200" : ""}`}>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <button onClick={() => setShowCardSettingsModal(false)} className="text-gray-400 hover:text-white">
+                <button onClick={() => setShowCardSettingsModal(false)} className={`${themeClasses.textSecondary} ${themeClasses.hoverText}`}>
                   <ChevronDown size={24} className="rotate-90" />
                 </button>
                 <h3 className="text-xl font-bold">Card Settings</h3>
               </div>
-              <button onClick={() => { setShowCardSettingsModal(false); setShowCardModal(false); }} className="text-gray-400 hover:text-white">
+              <button onClick={() => { setShowCardSettingsModal(false); setShowCardModal(false); }} className={`${themeClasses.textSecondary} ${themeClasses.hoverText}`}>
                 <X size={24} />
               </button>
             </div>
@@ -2419,52 +2424,52 @@ const MicroHood = () => {
                   setCardFrozen(!cardFrozen);
                   showToast(cardFrozen ? "Card unfrozen" : "Card frozen temporarily");
                 }}
-                className="w-full p-4 bg-gray-800 rounded-xl text-left hover:bg-gray-700 transition-colors flex items-center gap-4"
+                className={`w-full p-4 ${themeClasses.bgSecondary} rounded-xl text-left ${themeClasses.bgHoverSecondary} transition-colors flex items-center gap-4`}
               >
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${cardFrozen ? "bg-green-500/20" : "bg-blue-500/20"}`}>
                   {cardFrozen ? <Unlock size={20} className="text-green-400" /> : <Lock size={20} className="text-blue-400" />}
                 </div>
                 <div className="flex-1">
                   <p className="font-medium">{cardFrozen ? "Unfreeze Card" : "Freeze Card"}</p>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <p className={`text-sm ${themeClasses.textSecondary} mt-1`}>
                     {cardFrozen ? "Enable card for transactions" : "Temporarily disable all transactions"}
                   </p>
                 </div>
               </button>
               <button
                 onClick={() => showToast("PIN change request sent to your email")}
-                className="w-full p-4 bg-gray-800 rounded-xl text-left hover:bg-gray-700 transition-colors flex items-center gap-4"
+                className={`w-full p-4 ${themeClasses.bgSecondary} rounded-xl text-left ${themeClasses.bgHoverSecondary} transition-colors flex items-center gap-4`}
               >
                 <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
                   <Key size={20} className="text-purple-400" />
                 </div>
                 <div className="flex-1">
                   <p className="font-medium">Change PIN</p>
-                  <p className="text-sm text-gray-400 mt-1">Update your card PIN</p>
+                  <p className={`text-sm ${themeClasses.textSecondary} mt-1`}>Update your card PIN</p>
                 </div>
               </button>
               <button
                 onClick={() => showToast("Report submitted - new card will arrive in 5-7 days")}
-                className="w-full p-4 bg-gray-800 rounded-xl text-left hover:bg-gray-700 transition-colors flex items-center gap-4"
+                className={`w-full p-4 ${themeClasses.bgSecondary} rounded-xl text-left ${themeClasses.bgHoverSecondary} transition-colors flex items-center gap-4`}
               >
                 <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
                   <AlertTriangle size={20} className="text-red-400" />
                 </div>
                 <div className="flex-1">
                   <p className="font-medium">Report Lost or Stolen</p>
-                  <p className="text-sm text-gray-400 mt-1">Deactivate and request replacement</p>
+                  <p className={`text-sm ${themeClasses.textSecondary} mt-1`}>Deactivate and request replacement</p>
                 </div>
               </button>
               <button
                 onClick={() => showToast("Statements available in your email")}
-                className="w-full p-4 bg-gray-800 rounded-xl text-left hover:bg-gray-700 transition-colors flex items-center gap-4"
+                className={`w-full p-4 ${themeClasses.bgSecondary} rounded-xl text-left ${themeClasses.bgHoverSecondary} transition-colors flex items-center gap-4`}
               >
                 <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center">
-                  <FileText size={20} className="text-gray-400" />
+                  <FileText size={20} className={themeClasses.textSecondary} />
                 </div>
                 <div className="flex-1">
                   <p className="font-medium">View Statements</p>
-                  <p className="text-sm text-gray-400 mt-1">Download monthly statements</p>
+                  <p className={`text-sm ${themeClasses.textSecondary} mt-1`}>Download monthly statements</p>
                 </div>
               </button>
             </div>
@@ -2474,39 +2479,39 @@ const MicroHood = () => {
 
       {/* IRA Contribution Modal */}
       {showIRAModal && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-end md:items-center justify-center">
-          <div className="bg-gray-900 w-full md:w-96 md:rounded-2xl rounded-t-2xl p-6">
+        <div className={`fixed inset-0 ${themeClasses.bgOverlay} z-50 flex items-end md:items-center justify-center`}>
+          <div className={`${themeClasses.bgModal} w-full md:w-96 md:rounded-2xl rounded-t-2xl p-6 ${theme === "light" ? "border border-gray-200" : ""}`}>
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold">Contribute to IRA</h3>
-              <button onClick={() => { setShowIRAModal(false); setIraContribution(""); }} className="text-gray-400 hover:text-white">
+              <button onClick={() => { setShowIRAModal(false); setIraContribution(""); }} className={`${themeClasses.textSecondary} ${themeClasses.hoverText}`}>
                 <X size={24} />
               </button>
             </div>
             <div className="space-y-4">
-              <div className="bg-gray-800 rounded-xl p-4">
+              <div className={`${themeClasses.bgSecondary} rounded-xl p-4`}>
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-400">Current IRA Balance</span>
-                  <span className="text-white font-medium">{formatCurrency(iraBalance)}</span>
+                  <span className={themeClasses.textSecondary}>Current IRA Balance</span>
+                  <span className={`${themeClasses.text} font-medium`}>{formatCurrency(iraBalance)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">2024 Contribution Limit</span>
-                  <span className="text-white font-medium">$7,000</span>
+                  <span className={themeClasses.textSecondary}>2024 Contribution Limit</span>
+                  <span className={`${themeClasses.text} font-medium`}>$7,000</span>
                 </div>
                 <div className="flex justify-between text-sm mt-2">
-                  <span className="text-gray-400">Remaining this year</span>
-                  <span className="text-[#00C805] font-medium">{formatCurrency(Math.max(0, 7000 - iraBalance * 0.3))}</span>
+                  <span className={themeClasses.textSecondary}>Remaining this year</span>
+                  <span className={`${themeClasses.accentText} font-medium`}>{formatCurrency(Math.max(0, 7000 - iraBalance * 0.3))}</span>
                 </div>
               </div>
               <div>
-                <label className="text-sm text-gray-400">Contribution Amount</label>
+                <label className={`text-sm ${themeClasses.textSecondary}`}>Contribution Amount</label>
                 <div className="relative mt-2">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">$</span>
+                  <span className={`absolute left-4 top-1/2 -translate-y-1/2 ${themeClasses.textSecondary} text-xl`}>$</span>
                   <input
                     type="number"
                     value={iraContribution}
                     onChange={(e) => setIraContribution(e.target.value)}
                     placeholder="0.00"
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-4 text-2xl font-medium focus:border-[#00C805] focus:outline-none"
+                    className={`w-full ${themeClasses.bgInput} border ${themeClasses.borderSecondary} rounded-lg pl-10 pr-4 py-4 text-2xl font-medium focus:border-[#00C805] focus:outline-none ${themeClasses.text}`}
                   />
                 </div>
               </div>
@@ -2515,13 +2520,13 @@ const MicroHood = () => {
                   <button
                     key={amount}
                     onClick={() => setIraContribution(amount.toString())}
-                    className="flex-1 py-2 bg-gray-800 rounded-lg text-sm hover:bg-gray-700 transition-colors"
+                    className={`flex-1 py-2 ${themeClasses.bgTertiary} rounded-lg text-sm ${themeClasses.bgHoverSecondary} transition-colors`}
                   >
                     ${amount}
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-gray-500">Contributions from your buying power. Tax-deductible up to annual limit.</p>
+              <p className={`text-xs ${themeClasses.textMuted}`}>Contributions from your buying power. Tax-deductible up to annual limit.</p>
               <button
                 onClick={() => {
                   const amount = parseFloat(iraContribution);
@@ -2540,7 +2545,7 @@ const MicroHood = () => {
                 disabled={!iraContribution || parseFloat(iraContribution) <= 0}
                 className={`w-full py-4 rounded-full font-bold ${
                   !iraContribution || parseFloat(iraContribution) <= 0
-                    ? "bg-gray-700 text-gray-500 cursor-not-allowed"
+                    ? `${themeClasses.bgTertiary} ${themeClasses.textMuted} cursor-not-allowed`
                     : "bg-[#00C805] text-black hover:bg-[#00B504]"
                 }`}
               >
@@ -2558,7 +2563,7 @@ const MicroHood = () => {
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <h3 className={`text-xl font-bold ${themeClasses.text}`}>Settings</h3>
-              <button onClick={() => setShowSettingsModal(false)} className={`${themeClasses.textSecondary} hover:${themeClasses.text}`}>
+              <button onClick={() => setShowSettingsModal(false)} className={`${themeClasses.textSecondary} ${themeClasses.hoverText}`}>
                 <X size={24} />
               </button>
             </div>
@@ -2569,9 +2574,9 @@ const MicroHood = () => {
               <div className={`flex items-center justify-between p-4 ${themeClasses.bgSecondary} rounded-xl`}>
                 <div className="flex items-center gap-3">
                   {theme === "dark" ? (
-                    <Moon size={20} className="text-[#00C805]" />
+                    <Moon size={20} className={themeClasses.accentText} />
                   ) : (
-                    <Sun size={20} className="text-[#00C805]" />
+                    <Sun size={20} className={themeClasses.accentText} />
                   )}
                   <div>
                     <p className={`font-medium ${themeClasses.text}`}>Appearance</p>
@@ -2582,6 +2587,10 @@ const MicroHood = () => {
                 </div>
                 <button
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  type="button"
+                  aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+                  aria-pressed={theme === "light"}
+                  title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
                   className={`relative w-14 h-8 rounded-full transition-colors ${
                     theme === "light" ? "bg-[#00C805]" : themeClasses.bgTertiary
                   }`}
@@ -2605,7 +2614,7 @@ const MicroHood = () => {
                 </div>
                 <button
                   onClick={() => showToast("Notification settings updated")}
-                  className={`px-3 py-1.5 ${themeClasses.bgTertiary} rounded-lg text-sm font-medium ${themeClasses.textSecondary} hover:${themeClasses.text}`}
+                  className={`px-3 py-1.5 ${themeClasses.bgTertiary} rounded-lg text-sm font-medium ${themeClasses.textSecondary} ${themeClasses.hoverText}`}
                 >
                   Manage
                 </button>
