@@ -72,6 +72,7 @@ def config() -> RobinhoodChainConfig:
         asset_api_url="https://api.robinhood.com/rhj",
         timeout_seconds=1,
         metadata_ttl_seconds=60,
+        price_feeds={},
         writes_enabled=False,
     )
 
@@ -115,6 +116,72 @@ def test_prices_and_corporate_actions_are_read_only_calls():
     assert client.prices("aapl")["quotes"][0]["tokenSymbol"] == "AAPL"
     assert client.corporate_actions() == {"corpActions": []}
     assert not session.post_calls
+
+
+def test_asset_config_fails_closed_when_symbol_has_no_configured_chain_deployment():
+    session = FakeSession()
+    result = RobinhoodChainClient(config(), session=session).asset_config("AAPL")
+    assert result["supported"] is False
+    assert "no deployment" in result["reason"]
+    assert result["price_feed"]["status"] == "not_applicable"
+    assert not session.post_calls
+
+
+def test_asset_config_validates_mainnet_token_contract_and_multiplier():
+    class MainnetSession(FakeSession):
+        def get(self, url: str, **kwargs):
+            self.get_calls.append((url, kwargs))
+            if url.endswith("/assets"):
+                return FakeResponse(
+                    {
+                        "assets": [
+                            {
+                                "tokenSymbol": "AAPL",
+                                "status": "ASSET_STATUS_ACTIVE",
+                                "currentMultiplier": "1.000000000000000000",
+                                "deployments": [
+                                    {
+                                        "contractAddress": "0x1111111111111111111111111111111111111111",
+                                        "chainId": 4663,
+                                    }
+                                ],
+                            }
+                        ]
+                    }
+                )
+            raise AssertionError(f"unexpected GET {url}")
+
+        def post(self, url: str, **kwargs):
+            self.post_calls.append((url, kwargs))
+            method = kwargs["json"]["method"]
+            params = kwargs["json"]["params"]
+            if method == "eth_getCode":
+                return FakeResponse({"jsonrpc": "2.0", "id": 1, "result": "0x6000"})
+            if method == "eth_call":
+                selector = params[0]["data"]
+                if selector == "0x313ce567":
+                    return FakeResponse({"jsonrpc": "2.0", "id": 1, "result": hex(18)})
+                if selector == "0xa60bf13d":
+                    return FakeResponse({"jsonrpc": "2.0", "id": 1, "result": hex(10**18)})
+            raise AssertionError(f"unexpected RPC call {method} {params}")
+
+    mainnet = RobinhoodChainConfig(
+        network="mainnet",
+        chain_id=4663,
+        rpc_url="https://rpc.mainnet.chain.robinhood.com",
+        explorer_url="https://robinhoodchain.blockscout.com",
+        asset_api_url="https://api.robinhood.com/rhj",
+        timeout_seconds=1,
+        metadata_ttl_seconds=60,
+        price_feeds={},
+        writes_enabled=False,
+    )
+    result = RobinhoodChainClient(mainnet, session=MainnetSession()).asset_config("AAPL")
+    assert result["supported"] is True
+    assert result["token_contract"]["code_present"] is True
+    assert result["token_contract"]["decimals"] == 18
+    assert result["token_contract"]["ui_multiplier"] == str(10**18)
+    assert result["token_contract"]["api_multiplier_matches_onchain"] is True
 
 
 def test_rpc_error_is_normalized_without_leaking_payload():
