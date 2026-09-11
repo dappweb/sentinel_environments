@@ -644,6 +644,18 @@ async def robinhood_chain_assets(symbol: Optional[str] = Query(None)) -> JSONRes
     return JSONResponse(content=result)
 
 
+@app.get("/chain/robinhood/asset-config/{symbol}")
+async def robinhood_chain_asset_config(symbol: str) -> JSONResponse:
+    """Resolve one official asset and validate its configured chain contract."""
+    try:
+        result = get_robinhood_chain_client().asset_config(symbol)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RobinhoodChainError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return JSONResponse(content=result)
+
+
 @app.get("/chain/robinhood/prices/{symbol}")
 async def robinhood_chain_prices(symbol: str) -> JSONResponse:
     """Read a Stock Token quote without enabling any transaction path."""
