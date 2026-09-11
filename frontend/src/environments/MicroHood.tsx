@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useHashRoute } from "../hooks/useHashRoute";
-import { useMicrohoodData } from "../hooks/useMicrohoodData";
+import { useMicrohoodData, type RobinhoodAsset } from "../hooks/useMicrohoodData";
 import PrivyAccountButton from "../components/PrivyAccountButton";
 import {
   Search,
@@ -78,6 +78,33 @@ const XBrandIcon = ({ size = 16 }: { size?: number }) => (
   </svg>
 );
 
+const StockTokenLogo = ({
+  asset,
+  size = "h-8 w-8",
+}: {
+  asset?: Pick<RobinhoodAsset, "tokenSymbol" | "logoUrl">;
+  size?: string;
+}) => {
+  const [imageFailed, setImageFailed] = useState(false);
+  const symbol = asset?.tokenSymbol ?? "?";
+
+  return (
+    <span className={`flex ${size} shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#0078D4] text-xs font-bold text-white`}>
+      {asset?.logoUrl && !imageFailed ? (
+        <img
+          src={asset.logoUrl}
+          alt={`${symbol} logo`}
+          loading="lazy"
+          onError={() => setImageFailed(true)}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        symbol.slice(0, 1)
+      )}
+    </span>
+  );
+};
+
 // ============================================================================
 // TYPE DEFINITIONS (UI-only)
 // ============================================================================
@@ -152,6 +179,11 @@ const MicroHood = () => {
       .sort((a, b) => (rank.get(a.tokenSymbol.toUpperCase()) ?? 999) - (rank.get(b.tokenSymbol.toUpperCase()) ?? 999));
   }, [robinhoodAssets]);
 
+  const robinhoodAssetBySymbol = useMemo(
+    () => new Map(robinhoodAssets.map((asset) => [asset.tokenSymbol.toUpperCase(), asset])),
+    [robinhoodAssets],
+  );
+
   // Watchlist from API -- enrich with inWatchlist flag
   const watchlistItems = useMemo(() =>
     apiWatchlist.map(w => ({ ...w, color: "#6B7280", inWatchlist: true })),
@@ -183,7 +215,6 @@ const MicroHood = () => {
   const [showRewardsModal, setShowRewardsModal] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
   const [buyingPowerExpanded, setBuyingPowerExpanded] = useState(false);
-  const [showAllStocks, setShowAllStocks] = useState(false);
   // Derived from the route so the desktop top nav (Investing/Crypto/Spending/
   // Retirement) survives refresh and shareable URLs. "home" maps to investing.
   const activeNavSection: "investing" | "crypto" | "spending" | "retirement" =
@@ -1092,19 +1123,10 @@ const MicroHood = () => {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold">Stocks</h2>
-                <button
-                  onClick={() => setShowAllStocks(!showAllStocks)}
-                  className="text-[#00C805] text-sm font-medium hover:underline"
-                >
-                  {showAllStocks ? "Show Less" : "Show More"}
-                </button>
               </div>
               <div className="space-y-1">
                 {/* Show only stocks user owns, with dynamic prices */}
-                {(showAllStocks
-                  ? allStocksWithCurrentPrices.filter(s => s.shares > 0)
-                  : allStocksWithCurrentPrices.filter(s => s.shares > 0).slice(0, 3)
-                ).map((stock) => {
+                {allStocksWithCurrentPrices.filter(s => s.shares > 0).map((stock) => {
                   const value = stock.shares * stock.currentPrice;
                   const gain = (stock.currentPrice - stock.avgCost) * stock.shares;
                   const gainPercent = stock.avgCost > 0 ? ((stock.currentPrice - stock.avgCost) / stock.avgCost) * 100 : 0;
@@ -1129,12 +1151,16 @@ const MicroHood = () => {
                       className="w-full flex items-center justify-between p-4 hover:bg-gray-900 rounded-xl transition-colors group"
                     >
                       <div className="flex items-center gap-4">
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
-                          style={{ backgroundColor: stock.color }}
-                        >
-                          {stock.symbol.charAt(0)}
-                        </div>
+                        {robinhoodAssetBySymbol.has(stock.symbol.toUpperCase()) ? (
+                          <StockTokenLogo asset={robinhoodAssetBySymbol.get(stock.symbol.toUpperCase())} size="h-10 w-10" />
+                        ) : (
+                          <div
+                            className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white"
+                            style={{ backgroundColor: stock.color }}
+                          >
+                            {stock.symbol.charAt(0)}
+                          </div>
+                        )}
                         <div className="text-left">
                           <p className="font-medium">{stock.symbol}</p>
                           <p className="text-sm text-gray-500">{stock.shares} shares</p>
@@ -1150,8 +1176,7 @@ const MicroHood = () => {
                   );
                 })}
               </div>
-              {showAllStocks && (
-                <div className={`mt-6 border-t ${themeClasses.border} pt-5`}>
+              <div className={`mt-6 border-t ${themeClasses.border} pt-5`}>
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <div>
                       <p className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${themeClasses.textMuted}`}>Robinhood Chain · US stock tokens</p>
@@ -1175,9 +1200,7 @@ const MicroHood = () => {
                             title={`${displayName} · ${deployment.contractAddress}`}
                           >
                             <span className="flex min-w-0 items-center gap-2.5">
-                              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0078D4] text-xs font-bold text-white">
-                                {asset.tokenSymbol.slice(0, 1)}
-                              </span>
+                              <StockTokenLogo asset={asset} />
                               <span className="min-w-0">
                                 <span className={`block font-semibold ${themeClasses.text}`}>{asset.tokenSymbol}</span>
                                 <span className={`block truncate text-[10px] ${themeClasses.textMuted}`}>{displayName}</span>
@@ -1193,8 +1216,7 @@ const MicroHood = () => {
                   ) : (
                     <p className={`rounded-xl ${themeClasses.bgSecondary} p-4 text-sm ${themeClasses.textMuted}`}>Loading the official Robinhood asset registry…</p>
                   )}
-                </div>
-              )}
+              </div>
             </div>
           </div>
 
@@ -1205,14 +1227,21 @@ const MicroHood = () => {
               <div className="p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div
-                      className="w-12 h-12 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: liveSelectedStock?.color || "#00A4EF" }}
-                    >
-                      <span className="text-white font-bold text-lg">
-                        {liveSelectedStock?.symbol?.[0] || "M"}
-                      </span>
-                    </div>
+                    {robinhoodAssetBySymbol.has(liveSelectedStock?.symbol?.toUpperCase() || "MSFT") ? (
+                      <StockTokenLogo
+                        asset={robinhoodAssetBySymbol.get(liveSelectedStock?.symbol?.toUpperCase() || "MSFT")}
+                        size="h-12 w-12"
+                      />
+                    ) : (
+                      <div
+                        className="flex h-12 w-12 items-center justify-center rounded-full"
+                        style={{ backgroundColor: liveSelectedStock?.color || "#00A4EF" }}
+                      >
+                        <span className="text-lg font-bold text-white">
+                          {liveSelectedStock?.symbol?.[0] || "M"}
+                        </span>
+                      </div>
+                    )}
                     <div>
                       <p className="font-bold text-lg">{liveSelectedStock?.symbol || "MSFT"}</p>
                       <p className={`text-sm ${themeClasses.textSecondary}`}>{liveSelectedStock?.name || "Microsoft · Robinhood Stock Token"}</p>
