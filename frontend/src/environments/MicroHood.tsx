@@ -30,6 +30,7 @@ import {
   EyeOff,
   Plus,
   Copy,
+  Github,
   DollarSign,
   Building,
   Briefcase,
@@ -39,6 +40,22 @@ import {
 } from "lucide-react";
 
 export const TASK_ID_MICROHOOD = "microhood";
+
+const PROJECT_DOMAIN_URL =
+  import.meta.env.VITE_PROJECT_DOMAIN_URL ?? "https://microhood.ai";
+const PROJECT_X_URL = "https://x.com/microhood_ai";
+const RESEARCH_X_URL = "https://x.com/MSFTResearch";
+const PROJECT_REPO_URL =
+  import.meta.env.VITE_PROJECT_REPO_URL ??
+  "https://github.com/microsoft/sentinel_environments";
+const ROBINHOOD_MAINNET_EXPLORER = "https://robinhoodchain.blockscout.com";
+const MSFT_STOCK_TOKEN_ADDRESS =
+  "0xe93237C50D904957Cf27E7B1133b510C669c2e74";
+const MICROHOOD_PROJECT_TOKEN_ADDRESS =
+  "0x6be1478173ccb95e31d8b22b0b71efde24e2f0c4";
+
+const shortenAddress = (address: string) =>
+  `${address.slice(0, 6)}…${address.slice(-4)}`;
 
 // ============================================================================
 // TYPE DEFINITIONS (UI-only)
@@ -111,6 +128,7 @@ const MicroHood = () => {
 
   // ===================== UI STATE =====================
   const [toast, setToast] = useState<string | null>(null);
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [orderType, setOrderType] = useState<"buy" | "sell" | null>(null);
   const [selectedTimeframe, setSelectedTimeframe] = useState("1D");
 
@@ -315,6 +333,17 @@ const MicroHood = () => {
     setToast(message);
     setTimeout(() => setToast(null), 2500);
   }, []);
+
+  const copyAddress = useCallback(async (address: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopiedAddress(address);
+      showToast(`${label} copied`);
+      window.setTimeout(() => setCopiedAddress(null), 1600);
+    } catch {
+      showToast("Copy failed");
+    }
+  }, [showToast]);
 
   // Handlers
   const handleSelectStock = useCallback((stock: {
@@ -602,7 +631,7 @@ const MicroHood = () => {
             {/* Logo */}
             <div className="flex items-center gap-8">
               <div className="flex items-center gap-2">
-                <img src="desktop/microhood-icon.png" alt="MicroHood" className="w-8 h-8 object-contain" />
+                <img src={`${import.meta.env.BASE_URL}desktop/microhood-icon.png`} alt="MicroHood" className="w-8 h-8 object-contain" />
                 <span className="text-xl font-bold text-white">MicroHood</span>
               </div>
 
@@ -670,6 +699,116 @@ const MicroHood = () => {
           </div>
         </div>
       </header>
+
+      {/* Project identity rail: public links and explicit token provenance. */}
+      <div className={`border-b ${themeClasses.border} ${theme === "dark" ? "bg-[#0B0F12]" : "bg-gray-50"}`}>
+        <div className="max-w-7xl mx-auto px-4 py-2.5">
+          <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]">
+              <span className={`${themeClasses.textMuted} whitespace-nowrap`}>MicroHood / SentinelBench</span>
+              <a
+                href={PROJECT_DOMAIN_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap text-[#7ABEF0] transition hover:text-white"
+              >
+                microhood.ai <ArrowUpRight size={12} />
+              </a>
+              <a
+                href={PROJECT_X_URL}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="X @microhood_ai"
+                className={`inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap ${themeClasses.textSecondary} transition hover:text-[#00C805]`}
+              >
+                X <span className="normal-case tracking-normal">@microhood_ai</span>
+              </a>
+              <a
+                href={RESEARCH_X_URL}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Microsoft Research on X"
+                className={`inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap ${themeClasses.textSecondary} transition hover:text-[#00C805]`}
+              >
+                Research <span className="normal-case tracking-normal">@MSFTResearch</span>
+              </a>
+              <a
+                href={PROJECT_REPO_URL}
+                target="_blank"
+                rel="noreferrer"
+                className={`inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap ${themeClasses.textSecondary} transition hover:text-[#00C805]`}
+              >
+                <Github size={13} /> GitHub
+              </a>
+            </div>
+
+            <details className="relative self-start xl:self-auto">
+              <summary className={`flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-full border ${themeClasses.borderSecondary} px-3 text-[10px] font-semibold uppercase tracking-[0.12em] ${themeClasses.textSecondary} transition hover:border-[#00C805] hover:text-[#00C805]`}>
+                Token addresses
+                <span className="hidden font-mono text-[9px] normal-case tracking-normal text-gray-500 sm:inline">
+                  MSFT {shortenAddress(MSFT_STOCK_TOKEN_ADDRESS)} · CA {shortenAddress(MICROHOOD_PROJECT_TOKEN_ADDRESS)}
+                </span>
+                <ChevronDown size={13} />
+              </summary>
+              <div className={`absolute right-0 top-11 z-30 w-[min(92vw,34rem)] rounded-xl border ${themeClasses.borderSecondary} ${themeClasses.bgModal} p-4 shadow-2xl`}>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className={`text-[10px] font-semibold uppercase tracking-[0.12em] ${themeClasses.textMuted}`}>Official Robinhood Stock Token · MSFT</p>
+                        <a
+                          href={`${ROBINHOOD_MAINNET_EXPLORER}/address/${MSFT_STOCK_TOKEN_ADDRESS}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-1 block break-all font-mono text-xs text-[#7ABEF0] transition hover:text-white"
+                        >
+                          {MSFT_STOCK_TOKEN_ADDRESS}
+                        </a>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Copy official MSFT Stock Token address"
+                        title="Copy official MSFT Stock Token address"
+                        onClick={() => void copyAddress(MSFT_STOCK_TOKEN_ADDRESS, "MSFT address")}
+                        className={`flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-lg ${themeClasses.bgTertiary} ${themeClasses.textSecondary} transition hover:text-[#00C805]`}
+                      >
+                        {copiedAddress === MSFT_STOCK_TOKEN_ADDRESS ? <Check size={15} /> : <Copy size={15} />}
+                      </button>
+                    </div>
+                    <p className={`mt-1 text-[10px] ${themeClasses.textMuted}`}>Canonical mainnet address · chain 4663 · read-only UI</p>
+                  </div>
+
+                  <div className={`border-t ${themeClasses.border} pt-4`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className={`text-[10px] font-semibold uppercase tracking-[0.12em] ${themeClasses.textMuted}`}>MicroHood project CA</p>
+                        <a
+                          href={`${ROBINHOOD_MAINNET_EXPLORER}/address/${MICROHOOD_PROJECT_TOKEN_ADDRESS}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-1 block break-all font-mono text-xs text-[#7ABEF0] transition hover:text-white"
+                        >
+                          {MICROHOOD_PROJECT_TOKEN_ADDRESS}
+                        </a>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Copy MicroHood project CA"
+                        title="Copy MicroHood project CA"
+                        onClick={() => void copyAddress(MICROHOOD_PROJECT_TOKEN_ADDRESS, "Project CA")}
+                        className={`flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-lg ${themeClasses.bgTertiary} ${themeClasses.textSecondary} transition hover:text-[#00C805]`}
+                      >
+                        {copiedAddress === MICROHOOD_PROJECT_TOKEN_ADDRESS ? <Check size={15} /> : <Copy size={15} />}
+                      </button>
+                    </div>
+                    <p className={`mt-1 text-[10px] ${themeClasses.textMuted}`}>Project token · separate from the Microsoft equity stock token</p>
+                  </div>
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
