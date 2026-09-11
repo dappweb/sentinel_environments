@@ -153,6 +153,10 @@ from server.schemas import (
     WatchResponse,
 )
 from server.session import Session, build_event_timeline
+from server.robinhood_chain import (
+    RobinhoodChainError,
+    get_robinhood_chain_client,
+)
 
 _SHARED_DB = Path(__file__).parent / "shared.db"
 _SCENARIOS: dict[str, dict] = {}
@@ -612,6 +616,54 @@ async def dev_init(environment: str = Query(...)) -> JSONResponse:
 # ---------------------------------------------------------------------------
 # Data endpoints -- shared
 # ---------------------------------------------------------------------------
+
+@app.get("/chain/robinhood/config")
+async def robinhood_chain_config() -> JSONResponse:
+    """Return safe read-only integration metadata for the current process."""
+    client = get_robinhood_chain_client()
+    return JSONResponse(content=client.config.public_dict())
+
+
+@app.get("/chain/robinhood/health")
+async def robinhood_chain_health() -> JSONResponse:
+    """Read the configured Robinhood Chain network and current head block."""
+    try:
+        result = get_robinhood_chain_client().health()
+    except RobinhoodChainError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return JSONResponse(content=result)
+
+
+@app.get("/chain/robinhood/assets")
+async def robinhood_chain_assets(symbol: Optional[str] = Query(None)) -> JSONResponse:
+    """Read canonical Stock Token metadata from Robinhood's public API."""
+    try:
+        result = get_robinhood_chain_client().assets(symbol=symbol)
+    except RobinhoodChainError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return JSONResponse(content=result)
+
+
+@app.get("/chain/robinhood/prices/{symbol}")
+async def robinhood_chain_prices(symbol: str) -> JSONResponse:
+    """Read a Stock Token quote without enabling any transaction path."""
+    try:
+        result = get_robinhood_chain_client().prices(symbol)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RobinhoodChainError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return JSONResponse(content=result)
+
+
+@app.get("/chain/robinhood/corporate-actions")
+async def robinhood_chain_corporate_actions() -> JSONResponse:
+    """Read corporate actions used to reconcile Stock Token multipliers."""
+    try:
+        result = get_robinhood_chain_client().corporate_actions()
+    except RobinhoodChainError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return JSONResponse(content=result)
 
 @app.get("/data/config", response_model=ConfigResponse)
 async def data_config(request: Request) -> ConfigResponse:
