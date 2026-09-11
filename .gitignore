@@ -169,6 +169,11 @@ junit.xml
 coverage.xml
 test-results/
 
+# Foundry build artifacts
+# -----------------------
+contracts/cache/
+contracts/out/
+
 # Jupyter Notebooks
 # ------------------
 .ipynb_checkpoints/
