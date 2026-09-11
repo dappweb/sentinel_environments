@@ -54,6 +54,7 @@ export function useMicrohoodData() {
   const [error, setError] = useState<string | null>(null);
 
   const configLoaded = useRef(false);
+  const sessionInitAttempted = useRef(false);
   const mismatch = useRef(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -63,6 +64,19 @@ export function useMicrohoodData() {
     // Retry config until loaded
     if (!configLoaded.current) {
       fetch("/api/data/config")
+        .then(async (r) => {
+          if (r.status === 409 && !sessionInitAttempted.current) {
+            sessionInitAttempted.current = true;
+            const initRes = await fetch("/api/dev_init?environment=microhood", {
+              method: "POST",
+            });
+            if (!initRes.ok) {
+              throw new Error(`MicroHood init failed: ${initRes.status}`);
+            }
+            return fetch("/api/data/config");
+          }
+          return r;
+        })
         .then((r) => {
           if (!r.ok) throw new Error(`Config fetch failed: ${r.status}`);
           return r.json();
@@ -79,7 +93,14 @@ export function useMicrohoodData() {
           configLoaded.current = true;
           setConfig(data);
         })
-        .catch(() => {}); // Will retry on next poll
+        .catch((e) => {
+          setError(String(e));
+          setIsLoading(false);
+        });
+
+      // Data endpoints require a session. Let the next poll run after the
+      // config/init request above has established one.
+      return;
     }
 
     // Poll stocks, portfolio, watchlist, news in parallel

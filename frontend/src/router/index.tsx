@@ -1,7 +1,6 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import { Suspense } from "react";
 import Desktop from "../pages/Desktop";
-import Landing from "../pages/Landing";
 import NotFound from "../pages/NotFound";
 import RouteErrorBoundary from "../components/RouteErrorBoundary";
 import { routes } from "./routes";
@@ -24,7 +23,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/",
-    element: <Landing />,
+    element: <Navigate to="/microhood" replace />,
     errorElement: <RouteErrorBoundary />,
   },
   ...uniqueRoutableRoutes
