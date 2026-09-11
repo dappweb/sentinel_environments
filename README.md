@@ -15,7 +15,7 @@
 
 **Sentinel Environments** is a benchmark of 10 high-fidelity web-app replicas that tests whether an agent can *wait*, *monitor*, and *act* only when a condition is met. Each environment replays a scripted timeline of events; the agent must notice the right moment and respond, without wasting resources polling in between.
 
-Project site: [microhood.ai](https://microhood.ai) · X: [@microhood_ai](https://x.com/microhood_ai)
+Project site: [microhood.ai](https://microhood.ai) · Project X: [@microhood_ai](https://x.com/microhood_ai) · Research: [@MSFTResearch](https://x.com/MSFTResearch)
 
 This README covers **how to run the benchmark**. For the motivation, task design, and baseline results, see the [paper](https://arxiv.org/abs/2606.05342) and [blog post](https://www.microsoft.com/en-us/research/articles/sentinelbench-a-benchmark-for-long-running-monitoring-agents/).
 
@@ -46,6 +46,12 @@ uses the official `MSFT` Stock Token as its concrete asset case. See
 [`ROBINHOOD_CHAIN_MSFT_CASE.md`](ROBINHOOD_CHAIN_MSFT_CASE.md) for the verified
 mainnet deployment, validation flow, and the distinction between the official
 MSFT asset and the separately displayed project CA.
+
+The guarded ERC-20 adapter is documented in
+[`ROBINHOOD_CHAIN_ERC20_ADAPTER.md`](ROBINHOOD_CHAIN_ERC20_ADAPTER.md). It
+constructs only bounded `transfer` and `approve` calls through a user-owned
+account module; it does not custody assets or execute swaps, bridges, or
+arbitrary calldata.
 
 ## Quick Start
 
