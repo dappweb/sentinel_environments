@@ -61,6 +61,55 @@ const TOP_ROBINHOOD_SYMBOLS = [
   "JPM", "V", "MA", "KO",
 ];
 
+type StockTokenVisual = {
+  background: string;
+  foreground: string;
+  mark: string;
+};
+
+// The public registry may omit a logo URL, and the API can be temporarily
+// unavailable while the page is loading. Keep a deterministic local badge for
+// every supported symbol so no stock-token surface renders an empty icon.
+const STOCK_TOKEN_VISUALS: Record<string, StockTokenVisual> = {
+  MSFT: { background: "#0078D4", foreground: "#FFFFFF", mark: "MS" },
+  AAPL: { background: "#111827", foreground: "#FFFFFF", mark: "AP" },
+  NVDA: { background: "#76B900", foreground: "#0B1A00", mark: "NV" },
+  AMZN: { background: "#FF9900", foreground: "#241100", mark: "AM" },
+  GOOGL: { background: "#4285F4", foreground: "#FFFFFF", mark: "GO" },
+  META: { background: "#0866FF", foreground: "#FFFFFF", mark: "ME" },
+  TSLA: { background: "#E82127", foreground: "#FFFFFF", mark: "TS" },
+  AVGO: { background: "#CC092F", foreground: "#FFFFFF", mark: "AV" },
+  AMD: { background: "#ED1C24", foreground: "#FFFFFF", mark: "AD" },
+  ORCL: { background: "#F80000", foreground: "#FFFFFF", mark: "OR" },
+  NFLX: { background: "#E50914", foreground: "#FFFFFF", mark: "NF" },
+  TSM: { background: "#1E6AA8", foreground: "#FFFFFF", mark: "TS" },
+  INTC: { background: "#0071C5", foreground: "#FFFFFF", mark: "IN" },
+  CRM: { background: "#0D9DDA", foreground: "#FFFFFF", mark: "CR" },
+  ADBE: { background: "#FA0F00", foreground: "#FFFFFF", mark: "AD" },
+  COST: { background: "#E31837", foreground: "#FFFFFF", mark: "CO" },
+  JPM: { background: "#117ACA", foreground: "#FFFFFF", mark: "JP" },
+  V: { background: "#1A1F71", foreground: "#FFFFFF", mark: "V" },
+  MA: { background: "#EB001B", foreground: "#FFFFFF", mark: "MA" },
+  KO: { background: "#F40009", foreground: "#FFFFFF", mark: "KO" },
+};
+
+const getStockTokenVisual = (symbol: string, fallbackColor?: string): StockTokenVisual => {
+  const normalized = symbol.trim().toUpperCase() || "TOKEN";
+  const preset = STOCK_TOKEN_VISUALS[normalized];
+  if (preset) return preset;
+
+  let hash = 0;
+  for (const character of normalized) {
+    hash = (hash * 31 + character.charCodeAt(0)) | 0;
+  }
+  const hue = Math.abs(hash) % 360;
+  return {
+    background: fallbackColor || `hsl(${hue} 70% 45%)`,
+    foreground: "#FFFFFF",
+    mark: normalized.slice(0, 2),
+  };
+};
+
 const DEFAULT_MSFT_STOCK = {
   symbol: "MSFT",
   name: "Microsoft · Robinhood Stock Token",
@@ -80,26 +129,40 @@ const XBrandIcon = ({ size = 16 }: { size?: number }) => (
 
 const StockTokenLogo = ({
   asset,
+  symbol,
+  color,
   size = "h-8 w-8",
 }: {
   asset?: Pick<RobinhoodAsset, "tokenSymbol" | "logoUrl">;
+  symbol?: string;
+  color?: string;
   size?: string;
 }) => {
   const [imageFailed, setImageFailed] = useState(false);
-  const symbol = asset?.tokenSymbol ?? "?";
+  const resolvedSymbol = (asset?.tokenSymbol ?? symbol ?? "TOKEN").toUpperCase();
+  const visual = getStockTokenVisual(resolvedSymbol, color);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [asset?.logoUrl, resolvedSymbol]);
 
   return (
-    <span className={`flex ${size} shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#0078D4] text-xs font-bold text-white`}>
+    <span
+      className={`flex ${size} shrink-0 items-center justify-center overflow-hidden rounded-full text-[10px] font-extrabold tracking-[-0.04em] shadow-sm ring-1 ring-black/10`}
+      style={{ backgroundColor: visual.background, color: visual.foreground }}
+      title={`${resolvedSymbol} stock token icon`}
+      aria-label={`${resolvedSymbol} stock token icon`}
+    >
       {asset?.logoUrl && !imageFailed ? (
         <img
           src={asset.logoUrl}
-          alt={`${symbol} logo`}
+          alt={`${resolvedSymbol} logo`}
           loading="lazy"
           onError={() => setImageFailed(true)}
           className="h-full w-full object-cover"
         />
       ) : (
-        symbol.slice(0, 1)
+        <span className="flex h-full w-full items-center justify-center bg-white/10">{visual.mark}</span>
       )}
     </span>
   );
@@ -1156,16 +1219,12 @@ const MicroHood = () => {
                       className="w-full flex items-center justify-between p-4 hover:bg-gray-900 rounded-xl transition-colors group"
                     >
                       <div className="flex items-center gap-4">
-                        {robinhoodAssetBySymbol.has(stock.symbol.toUpperCase()) ? (
-                          <StockTokenLogo asset={robinhoodAssetBySymbol.get(stock.symbol.toUpperCase())} size="h-10 w-10" />
-                        ) : (
-                          <div
-                            className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white"
-                            style={{ backgroundColor: stock.color }}
-                          >
-                            {stock.symbol.charAt(0)}
-                          </div>
-                        )}
+                        <StockTokenLogo
+                          asset={robinhoodAssetBySymbol.get(stock.symbol.toUpperCase())}
+                          symbol={stock.symbol}
+                          color={stock.color}
+                          size="h-10 w-10"
+                        />
                         <div className="text-left">
                           <p className="font-medium">{stock.symbol}</p>
                           <p className={`text-sm ${themeClasses.textMuted}`}>{stock.shares} shares</p>
@@ -1232,21 +1291,12 @@ const MicroHood = () => {
               <div className="p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    {robinhoodAssetBySymbol.has(liveSelectedStock?.symbol?.toUpperCase() || "MSFT") ? (
-                      <StockTokenLogo
-                        asset={robinhoodAssetBySymbol.get(liveSelectedStock?.symbol?.toUpperCase() || "MSFT")}
-                        size="h-12 w-12"
-                      />
-                    ) : (
-                      <div
-                        className="flex h-12 w-12 items-center justify-center rounded-full"
-                        style={{ backgroundColor: liveSelectedStock?.color || "#00A4EF" }}
-                      >
-                        <span className="text-lg font-bold text-white">
-                          {liveSelectedStock?.symbol?.[0] || "M"}
-                        </span>
-                      </div>
-                    )}
+                    <StockTokenLogo
+                      asset={robinhoodAssetBySymbol.get(liveSelectedStock?.symbol?.toUpperCase() || "MSFT")}
+                      symbol={liveSelectedStock?.symbol || "MSFT"}
+                      color={liveSelectedStock?.color || "#00A4EF"}
+                      size="h-12 w-12"
+                    />
                     <div>
                       <p className="font-bold text-lg">{liveSelectedStock?.symbol || "MSFT"}</p>
                       <p className={`text-sm ${themeClasses.textSecondary}`}>{liveSelectedStock?.name || "Microsoft · Robinhood Stock Token"}</p>
