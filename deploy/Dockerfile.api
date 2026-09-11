@@ -1,0 +1,21 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+COPY server/requirements.txt /app/server/requirements.txt
+RUN pip install --no-cache-dir -r /app/server/requirements.txt
+
+COPY data /app/data
+COPY scenarios /app/scenarios
+COPY server /app/server
+
+# Catalog databases are generated from the versioned JSONL/JSON sources during
+# the image build; runtime containers do not need a writable source checkout.
+RUN python -m server.scripts.build_db
+
+EXPOSE 8000
+
+CMD ["uvicorn", "server.server:app", "--host", "0.0.0.0", "--port", "8000"]
