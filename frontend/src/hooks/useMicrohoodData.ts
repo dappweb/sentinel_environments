@@ -44,12 +44,40 @@ export interface ApiTaskConfig {
   selfUser?: ApiSelfUser;
 }
 
+export interface RobinhoodAsset {
+  tokenSymbol: string;
+  tokenName: string;
+  logoUrl?: string;
+  status?: string;
+  deployments: Array<{
+    contractAddress: string;
+    chainId: number;
+    networkName?: string;
+  }>;
+}
+
+export interface RobinhoodMsftQuote {
+  symbol: "MSFT";
+  currentPrice: number;
+  bid: number;
+  ask: number;
+  dailyHigh: number;
+  dailyLow: number;
+  generatedAt: string;
+  contractAddress: string;
+  chainId: number;
+  isTradingHalt: boolean;
+}
+
 export function useMicrohoodData() {
   const [stocks, setStocks] = useState<ApiStock[]>([]);
   const [watchlist, setWatchlist] = useState<ApiWatchlistItem[]>([]);
   const [news, setNews] = useState<ApiNews[]>([]);
   const [portfolio, setPortfolio] = useState<ApiPortfolio | null>(null);
   const [config, setConfig] = useState<ApiTaskConfig | null>(null);
+  const [robinhoodAssets, setRobinhoodAssets] = useState<RobinhoodAsset[]>([]);
+  const [robinhoodMsftQuote, setRobinhoodMsftQuote] = useState<RobinhoodMsftQuote | null>(null);
+  const [robinhoodMsftPriceHistory, setRobinhoodMsftPriceHistory] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,6 +85,78 @@ export function useMicrohoodData() {
   const sessionInitAttempted = useRef(false);
   const mismatch = useRef(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchRobinhoodAssets = useCallback(async () => {
+    try {
+      const response = await fetch("/api/chain/robinhood/assets", { cache: "no-store" });
+      if (!response.ok) return;
+      const payload = await response.json() as { assets?: RobinhoodAsset[] };
+      if (Array.isArray(payload.assets)) setRobinhoodAssets(payload.assets);
+    } catch {
+      // The benchmark remains usable if the public registry is temporarily unavailable.
+    }
+  }, []);
+
+  const fetchRobinhoodMsftQuote = useCallback(async () => {
+    try {
+      const response = await fetch("/api/chain/robinhood/prices/MSFT", { cache: "no-store" });
+      if (!response.ok) return;
+      const payload = await response.json() as {
+        quotes?: Array<{
+          tokenSymbol?: string;
+          deployments?: Array<{ contractAddress?: string; chainId?: number; networkName?: string }>;
+          bid?: string;
+          ask?: string;
+          dailyHigh?: string;
+          dailyLow?: string;
+          generatedAt?: string;
+          isTradingHalt?: boolean;
+        }>;
+      };
+      const quote = payload.quotes?.find((item) => item.tokenSymbol?.toUpperCase() === "MSFT");
+      if (!quote) return;
+
+      const bid = Number(quote.bid);
+      const ask = Number(quote.ask);
+      const currentPrice = Number(((bid + ask) / 2).toFixed(2));
+      if (![bid, ask, currentPrice].every(Number.isFinite) || bid <= 0 || ask <= 0) return;
+
+      const deployment = quote.deployments?.find((item) => item.chainId === 4663);
+      const dailyHigh = Number(quote.dailyHigh);
+      const dailyLow = Number(quote.dailyLow);
+      const nextQuote: RobinhoodMsftQuote = {
+        symbol: "MSFT",
+        currentPrice,
+        bid,
+        ask,
+        dailyHigh: Number.isFinite(dailyHigh) && dailyHigh > 0 ? dailyHigh : currentPrice,
+        dailyLow: Number.isFinite(dailyLow) && dailyLow > 0 ? dailyLow : currentPrice,
+        generatedAt: quote.generatedAt ?? "",
+        contractAddress: deployment?.contractAddress ?? "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+        chainId: deployment?.chainId ?? 4663,
+        isTradingHalt: quote.isTradingHalt ?? false,
+      };
+      setRobinhoodMsftQuote(nextQuote);
+      setRobinhoodMsftPriceHistory((previous) => {
+        if (previous[previous.length - 1] === currentPrice) return previous;
+        return [...previous, currentPrice].slice(-80);
+      });
+    } catch {
+      // The selected MSFT card keeps its last confirmed quote on transient errors.
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchRobinhoodAssets();
+    const registryPoll = setInterval(fetchRobinhoodAssets, 60_000);
+    return () => clearInterval(registryPoll);
+  }, [fetchRobinhoodAssets]);
+
+  useEffect(() => {
+    void fetchRobinhoodMsftQuote();
+    const quotePoll = setInterval(fetchRobinhoodMsftQuote, 15_000);
+    return () => clearInterval(quotePoll);
+  }, [fetchRobinhoodMsftQuote]);
 
   const fetchData = useCallback(() => {
     if (mismatch.current) return;
@@ -185,6 +285,9 @@ export function useMicrohoodData() {
     news,
     portfolio,
     config,
+    robinhoodAssets,
+    robinhoodMsftQuote,
+    robinhoodMsftPriceHistory,
     isLoading,
     error,
     placeOrder,

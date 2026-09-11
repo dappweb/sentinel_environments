@@ -8,6 +8,9 @@ RUN cd /app/frontend && npm ci
 COPY frontend /app/frontend
 COPY data/public /app/data/public
 
+ARG VITE_PRIVY_APP_ID
+ENV VITE_PRIVY_APP_ID=${VITE_PRIVY_APP_ID}
+
 RUN cd /app/frontend && npm run build
 
 FROM nginx:1.27-alpine

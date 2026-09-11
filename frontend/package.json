@@ -20,6 +20,7 @@
     "test:watch": "vitest --watch"
   },
   "dependencies": {
+    "@privy-io/react-auth": "^3.42.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/matter-js": "^0.19.8",
     "@types/styled-components": "^5.1.34",
