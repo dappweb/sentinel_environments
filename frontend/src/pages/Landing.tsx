@@ -7,8 +7,19 @@ import { useNavigate } from "react-router-dom";
 import { routes, RouteConfig } from "../router/routes";
 
 const README_URL = "https://github.com/microsoft/sentinel_environments#readme";
+const PROJECT_REPO_URL =
+  import.meta.env.VITE_PROJECT_REPO_URL ??
+  "https://github.com/microsoft/sentinel_environments";
 const BLOG_URL =
   "https://www.microsoft.com/en-us/research/blog/tell-me-when-building-agents-that-can-wait-monitor-and-act/";
+const ROBINHOOD_STOCK_TOKEN_DOCS =
+  "https://docs.robinhood.com/chain/stock-token-apis";
+const ROBINHOOD_CHAIN_DOCS = "https://docs.robinhood.com/chain/";
+const ROBINHOOD_MAINNET_EXPLORER = "https://robinhoodchain.blockscout.com";
+const MSFT_STOCK_TOKEN_ADDRESS =
+  "0xe93237C50D904957Cf27E7B1133b510C669c2e74";
+const MICROHOOD_PROJECT_TOKEN_ADDRESS =
+  "0x6be1478173ccb95e31d8b22b0b71efde24e2f0c4";
 
 const FONT =
   '"Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
@@ -159,6 +170,7 @@ const Landing = () => {
   const [busyEnv, setBusyEnv] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<ModalKind | null>(null);
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const envSectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -194,6 +206,20 @@ const Landing = () => {
       setBusyEnv(null);
     }
   };
+
+  const copyAddress = async (address: string) => {
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopiedAddress(address);
+      window.setTimeout(() => setCopiedAddress(null), 1600);
+    } catch {
+      setCopiedAddress(null);
+    }
+  };
+
+  const microhoodRoute = environmentRoutes.find(
+    (route) => (route.base_task ?? route.path.replace(/^\//, "")) === "microhood"
+  );
 
   return (
     <div
@@ -235,7 +261,7 @@ const Landing = () => {
               href={README_URL}
               target="_blank"
               rel="noreferrer"
-              className="rounded-md px-3 py-2 transition hover:bg-black/[0.04]"
+              className="hidden rounded-md px-3 py-2 transition hover:bg-black/[0.04] sm:inline-flex"
               style={{ color: INK_SOFT }}
             >
               README ↗
@@ -244,7 +270,7 @@ const Landing = () => {
               href="https://github.com/microsoft/sentinel_environments"
               target="_blank"
               rel="noreferrer"
-              className="ml-2 inline-flex items-center gap-2 rounded-md px-3 py-2 text-[14px] font-medium transition hover:opacity-90"
+              className="ml-2 hidden items-center gap-2 rounded-md px-3 py-2 text-[14px] font-medium transition hover:opacity-90 sm:inline-flex"
               style={{ background: INK, color: CANVAS }}
             >
               GitHub
@@ -295,6 +321,182 @@ const Landing = () => {
             >
               Read the paper
               <span aria-hidden>→</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* MSFT / ROBINHOOD CHAIN CASE STUDY */}
+      <section className="relative z-10 mx-auto max-w-[1280px] px-6 pb-16 sm:px-10 sm:pb-20">
+        <div
+          className="overflow-hidden rounded-[28px] border"
+          style={{ background: "#111827", borderColor: "#111827", color: CANVAS }}
+        >
+          <div className="grid lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="p-7 sm:p-10">
+              <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em]">
+                <span
+                  className="rounded-full px-3 py-1"
+                  style={{ background: "#2A4DBF", color: "#fff" }}
+                >
+                  Case study
+                </span>
+                <span style={{ color: "#9CA3AF" }}>MSFT · Robinhood Chain</span>
+              </div>
+              <h2
+                className="mt-6 max-w-2xl text-[clamp(2rem,4.5vw,4.25rem)] font-extrabold leading-[1.02] tracking-tight"
+                style={{ letterSpacing: "-0.035em" }}
+              >
+                Microsoft stock, from monitoring benchmark to onchain asset.
+              </h2>
+              <p
+                className="mt-6 max-w-2xl text-[16px] leading-[1.7] sm:text-[18px]"
+                style={{ color: "#D1D5DB" }}
+              >
+                MicroHood gives agents a realistic stock-monitoring surface. In
+                this Robinhood Chain case, the agent first resolves the official
+                MSFT Stock Token, checks its canonical deployment and metadata,
+                and stays read-only before any future execution path is reviewed.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                {microhoodRoute ? (
+                  <button
+                    type="button"
+                    onClick={() => void openEnvironment(microhoodRoute)}
+                    disabled={busyEnv !== null}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-lg px-4 py-2.5 text-[14px] font-semibold transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{ background: CANVAS, color: INK }}
+                  >
+                    Open MicroHood
+                    <span aria-hidden>→</span>
+                  </button>
+                ) : null}
+                <a
+                  href={ROBINHOOD_STOCK_TOKEN_DOCS}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-lg border px-4 py-2.5 text-[14px] font-semibold transition hover:bg-white/[0.08]"
+                  style={{ borderColor: "#374151", color: CANVAS }}
+                >
+                  Stock Token API
+                  <span aria-hidden>↗</span>
+                </a>
+              </div>
+            </div>
+
+            <div
+              className="flex flex-col justify-between border-t p-7 sm:p-10 lg:border-l lg:border-t-0"
+              style={{ borderColor: "#374151", background: "#182236" }}
+            >
+              <div>
+                <p
+                  className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+                  style={{ color: "#93C5FD" }}
+                >
+                  Official Robinhood Stock Token
+                </p>
+                <div className="mt-4 flex items-end justify-between gap-4">
+                  <div>
+                    <p className="text-5xl font-extrabold tracking-tight">MSFT</p>
+                    <p className="mt-1 text-[14px]" style={{ color: "#9CA3AF" }}>
+                      Microsoft · chain id 4663
+                    </p>
+                  </div>
+                  <span
+                    className="rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider"
+                    style={{ background: "#123B2A", color: "#86EFAC" }}
+                  >
+                    Read-only
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-10">
+                <p className="text-[12px]" style={{ color: "#9CA3AF" }}>
+                  Canonical asset address
+                </p>
+                <div
+                  className="mt-2 rounded-xl border p-3"
+                  style={{ borderColor: "#374151", background: "#111827" }}
+                >
+                  <code className="block break-all text-[12px] leading-[1.55]" style={{ color: "#BFDBFE" }}>
+                    {MSFT_STOCK_TOKEN_ADDRESS}
+                  </code>
+                  <div className="mt-3 flex flex-wrap gap-3 text-[12px] font-semibold">
+                    <a
+                      href={`${ROBINHOOD_MAINNET_EXPLORER}/address/${MSFT_STOCK_TOKEN_ADDRESS}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex min-h-11 items-center hover:underline"
+                      style={{ color: "#93C5FD" }}
+                    >
+                      Explorer ↗
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => void copyAddress(MSFT_STOCK_TOKEN_ADDRESS)}
+                      className="inline-flex min-h-11 items-center rounded-md px-2 hover:underline"
+                      style={{ color: "#D1D5DB" }}
+                    >
+                      {copiedAddress === MSFT_STOCK_TOKEN_ADDRESS ? "Copied" : "Copy address"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="grid gap-5 border-t p-7 sm:grid-cols-[auto_1fr] sm:items-center sm:p-10"
+            style={{ borderColor: "#374151", background: "#0F172A" }}
+          >
+            <div>
+              <p
+                className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+                style={{ color: "#FCD34D" }}
+              >
+                Project CA shown on this homepage
+              </p>
+              <p className="mt-2 text-[13px] leading-[1.55]" style={{ color: "#9CA3AF" }}>
+                This is the provided Microhood project token address. It is separate
+                from the official MSFT Stock Token above and is not Microsoft equity.
+              </p>
+            </div>
+            <div className="flex min-w-0 flex-wrap items-center gap-3 sm:justify-end">
+              <code
+                className="min-w-0 max-w-full break-all rounded-lg border px-3 py-2 text-[12px]"
+                style={{ borderColor: "#374151", color: "#FDE68A" }}
+              >
+                {MICROHOOD_PROJECT_TOKEN_ADDRESS}
+              </code>
+              <a
+                href={`${ROBINHOOD_MAINNET_EXPLORER}/address/${MICROHOOD_PROJECT_TOKEN_ADDRESS}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-11 items-center text-[12px] font-semibold hover:underline"
+                style={{ color: "#FCD34D" }}
+              >
+                Explorer ↗
+              </a>
+              <button
+                type="button"
+                onClick={() => void copyAddress(MICROHOOD_PROJECT_TOKEN_ADDRESS)}
+                className="inline-flex min-h-11 items-center rounded-md px-2 text-[12px] font-semibold hover:underline"
+                style={{ color: "#D1D5DB" }}
+              >
+                {copiedAddress === MICROHOOD_PROJECT_TOKEN_ADDRESS ? "Copied" : "Copy CA"}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 px-1 text-[12px]" style={{ color: MUTED }}>
+          <span>Data boundary: public metadata and chain reads only; no wallet or order execution.</span>
+          <div className="flex items-center gap-4">
+            <a href={ROBINHOOD_CHAIN_DOCS} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center font-semibold hover:underline" style={{ color: INK_SOFT }}>
+              Robinhood Chain docs ↗
+            </a>
+            <a href={PROJECT_REPO_URL} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center font-semibold hover:underline" style={{ color: INK_SOFT }}>
+              Open-source repo ↗
             </a>
           </div>
         </div>

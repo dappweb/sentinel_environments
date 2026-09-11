@@ -36,6 +36,15 @@ The benchmark ships 10 environments (`Micro*`), each with 10 monitoring scenario
 
 > Environments marked **Text-only (JSONL)** use structured text data with no AI-generated media. The others use AI-generated images, video, or audio produced by the pipeline in [`data_generation/`](#regenerating-synthetic-media).
 
+### Robinhood Chain / MSFT case
+
+The MicroHood environment is the benchmark's deterministic stock-trading
+replica. The repository also includes a read-only Robinhood Chain boundary that
+uses the official `MSFT` Stock Token as its concrete asset case. See
+[`ROBINHOOD_CHAIN_MSFT_CASE.md`](ROBINHOOD_CHAIN_MSFT_CASE.md) for the verified
+mainnet deployment, validation flow, and the distinction between the official
+MSFT asset and the separately displayed project CA.
+
 ## Quick Start
 
 Set up local dependencies, build the SQLite databases, and run all three
