@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useHashRoute } from "../hooks/useHashRoute";
 import { useMicrohoodData } from "../hooks/useMicrohoodData";
+import PrivyAccountButton from "../components/PrivyAccountButton";
 import {
   Search,
   Bell,
@@ -41,10 +42,7 @@ import {
 
 export const TASK_ID_MICROHOOD = "microhood";
 
-const PROJECT_DOMAIN_URL =
-  import.meta.env.VITE_PROJECT_DOMAIN_URL ?? "https://microhood.ai";
 const PROJECT_X_URL = "https://x.com/microhood_ai";
-const RESEARCH_X_URL = "https://x.com/MSFTResearch";
 const PROJECT_REPO_URL =
   import.meta.env.VITE_PROJECT_REPO_URL ??
   "https://github.com/microsoft/sentinel_environments";
@@ -56,6 +54,29 @@ const MICROHOOD_PROJECT_TOKEN_ADDRESS =
 
 const shortenAddress = (address: string) =>
   `${address.slice(0, 6)}…${address.slice(-4)}`;
+
+const TOP_ROBINHOOD_SYMBOLS = [
+  "MSFT", "AAPL", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "AVGO",
+  "AMD", "ORCL", "NFLX", "TSM", "INTC", "CRM", "ADBE", "COST",
+  "JPM", "V", "MA", "KO",
+];
+
+const DEFAULT_MSFT_STOCK = {
+  symbol: "MSFT",
+  name: "Microsoft · Robinhood Stock Token",
+  price: 0,
+  change: 0,
+  changePercent: 0,
+  color: "#0078D4",
+  shares: 0,
+  avgCost: 0,
+};
+
+const XBrandIcon = ({ size = 16 }: { size?: number }) => (
+  <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.657l-5.214-6.817-5.964 6.817H1.684l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
 
 // ============================================================================
 // TYPE DEFINITIONS (UI-only)
@@ -87,6 +108,7 @@ const MicroHood = () => {
   // ===================== API DATA =====================
   const {
     stocks, watchlist: apiWatchlist, news, portfolio, config,
+    robinhoodAssets, robinhoodMsftQuote, robinhoodMsftPriceHistory,
     isLoading, error,
     placeOrder, toggleWatchlist: apiToggleWatchlist,
   } = useMicrohoodData();
@@ -120,6 +142,16 @@ const MicroHood = () => {
   // allStocksWithCurrentPrices -- directly from API (already has current prices)
   const allStocksWithCurrentPrices = stocks;
 
+  const featuredRobinhoodAssets = useMemo(() => {
+    const rank = new Map(TOP_ROBINHOOD_SYMBOLS.map((symbol, index) => [symbol, index]));
+    return robinhoodAssets
+      .filter((asset) => {
+        const symbol = asset.tokenSymbol.toUpperCase();
+        return rank.has(symbol) && asset.deployments.some((deployment) => deployment.chainId === 4663);
+      })
+      .sort((a, b) => (rank.get(a.tokenSymbol.toUpperCase()) ?? 999) - (rank.get(b.tokenSymbol.toUpperCase()) ?? 999));
+  }, [robinhoodAssets]);
+
   // Watchlist from API -- enrich with inWatchlist flag
   const watchlistItems = useMemo(() =>
     apiWatchlist.map(w => ({ ...w, color: "#6B7280", inWatchlist: true })),
@@ -131,8 +163,6 @@ const MicroHood = () => {
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [orderType, setOrderType] = useState<"buy" | "sell" | null>(null);
   const [selectedTimeframe, setSelectedTimeframe] = useState("1D");
-
-  const [isSignedOut, setIsSignedOut] = useState(false);
 
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [orderQuantity, setOrderQuantity] = useState("1");
@@ -178,9 +208,18 @@ const MicroHood = () => {
     color: string;
     shares?: number;
     avgCost?: number;
-  } | null>(null);
+  }>(DEFAULT_MSFT_STOCK);
   const liveSelectedStock = useMemo(() => {
-    if (!selectedStock) return null;
+    if (selectedStock.symbol === "MSFT") {
+      return {
+        ...selectedStock,
+        price: robinhoodMsftQuote?.currentPrice ?? selectedStock.price,
+        change: 0,
+        changePercent: 0,
+        shares: 0,
+        avgCost: 0,
+      };
+    }
     const live = allStocksWithCurrentPrices.find(s => s.symbol === selectedStock.symbol);
     if (!live) return selectedStock;
     return {
@@ -191,7 +230,9 @@ const MicroHood = () => {
       shares: live.shares,
       avgCost: live.avgCost,
     };
-  }, [selectedStock, allStocksWithCurrentPrices]);
+  }, [selectedStock, allStocksWithCurrentPrices, robinhoodMsftQuote]);
+
+  const isRobinhoodMsft = liveSelectedStock?.symbol === "MSFT";
 
   // Restore the detail panel selection from the URL hash (#home/SYM) once
   // stocks have loaded, so reloads — including the eval harness's wait_for
@@ -215,9 +256,10 @@ const MicroHood = () => {
 
   // ===================== PRICE HISTORY (depends on liveSelectedStock) =====================
   const currentPrice = useMemo(() => {
+    if (isRobinhoodMsft) return robinhoodMsftQuote?.currentPrice ?? liveSelectedStock.price;
     const symbol = liveSelectedStock?.symbol ?? "MCRO";
     return stocks.find(s => s.symbol === symbol)?.currentPrice ?? 0;
-  }, [stocks, liveSelectedStock]);
+  }, [stocks, liveSelectedStock, isRobinhoodMsft, robinhoodMsftQuote]);
 
   const generatePriceHistory = (startPrice: number, points: number, volatility: number, endPrice: number, seed: number): number[] => {
     let s = seed | 0;
@@ -235,6 +277,23 @@ const MicroHood = () => {
     const open = p - (liveSelectedStock?.change ?? 0);
     const sym = liveSelectedStock?.symbol ?? "";
     const base = sym.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+    if (isRobinhoodMsft) {
+      const low = robinhoodMsftQuote?.dailyLow ?? p;
+      const high = robinhoodMsftQuote?.dailyHigh ?? p;
+      const observed = robinhoodMsftPriceHistory.length >= 2
+        ? robinhoodMsftPriceHistory
+        : [low, (low + p) / 2, p].filter((value) => value > 0);
+      const range = [low, p, high].filter((value) => value > 0);
+      return {
+        "1D": observed,
+        "1W": range,
+        "1M": range,
+        "3M": range,
+        "YTD": range,
+        "1Y": range,
+        "ALL": range,
+      };
+    }
     return {
       "1D":  generatePriceHistory(open,      30, v * 0.3, p, base + 1),
       "1W":  generatePriceHistory(p * 0.97,  50, v,       p, base + 2),
@@ -244,7 +303,7 @@ const MicroHood = () => {
       "1Y":  generatePriceHistory(p * 0.75,  50, v * 4.5, p, base + 6),
       "ALL": generatePriceHistory(p * 0.55,  50, v * 7,   p, base + 7),
     };
-  }, [liveSelectedStock]);
+  }, [liveSelectedStock, isRobinhoodMsft, robinhoodMsftQuote, robinhoodMsftPriceHistory]);
 
   const priceHistoryRef = useRef<number[]>([]);
   const lastSymbolRef = useRef<string>("");
@@ -262,7 +321,9 @@ const MicroHood = () => {
     setPriceHistory([...hist]);
   }, [currentPrice, liveSelectedStock?.symbol, priceHistoryByTimeframe]);
 
-  // For non-1D timeframes use the static generated history; for 1D use the live-ticking one.
+  // For the official MSFT case, 1D uses observed public quote samples; the
+  // other timeframes use the current-day range because no historical endpoint
+  // is claimed by the read-only Stock Token API.
   const chartData = selectedTimeframe === "1D"
     ? priceHistory
     : (priceHistoryByTimeframe[selectedTimeframe as keyof typeof priceHistoryByTimeframe] ?? []);
@@ -376,13 +437,17 @@ const MicroHood = () => {
   }, [watchlistItems]);
 
   const handlePlaceOrder = useCallback((type: "buy" | "sell") => {
+    if (isRobinhoodMsft) {
+      showToast("MSFT is a read-only Robinhood Chain quote");
+      return;
+    }
     setOrderType(type);
     setShowOrderModal(true);
     setOrderQuantity("1");
     setOrderStep("quantity");
     setOrderTypeSelection("market");
     setLimitPrice("");
-  }, []);
+  }, [isRobinhoodMsft, showToast]);
 
   const handleConfirmOrder = useCallback(async () => {
     const qty = parseInt(orderQuantity) || 1;
@@ -420,7 +485,10 @@ const MicroHood = () => {
 
   const stockStats = useMemo(() => {
     const s = liveSelectedStock;
-    if (!s) return null;
+    // The Robinhood Chain public quote endpoint does not provide fundamentals
+    // or analyst research. Do not show synthetic values for the official MSFT
+    // example; keep those fields limited to the simulated benchmark stocks.
+    if (!s || isRobinhoodMsft) return null;
     // Deterministic hash so each stock gets stable but different values.
     let h = 0;
     for (let i = 0; i < s.symbol.length; i++) {
@@ -452,7 +520,7 @@ const MicroHood = () => {
       sellPct,
       analystCount: 20 + (h2 % 35),
     };
-  }, [liveSelectedStock]);
+  }, [liveSelectedStock, isRobinhoodMsft]);
 
   const handleTimeframeChange = useCallback((tf: string) => {
     setSelectedTimeframe(tf);
@@ -636,7 +704,7 @@ const MicroHood = () => {
               </div>
 
               {/* Navigation */}
-              <nav className="hidden md:flex items-center gap-6 text-sm">
+              <nav className="hidden lg:flex items-center gap-6 text-sm">
                 <button
                   onClick={() => setActiveNavSection("investing")}
                   className={`${activeNavSection === "investing" ? `${themeClasses.navActive} font-medium` : themeClasses.textSecondary} hover:text-[#00C805] transition-colors`}
@@ -668,11 +736,31 @@ const MicroHood = () => {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setShowSearchModal(true)}
-                className={`hidden md:flex items-center gap-2 ${themeClasses.bgSecondary} rounded-full px-4 py-2 ${themeClasses.bgHoverSecondary} transition-colors`}
+                className={`hidden lg:flex items-center gap-2 ${themeClasses.bgSecondary} rounded-full px-4 py-2 ${themeClasses.bgHoverSecondary} transition-colors`}
               >
                 <Search size={16} className={themeClasses.textSecondary} />
                 <span className={`text-sm ${themeClasses.textMuted} w-48 text-left`}>Search</span>
               </button>
+              <a
+                href={PROJECT_X_URL}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="X @microhood_ai"
+                title="X @microhood_ai"
+                className={`hidden md:flex min-h-10 min-w-10 items-center justify-center rounded-full ${themeClasses.bgHoverSecondary} ${themeClasses.textSecondary} transition-colors hover:text-white`}
+              >
+                <XBrandIcon />
+              </a>
+              <a
+                href={PROJECT_REPO_URL}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="GitHub source repository"
+                title="GitHub source repository"
+                className={`hidden md:flex min-h-10 min-w-10 items-center justify-center rounded-full ${themeClasses.bgHoverSecondary} ${themeClasses.textSecondary} transition-colors hover:text-white`}
+              >
+                <Github size={17} />
+              </a>
               <button
                 onClick={() => setShowNotificationsPanel(!showNotificationsPanel)}
                 className={`p-2 ${themeClasses.bgHoverSecondary} rounded-full transition-colors relative ${showNotificationsPanel ? themeClasses.bgTertiary : ""}`}
@@ -686,12 +774,10 @@ const MicroHood = () => {
               >
                 <Settings size={20} className={themeClasses.textSecondary} />
               </button>
-              <button
-                onClick={() => setIsSignedOut(true)}
+              <PrivyAccountButton
+                onUnavailable={() => showToast("Configure VITE_PRIVY_APP_ID to enable Privy login")}
                 className="hidden md:block px-4 py-2 text-sm font-medium text-[#00C805] hover:bg-[#00C805]/10 rounded-full transition-colors"
-              >
-                Log Out
-              </button>
+              />
               <button className="md:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                 {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
@@ -703,109 +789,26 @@ const MicroHood = () => {
       {/* Project identity rail: public links and explicit token provenance. */}
       <div className={`border-b ${themeClasses.border} ${theme === "dark" ? "bg-[#0B0F12]" : "bg-gray-50"}`}>
         <div className="max-w-7xl mx-auto px-4 py-2.5">
-          <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]">
-              <span className={`${themeClasses.textMuted} whitespace-nowrap`}>MicroHood / SentinelBench</span>
-              <a
-                href={PROJECT_DOMAIN_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap text-[#7ABEF0] transition hover:text-white"
-              >
-                microhood.ai <ArrowUpRight size={12} />
-              </a>
-              <a
-                href={PROJECT_X_URL}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="X @microhood_ai"
-                className={`inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap ${themeClasses.textSecondary} transition hover:text-[#00C805]`}
-              >
-                X <span className="normal-case tracking-normal">@microhood_ai</span>
-              </a>
-              <a
-                href={RESEARCH_X_URL}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Microsoft Research on X"
-                className={`inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap ${themeClasses.textSecondary} transition hover:text-[#00C805]`}
-              >
-                Research <span className="normal-case tracking-normal">@MSFTResearch</span>
-              </a>
-              <a
-                href={PROJECT_REPO_URL}
-                target="_blank"
-                rel="noreferrer"
-                className={`inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap ${themeClasses.textSecondary} transition hover:text-[#00C805]`}
-              >
-                <Github size={13} /> GitHub
-              </a>
-            </div>
-
-            <details className="relative self-start xl:self-auto">
-              <summary className={`flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-full border ${themeClasses.borderSecondary} px-3 text-[10px] font-semibold uppercase tracking-[0.12em] ${themeClasses.textSecondary} transition hover:border-[#00C805] hover:text-[#00C805]`}>
-                Token addresses
-                <span className="hidden font-mono text-[9px] normal-case tracking-normal text-gray-500 sm:inline">
-                  MSFT {shortenAddress(MSFT_STOCK_TOKEN_ADDRESS)} · CA {shortenAddress(MICROHOOD_PROJECT_TOKEN_ADDRESS)}
-                </span>
-                <ChevronDown size={13} />
-              </summary>
-              <div className={`absolute right-0 top-11 z-30 w-[min(92vw,34rem)] rounded-xl border ${themeClasses.borderSecondary} ${themeClasses.bgModal} p-4 shadow-2xl`}>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className={`text-[10px] font-semibold uppercase tracking-[0.12em] ${themeClasses.textMuted}`}>Official Robinhood Stock Token · MSFT</p>
-                        <a
-                          href={`${ROBINHOOD_MAINNET_EXPLORER}/address/${MSFT_STOCK_TOKEN_ADDRESS}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="mt-1 block break-all font-mono text-xs text-[#7ABEF0] transition hover:text-white"
-                        >
-                          {MSFT_STOCK_TOKEN_ADDRESS}
-                        </a>
-                      </div>
-                      <button
-                        type="button"
-                        aria-label="Copy official MSFT Stock Token address"
-                        title="Copy official MSFT Stock Token address"
-                        onClick={() => void copyAddress(MSFT_STOCK_TOKEN_ADDRESS, "MSFT address")}
-                        className={`flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-lg ${themeClasses.bgTertiary} ${themeClasses.textSecondary} transition hover:text-[#00C805]`}
-                      >
-                        {copiedAddress === MSFT_STOCK_TOKEN_ADDRESS ? <Check size={15} /> : <Copy size={15} />}
-                      </button>
-                    </div>
-                    <p className={`mt-1 text-[10px] ${themeClasses.textMuted}`}>Canonical mainnet address · chain 4663 · read-only UI</p>
-                  </div>
-
-                  <div className={`border-t ${themeClasses.border} pt-4`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className={`text-[10px] font-semibold uppercase tracking-[0.12em] ${themeClasses.textMuted}`}>MicroHood project CA</p>
-                        <a
-                          href={`${ROBINHOOD_MAINNET_EXPLORER}/address/${MICROHOOD_PROJECT_TOKEN_ADDRESS}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="mt-1 block break-all font-mono text-xs text-[#7ABEF0] transition hover:text-white"
-                        >
-                          {MICROHOOD_PROJECT_TOKEN_ADDRESS}
-                        </a>
-                      </div>
-                      <button
-                        type="button"
-                        aria-label="Copy MicroHood project CA"
-                        title="Copy MicroHood project CA"
-                        onClick={() => void copyAddress(MICROHOOD_PROJECT_TOKEN_ADDRESS, "Project CA")}
-                        className={`flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-lg ${themeClasses.bgTertiary} ${themeClasses.textSecondary} transition hover:text-[#00C805]`}
-                      >
-                        {copiedAddress === MICROHOOD_PROJECT_TOKEN_ADDRESS ? <Check size={15} /> : <Copy size={15} />}
-                      </button>
-                    </div>
-                    <p className={`mt-1 text-[10px] ${themeClasses.textMuted}`}>Project token · separate from the Microsoft equity stock token</p>
-                  </div>
-                </div>
-              </div>
-            </details>
+          <div className={`flex min-h-9 flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border ${themeClasses.borderSecondary} px-3 py-2`}>
+            <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] ${themeClasses.textSecondary}`}>Project CA</span>
+            <a
+              href={`${ROBINHOOD_MAINNET_EXPLORER}/address/${MICROHOOD_PROJECT_TOKEN_ADDRESS}`}
+              target="_blank"
+              rel="noreferrer"
+              className="min-w-0 flex-1 break-all font-mono text-[10px] text-[#7ABEF0] transition hover:text-white sm:text-xs"
+              title="Open MicroHood project contract on Blockscout"
+            >
+              {MICROHOOD_PROJECT_TOKEN_ADDRESS}
+            </a>
+            <button
+              type="button"
+              aria-label="Copy MicroHood project CA"
+              title="Copy MicroHood project CA"
+              onClick={() => void copyAddress(MICROHOOD_PROJECT_TOKEN_ADDRESS, "Project CA")}
+              className={`flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded-lg ${themeClasses.bgTertiary} ${themeClasses.textSecondary} transition hover:text-[#00C805]`}
+            >
+              {copiedAddress === MICROHOOD_PROJECT_TOKEN_ADDRESS ? <Check size={15} /> : <Copy size={15} />}
+            </button>
           </div>
         </div>
       </div>
@@ -844,12 +847,10 @@ const MicroHood = () => {
             >
               <Settings size={20} /> Settings
             </button>
-            <button
-              onClick={() => { setIsSignedOut(true); setMobileMenuOpen(false); }}
+            <PrivyAccountButton
+              onUnavailable={() => { showToast("Configure VITE_PRIVY_APP_ID to enable Privy login"); setMobileMenuOpen(false); }}
               className="w-full py-3 mt-4 bg-[#00C805] text-black font-bold rounded-full"
-            >
-              Log Out
-            </button>
+            />
           </div>
         </div>
       )}
@@ -981,7 +982,7 @@ const MicroHood = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-3 lg:items-stretch">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Portfolio Value */}
@@ -1027,8 +1028,8 @@ const MicroHood = () => {
                 onClick={() => handlePlaceOrder("buy")}
                 className={`flex flex-col items-center gap-2 p-4 ${themeClasses.bgSecondary} rounded-xl ${themeClasses.bgHoverSecondary} transition-colors`}
               >
-                <TrendingUp size={24} className="text-[#00C805]" />
-                <span className={`text-sm ${themeClasses.textSecondary}`}>Invest</span>
+                {isRobinhoodMsft ? <EyeOff size={24} className={themeClasses.textSecondary} /> : <TrendingUp size={24} className="text-[#00C805]" />}
+                <span className={`text-sm ${themeClasses.textSecondary}`}>{isRobinhoodMsft ? "Observe" : "Invest"}</span>
               </button>
               <button
                 onClick={() => setShowTransferModal(true)}
@@ -1149,11 +1150,56 @@ const MicroHood = () => {
                   );
                 })}
               </div>
+              {showAllStocks && (
+                <div className={`mt-6 border-t ${themeClasses.border} pt-5`}>
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${themeClasses.textMuted}`}>Robinhood Chain · US stock tokens</p>
+                      <p className={`mt-1 text-xs ${themeClasses.textSecondary}`}>Official assets from the public registry · chain 4663</p>
+                    </div>
+                    <span className={`shrink-0 text-[10px] ${themeClasses.textMuted}`}>{featuredRobinhoodAssets.length} assets</span>
+                  </div>
+                  {featuredRobinhoodAssets.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {featuredRobinhoodAssets.map((asset) => {
+                        const deployment = asset.deployments.find((item) => item.chainId === 4663);
+                        if (!deployment) return null;
+                        const displayName = asset.tokenName.replace(/\s+•\s+Robinhood Token$/, "");
+                        return (
+                          <a
+                            key={asset.tokenSymbol}
+                            href={`${ROBINHOOD_MAINNET_EXPLORER}/address/${deployment.contractAddress}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={`flex min-h-16 items-center justify-between gap-3 rounded-xl ${themeClasses.bgSecondary} px-3 py-2.5 transition ${themeClasses.bgHoverSecondary}`}
+                            title={`${displayName} · ${deployment.contractAddress}`}
+                          >
+                            <span className="flex min-w-0 items-center gap-2.5">
+                              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0078D4] text-xs font-bold text-white">
+                                {asset.tokenSymbol.slice(0, 1)}
+                              </span>
+                              <span className="min-w-0">
+                                <span className={`block font-semibold ${themeClasses.text}`}>{asset.tokenSymbol}</span>
+                                <span className={`block truncate text-[10px] ${themeClasses.textMuted}`}>{displayName}</span>
+                              </span>
+                            </span>
+                            <span className="flex shrink-0 items-center gap-1 text-[10px] font-mono text-[#7ABEF0]">
+                              {shortenAddress(deployment.contractAddress)} <ArrowUpRight size={12} />
+                            </span>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className={`rounded-xl ${themeClasses.bgSecondary} p-4 text-sm ${themeClasses.textMuted}`}>Loading the official Robinhood asset registry…</p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="h-full space-y-6">
             {/* Featured Stock */}
             <div className={`${themeClasses.bgSecondary} rounded-xl overflow-hidden`}>
               <div className="p-5">
@@ -1168,8 +1214,13 @@ const MicroHood = () => {
                       </span>
                     </div>
                     <div>
-                      <p className="font-bold text-lg">{liveSelectedStock?.symbol || "MCRO"}</p>
-                      <p className={`text-sm ${themeClasses.textSecondary}`}>{liveSelectedStock?.name || "MicroSystems Corp"}</p>
+                      <p className="font-bold text-lg">{liveSelectedStock?.symbol || "MSFT"}</p>
+                      <p className={`text-sm ${themeClasses.textSecondary}`}>{liveSelectedStock?.name || "Microsoft · Robinhood Stock Token"}</p>
+                      {isRobinhoodMsft && (
+                        <p className={`mt-1 font-mono text-[10px] ${themeClasses.textMuted}`}>
+                          {shortenAddress(MSFT_STOCK_TOKEN_ADDRESS)} · chain 4663 · read-only
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1250,51 +1301,75 @@ const MicroHood = () => {
 
                 <div className="flex items-baseline gap-2 mb-1">
                   <span className="text-3xl font-bold">
-                    {formatCurrency(liveSelectedStock?.price || currentPrice)}
+                    {isRobinhoodMsft && !robinhoodMsftQuote
+                      ? "Resolving…"
+                      : formatCurrency(liveSelectedStock?.price || currentPrice)}
                   </span>
                 </div>
-                <div className={`flex items-center gap-1 ${
-                  (liveSelectedStock?.change ?? priceChange) >= 0 ? "text-[#00C805]" : "text-[#FF5000]"
-                }`}>
-                  {(liveSelectedStock?.change ?? priceChange) >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-                  <span className="font-medium">
-                    {formatChange(
-                      liveSelectedStock?.change ?? priceChange,
-                      liveSelectedStock?.changePercent ?? priceChangePercent
+                {isRobinhoodMsft ? (
+                  <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${themeClasses.textSecondary}`}>
+                    {robinhoodMsftQuote ? (
+                      <>
+                        <span>Bid {formatCurrency(robinhoodMsftQuote.bid)}</span>
+                        <span>Ask {formatCurrency(robinhoodMsftQuote.ask)}</span>
+                        <span className="text-[#00C805]">Live · public read</span>
+                      </>
+                    ) : (
+                      <span>Waiting for the public Robinhood quote…</span>
                     )}
-                  </span>
-                </div>
+                  </div>
+                ) : (
+                  <div className={`flex items-center gap-1 ${
+                    (liveSelectedStock?.change ?? priceChange) >= 0 ? "text-[#00C805]" : "text-[#FF5000]"
+                  }`}>
+                    {(liveSelectedStock?.change ?? priceChange) >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                    <span className="font-medium">
+                      {formatChange(
+                        liveSelectedStock?.change ?? priceChange,
+                        liveSelectedStock?.changePercent ?? priceChangePercent
+                      )}
+                    </span>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-3 mt-5">
-                  <button
-                    onClick={() => handlePlaceOrder("buy")}
-                    className="py-3 rounded-full font-bold text-sm transition-all bg-[#00C805] text-black hover:bg-[#00B504] active:scale-[0.98]"
-                  >
-                    Buy
-                  </button>
-                  <button
-                    onClick={() => handlePlaceOrder("sell")}
-                    className="py-3 rounded-full font-bold text-sm transition-all bg-gray-800 text-white hover:bg-gray-700 active:scale-[0.98]"
-                  >
-                    Sell
-                  </button>
+                  {isRobinhoodMsft ? (
+                    <div className={`col-span-2 flex items-center justify-center gap-2 rounded-full ${themeClasses.bgTertiary} py-3 text-sm font-semibold ${themeClasses.textSecondary}`}>
+                      <Lock size={15} /> Read-only quote
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handlePlaceOrder("buy")}
+                        className="py-3 rounded-full font-bold text-sm transition-all bg-[#00C805] text-black hover:bg-[#00B504] active:scale-[0.98]"
+                      >
+                        Buy
+                      </button>
+                      <button
+                        onClick={() => handlePlaceOrder("sell")}
+                        className="py-3 rounded-full font-bold text-sm transition-all bg-gray-800 text-white hover:bg-gray-700 active:scale-[0.98]"
+                      >
+                        Sell
+                      </button>
+                    </>
+                  )}
                 </div>
-                {liveSelectedStock && (
+                {liveSelectedStock && !isRobinhoodMsft && (
                   <button
                     onClick={() => {
-                      setSelectedStock(null);
+                      setSelectedStock(DEFAULT_MSFT_STOCK);
                       setHoodRoute("home", null);
                     }}
                     className="w-full mt-3 py-2 text-sm text-[#00C805] hover:underline"
                   >
-                    ← Back to MCRO
+                    ← Back to MSFT
                   </button>
                 )}
               </div>
 
               {/* Your Position */}
               <div className="border-t border-gray-800 p-5">
-                <h4 className="text-sm font-medium text-gray-400 mb-3">Your Position</h4>
+                <h4 className="text-sm font-medium text-gray-400 mb-3">{isRobinhoodMsft ? "Portfolio Position" : "Your Position"}</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-gray-500">Shares</p>
@@ -1303,30 +1378,65 @@ const MicroHood = () => {
                   <div>
                     <p className="text-gray-500">Market Value</p>
                     <p className="font-medium">
-                      {formatCurrency((liveSelectedStock?.price || currentPrice) * (liveSelectedStock?.shares ?? ownedShares))}
+                      {isRobinhoodMsft
+                        ? "—"
+                        : formatCurrency((liveSelectedStock?.price || currentPrice) * (liveSelectedStock?.shares ?? ownedShares))}
                     </p>
                   </div>
                   <div>
                     <p className="text-gray-500">Avg Cost</p>
-                    <p className="font-medium">{liveSelectedStock?.avgCost ? formatCurrency(liveSelectedStock.avgCost) : "$380.50"}</p>
+                    <p className="font-medium">{isRobinhoodMsft ? "—" : liveSelectedStock?.avgCost ? formatCurrency(liveSelectedStock.avgCost) : "$380.50"}</p>
                   </div>
                   <div>
                     <p className="text-gray-500">Total Return</p>
-                    {(() => {
-                      const avgCost = liveSelectedStock?.avgCost || 380.50;
-                      const price = liveSelectedStock?.price || currentPrice;
-                      const shares = liveSelectedStock?.shares ?? ownedShares;
-                      const returnValue = (price - avgCost) * shares;
-                      const returnPercent = ((price - avgCost) / avgCost) * 100;
-                      return (
-                        <p className={`font-medium ${returnValue >= 0 ? "text-[#00C805]" : "text-[#FF5000]"}`}>
-                          {formatCurrency(returnValue)} ({returnPercent.toFixed(2)}%)
-                        </p>
-                      );
-                    })()}
+                    {isRobinhoodMsft ? (
+                      <p className={`font-medium ${themeClasses.textMuted}`}>Read-only</p>
+                    ) : (() => {
+                        const avgCost = liveSelectedStock?.avgCost || 380.50;
+                        const price = liveSelectedStock?.price || currentPrice;
+                        const shares = liveSelectedStock?.shares ?? ownedShares;
+                        const returnValue = (price - avgCost) * shares;
+                        const returnPercent = ((price - avgCost) / avgCost) * 100;
+                        return (
+                          <p className={`font-medium ${returnValue >= 0 ? "text-[#00C805]" : "text-[#FF5000]"}`}>
+                            {formatCurrency(returnValue)} ({returnPercent.toFixed(2)}%)
+                          </p>
+                        );
+                      })()}
                   </div>
                 </div>
               </div>
+
+              {isRobinhoodMsft && robinhoodMsftQuote && (
+                <div className="border-t border-gray-800 p-5">
+                  <h4 className="text-sm font-medium text-gray-400 mb-3">Public Quote</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-500">Bid</p>
+                      <p className="font-medium">{formatCurrency(robinhoodMsftQuote.bid)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Ask</p>
+                      <p className="font-medium">{formatCurrency(robinhoodMsftQuote.ask)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Day High</p>
+                      <p className="font-medium">{formatCurrency(robinhoodMsftQuote.dailyHigh)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Day Low</p>
+                      <p className="font-medium">{formatCurrency(robinhoodMsftQuote.dailyLow)}</p>
+                    </div>
+                  </div>
+                  <p className={`mt-3 text-xs ${themeClasses.textMuted}`}>
+                    Public read-only quote · Robinhood Chain {robinhoodMsftQuote.chainId}
+                    {robinhoodMsftQuote.isTradingHalt ? " · trading halt reported" : ""}
+                  </p>
+                  <p className={`mt-1 text-xs ${themeClasses.textMuted}`}>
+                    Fundamentals and analyst ratings are not sourced from this endpoint.
+                  </p>
+                </div>
+              )}
 
               {/* Stats */}
               {stockStats && (
@@ -1755,32 +1865,6 @@ const MicroHood = () => {
                 </p>
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Lock Screen */}
-      {isSignedOut && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}>
-          <div className="bg-white rounded-lg shadow-2xl p-8 w-[360px] flex flex-col items-center">
-            <div className="text-2xl font-bold mb-6" style={{ color: "#00C805" }}>MicroHood</div>
-            {currentUser.avatarUrl ? (
-              <img
-                src={currentUser.avatarUrl}
-                alt={currentUser.name}
-                className="w-20 h-20 rounded-full object-cover mb-4"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-4" style={{ backgroundColor: "#00C805" }}>
-                {currentUser.name.split(" ").map((n: string) => n[0]).join("")}
-              </div>
-            )}
-            <div className="text-lg font-semibold text-gray-900 mb-1">{currentUser.name}</div>
-            <div className="text-sm text-gray-500 mb-6">Portfolio Account</div>
-            <input type="password" readOnly value="••••••••" className="w-full px-4 py-2 border border-gray-300 rounded mb-4 text-center text-gray-400 bg-gray-50" />
-            <button onClick={() => setIsSignedOut(false)} className="w-full py-2 text-white rounded-full font-semibold hover:opacity-90 transition-opacity" style={{ backgroundColor: "#00C805" }}>
-              Sign in
-            </button>
           </div>
         </div>
       )}
