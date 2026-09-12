@@ -109,3 +109,27 @@ def list_wallets(connection: sqlite3.Connection, account_id: int) -> list[Wallet
         (account_id,),
     ).fetchall()
     return [Wallet(chain_id=row[0], address=row[1]) for row in rows]
+
+
+def add_watchlist_symbol(connection: sqlite3.Connection, account_id: int, symbol: str) -> None:
+    normalized = symbol.strip().upper()
+    if not normalized or len(normalized) > 16 or not normalized.isalnum():
+        raise ValueError("symbol must be 1-16 alphanumeric characters")
+    connection.execute(
+        "INSERT INTO watchlist (account_id, symbol) VALUES (?, ?) ON CONFLICT(account_id, symbol) DO NOTHING",
+        (account_id, normalized),
+    )
+    connection.commit()
+
+
+def remove_watchlist_symbol(connection: sqlite3.Connection, account_id: int, symbol: str) -> None:
+    normalized = symbol.strip().upper()
+    connection.execute("DELETE FROM watchlist WHERE account_id = ? AND symbol = ?", (account_id, normalized))
+    connection.commit()
+
+
+def list_watchlist_symbols(connection: sqlite3.Connection, account_id: int) -> list[str]:
+    rows = connection.execute(
+        "SELECT symbol FROM watchlist WHERE account_id = ? ORDER BY symbol", (account_id,)
+    ).fetchall()
+    return [row[0] for row in rows]

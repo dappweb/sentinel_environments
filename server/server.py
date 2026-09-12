@@ -42,6 +42,7 @@ from server.handlers import microtube as microtube_handler
 from server.schemas import (
 
     AccountWalletRequest,
+    AccountWatchlistRequest,
     CommentResponse,
     ConfigResponse,
     CreateEventResponse,
@@ -158,7 +159,15 @@ from server.robinhood_chain import (
     RobinhoodChainError,
     get_robinhood_chain_client,
 )
-from server.account_store import add_wallet, get_or_create_account, initialize as initialize_account_store, list_wallets
+from server.account_store import (
+    add_watchlist_symbol,
+    add_wallet,
+    get_or_create_account,
+    initialize as initialize_account_store,
+    list_wallets,
+    list_watchlist_symbols,
+    remove_watchlist_symbol,
+)
 from server.privy_auth import require_privy_user
 
 _SHARED_DB = Path(__file__).parent / "shared.db"
@@ -672,6 +681,41 @@ async def account_wallet_add(payload: AccountWalletRequest, claims: dict = Depen
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         return JSONResponse(status_code=201, content={"chain_id": payload.chain_id, "address": payload.address.strip().lower()})
+    finally:
+        connection.close()
+
+
+@app.get("/account/watchlist")
+async def account_watchlist(claims: dict = Depends(require_privy_user)) -> JSONResponse:
+    connection = _account_connection()
+    try:
+        account = get_or_create_account(connection, claims["sub"])
+        return JSONResponse(content={"symbols": list_watchlist_symbols(connection, account.id)})
+    finally:
+        connection.close()
+
+
+@app.post("/account/watchlist", status_code=201)
+async def account_watchlist_add(payload: AccountWatchlistRequest, claims: dict = Depends(require_privy_user)) -> JSONResponse:
+    connection = _account_connection()
+    try:
+        account = get_or_create_account(connection, claims["sub"])
+        try:
+            add_watchlist_symbol(connection, account.id, payload.symbol)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return JSONResponse(status_code=201, content={"symbol": payload.symbol.strip().upper()})
+    finally:
+        connection.close()
+
+
+@app.delete("/account/watchlist/{symbol}", status_code=204)
+async def account_watchlist_remove(symbol: str, claims: dict = Depends(require_privy_user)) -> Response:
+    connection = _account_connection()
+    try:
+        account = get_or_create_account(connection, claims["sub"])
+        remove_watchlist_symbol(connection, account.id, symbol)
+        return Response(status_code=204)
     finally:
         connection.close()
 

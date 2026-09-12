@@ -41,6 +41,10 @@ class AccountWalletRequest(BaseModel):
     address: str
 
 
+class AccountWatchlistRequest(BaseModel):
+    symbol: str
+
+
 # ---------------------------------------------------------------------------
 # Shared
 # ---------------------------------------------------------------------------
