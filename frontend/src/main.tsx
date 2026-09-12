@@ -14,7 +14,8 @@ const app = (
   </React.StrictMode>
 );
 
-const privyAppId = import.meta.env.VITE_PRIVY_APP_ID as string | undefined;
+const privyAppId = import.meta.env.VITE_PUBLIC_READONLY === "true" && import.meta.env.VITE_PRIVY_ENABLED !== "true"
+  ? undefined : import.meta.env.VITE_PRIVY_APP_ID as string | undefined;
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   privyAppId ? (
