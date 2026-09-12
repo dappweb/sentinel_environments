@@ -61,6 +61,12 @@ class Account:
     privy_subject: str
 
 
+@dataclass(frozen=True)
+class Wallet:
+    chain_id: int
+    address: str
+
+
 def initialize(connection: sqlite3.Connection) -> None:
     connection.executescript(SCHEMA)
     connection.commit()
@@ -84,10 +90,22 @@ def get_or_create_account(connection: sqlite3.Connection, privy_subject: str) ->
 
 def add_wallet(connection: sqlite3.Connection, account_id: int, chain_id: int, address: str) -> None:
     normalized = address.strip().lower()
-    if not normalized or not normalized.startswith("0x"):
-        raise ValueError("wallet address must be a hexadecimal address")
+    if chain_id <= 0 or len(normalized) != 42 or not normalized.startswith("0x"):
+        raise ValueError("wallet must include a positive chain_id and 20-byte hexadecimal address")
+    try:
+        int(normalized[2:], 16)
+    except ValueError as exc:
+        raise ValueError("wallet address must be a hexadecimal address") from exc
     connection.execute(
         "INSERT INTO account_wallets (account_id, chain_id, address) VALUES (?, ?, ?)",
         (account_id, chain_id, normalized),
     )
     connection.commit()
+
+
+def list_wallets(connection: sqlite3.Connection, account_id: int) -> list[Wallet]:
+    rows = connection.execute(
+        "SELECT chain_id, address FROM account_wallets WHERE account_id = ? ORDER BY chain_id, address",
+        (account_id,),
+    ).fetchall()
+    return [Wallet(chain_id=row[0], address=row[1]) for row in rows]
