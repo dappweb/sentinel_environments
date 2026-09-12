@@ -24,11 +24,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Check release is still current
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REVISION: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          latest=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          if [ "$latest" = "$REVISION" ]; then
+            echo 'deploy=true' >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v4
+        if: steps.current.outputs.deploy == 'true'
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           persist-credentials: false
       - name: Configure deployment transport
+        if: steps.current.outputs.deploy == 'true'
         env:
           SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
           KNOWN_HOSTS: ${{ secrets.PRODUCTION_KNOWN_HOSTS }}
@@ -39,6 +51,7 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
       - name: Deploy tested commit
+        if: steps.current.outputs.deploy == 'true'
         env:
           TARGET: ${{ vars.PRODUCTION_SSH_TARGET }}
           REVISION: ${{ github.event.workflow_run.head_sha }}
