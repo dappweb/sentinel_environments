@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, Form, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 
@@ -157,6 +157,8 @@ from server.robinhood_chain import (
     RobinhoodChainError,
     get_robinhood_chain_client,
 )
+from server.account_store import get_or_create_account, initialize as initialize_account_store
+from server.privy_auth import require_privy_user
 
 _SHARED_DB = Path(__file__).parent / "shared.db"
 _SCENARIOS: dict[str, dict] = {}
@@ -622,6 +624,20 @@ async def robinhood_chain_config() -> JSONResponse:
     """Return safe read-only integration metadata for the current process."""
     client = get_robinhood_chain_client()
     return JSONResponse(content=client.config.public_dict())
+
+
+@app.get("/account/me")
+async def account_me(claims: dict = Depends(require_privy_user)) -> JSONResponse:
+    """Create or return the account represented by a verified Privy subject."""
+    db_path = Path(os.getenv("MICROHOOD_ACCOUNT_DB", "/data/microhood-accounts.sqlite3"))
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(db_path)
+    try:
+        initialize_account_store(connection)
+        account = get_or_create_account(connection, claims["sub"])
+        return JSONResponse(content={"id": account.id, "privy_subject": account.privy_subject})
+    finally:
+        connection.close()
 
 
 @app.get("/chain/robinhood/health")
