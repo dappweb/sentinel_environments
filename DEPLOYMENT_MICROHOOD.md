@@ -48,15 +48,26 @@ docker compose --env-file /opt/microhood/.env -f docker-compose.production.yml u
 docker compose --env-file /opt/microhood/.env -f docker-compose.production.yml ps
 ```
 
-The API defaults to Robinhood Chain testnet and has no transaction signing or
-write capability. Production deployment does not configure a wallet,
-private key, trade executor, or real-funds approval.
+### Required `.env` keys
+
+| Key | Purpose |
+| --- | --- |
+| `ROBINHOOD_CHAIN_NETWORK` | `mainnet` (4663) to resolve the official MSFT Stock Token; on `testnet` (46630) the MSFT endpoint fails closed because the asset has no deployment on that chain |
+| `ROBINHOOD_CHAIN_TIMEOUT_SECONDS` | RPC/API timeout for the read-only chain client |
+| `ROBINHOOD_CHAIN_PRICE_FEEDS_JSON` | Chainlink feed map, e.g. `{"MSFT": {"address": "0x45C3C877C15E6BA2EBB19eA114Ea508d14C1Af2E", "heartbeat_seconds": 86400}}` |
+| `VITE_PRIVY_APP_ID` | Privy app id. Inlined into the frontend bundle **at build time**, so changing it requires `up -d --build frontend` |
+| `CLOUDFLARE_TUNNEL_TOKEN` | `metakina-prod` tunnel connector token, required by `docker-compose.production.yml` |
+
+The API has no transaction signing or write capability on either network.
+Production deployment does not configure a wallet, private key, trade
+executor, or real-funds approval.
 
 ## Acceptance checks
 
 ```bash
 curl -fsS https://microhood.ai/ | grep -F "MicroHood"
 curl -fsS https://microhood.ai/api/chain/robinhood/config
+curl -fsS https://microhood.ai/api/chain/robinhood/asset-config/MSFT
 docker compose --env-file /opt/microhood/.env -f docker-compose.production.yml logs --tail=100 cloudflared
 ```
 
