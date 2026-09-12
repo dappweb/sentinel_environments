@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useHashRoute } from "../hooks/useHashRoute";
-import { useMicrohoodData, type RobinhoodAsset } from "../hooks/useMicrohoodData";
+import { PUBLIC_READONLY, useMicrohoodData, type RobinhoodAsset } from "../hooks/useMicrohoodData";
 import PrivyAccountButton from "../components/PrivyAccountButton";
 import {
   Search,
@@ -45,7 +45,7 @@ export const TASK_ID_MICROHOOD = "microhood";
 const PROJECT_X_URL = "https://x.com/microhood_ai";
 const PROJECT_REPO_URL =
   import.meta.env.VITE_PROJECT_REPO_URL ??
-  "https://github.com/microsoft/sentinel_environments";
+  "https://github.com/dappweb/sentinel_environments";
 const ROBINHOOD_MAINNET_EXPLORER = "https://robinhoodchain.blockscout.com";
 const MSFT_STOCK_TOKEN_ADDRESS =
   "0xe93237C50D904957Cf27E7B1133b510C669c2e74";
@@ -199,7 +199,7 @@ const MicroHood = () => {
   const {
     stocks, watchlist: apiWatchlist, news, portfolio, config,
     robinhoodAssets, robinhoodMsftQuote, robinhoodMsftPriceHistory,
-    isLoading, error,
+    isLoading, error, quoteError,
     placeOrder, toggleWatchlist: apiToggleWatchlist,
   } = useMicrohoodData();
 
@@ -266,9 +266,12 @@ const MicroHood = () => {
     ["home", "search", "transfers", "profile", "crypto", "spending", "retirement"] as const,
     "home",
   );
-  const activeTab = hoodRoute.view;
+  const activeTab = PUBLIC_READONLY ? "home" : hoodRoute.view;
   type HoodTab = "home" | "search" | "transfers" | "profile" | "crypto" | "spending" | "retirement";
-  const setActiveTab = useCallback((tab: HoodTab) => setHoodRoute(tab), [setHoodRoute]);
+  const setActiveTab = useCallback((tab: HoodTab) => {
+    if (PUBLIC_READONLY && tab !== "home") { setToast("This feature is not available in the read-only preview"); return; }
+    setHoodRoute(tab);
+  }, [setHoodRoute]);
 
   // UI Panel States
   const [showSearchModal, setShowSearchModal] = useState(false);
@@ -286,6 +289,7 @@ const MicroHood = () => {
       : "investing";
   const setActiveNavSection = useCallback(
     (section: "investing" | "crypto" | "spending" | "retirement") => {
+      if (PUBLIC_READONLY && section !== "investing") { setToast("This feature is not available in the read-only preview"); return; }
       setHoodRoute(section === "investing" ? "home" : section);
     },
     [setHoodRoute],
@@ -372,12 +376,8 @@ const MicroHood = () => {
     const sym = liveSelectedStock?.symbol ?? "";
     const base = sym.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
     if (isRobinhoodMsft) {
-      const low = robinhoodMsftQuote?.dailyLow ?? p;
-      const high = robinhoodMsftQuote?.dailyHigh ?? p;
-      const observed = robinhoodMsftPriceHistory.length >= 2
-        ? robinhoodMsftPriceHistory
-        : [low, (low + p) / 2, p].filter((value) => value > 0);
-      const range = [low, p, high].filter((value) => value > 0);
+      const observed = robinhoodMsftPriceHistory;
+      const range: number[] = [];
       return {
         "1D": observed,
         "1W": range,
@@ -418,7 +418,7 @@ const MicroHood = () => {
   // For the official MSFT case, 1D uses observed public quote samples; the
   // other timeframes use the current-day range because no historical endpoint
   // is claimed by the read-only Stock Token API.
-  const chartData = selectedTimeframe === "1D"
+  const chartData = isRobinhoodMsft ? robinhoodMsftPriceHistory : selectedTimeframe === "1D"
     ? priceHistory
     : (priceHistoryByTimeframe[selectedTimeframe as keyof typeof priceHistoryByTimeframe] ?? []);
 
@@ -524,6 +524,7 @@ const MicroHood = () => {
   }, [showToast, setHoodRoute]);
 
   const handleToggleWatchlist = useCallback((symbol: string) => {
+    if (PUBLIC_READONLY) { showToast("Watchlists are not available yet"); return; }
     const existing = watchlistItems.find(item => item.symbol === symbol);
     const isCurrentlyInWatchlist = existing?.inWatchlist ?? false;
     apiToggleWatchlist(symbol);
@@ -741,12 +742,12 @@ const MicroHood = () => {
     );
   };
 
-  const timeframes = ["1D", "1W", "1M", "3M", "YTD", "1Y", "ALL"];
+  const timeframes = isRobinhoodMsft ? ["Session"] : ["1D", "1W", "1M", "3M", "YTD", "1Y", "ALL"];
 
   // ---------------------------------------------------------------------------
   // Loading Gate
   // ---------------------------------------------------------------------------
-  if (!config || isLoading) {
+  if (!PUBLIC_READONLY && (!config || isLoading)) {
     const isNetworkError = error && /failed to fetch|networkerror/i.test(error);
     const isNoSession = error && /409/.test(error);
     const isMismatch = error && /environment mismatch/i.test(error);
@@ -811,19 +812,19 @@ const MicroHood = () => {
                   Investing
                 </button>
                 <button
-                  onClick={() => setActiveNavSection("crypto")}
+                  onClick={() => PUBLIC_READONLY ? showToast("Crypto trading is not available") : setActiveNavSection("crypto")}
                   className={`${activeNavSection === "crypto" ? `${themeClasses.navActive} font-medium` : themeClasses.textSecondary} ${themeClasses.accentHover} transition-colors`}
                 >
                   Crypto
                 </button>
                 <button
-                  onClick={() => setActiveNavSection("spending")}
+                  onClick={() => PUBLIC_READONLY ? showToast("Spending is not available") : setActiveNavSection("spending")}
                   className={`${activeNavSection === "spending" ? `${themeClasses.navActive} font-medium` : themeClasses.textSecondary} ${themeClasses.accentHover} transition-colors`}
                 >
                   Spending
                 </button>
                 <button
-                  onClick={() => setActiveNavSection("retirement")}
+                  onClick={() => PUBLIC_READONLY ? showToast("Retirement accounts are not available") : setActiveNavSection("retirement")}
                   className={`${activeNavSection === "retirement" ? `${themeClasses.navActive} font-medium` : themeClasses.textSecondary} ${themeClasses.accentHover} transition-colors`}
                 >
                   Retirement
@@ -908,9 +909,36 @@ const MicroHood = () => {
             >
               {copiedAddress === MICROHOOD_PROJECT_TOKEN_ADDRESS ? <Check size={15} /> : <Copy size={15} />}
             </button>
+            <a
+              href="/landing"
+              title="Open the SentinelBench overview page"
+              className={`shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] ${themeClasses.linkText} transition ${themeClasses.hoverText}`}
+            >
+              Overview
+            </a>
           </div>
         </div>
       </div>
+
+      {/* X introduction card: persistent project context for every MicroHood view. */}
+      <section className={`${themeClasses.bgSecondary} border-b ${themeClasses.border}`} aria-labelledby="project-x-card-title">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:py-5">
+          <div className={`flex flex-col gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5 ${themeClasses.borderSecondary}`}>
+            <div className="flex items-start gap-3">
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${themeClasses.bgTertiary} ${themeClasses.text}`} aria-hidden="true"><XBrandIcon size={18} /></div>
+              <div>
+                <p className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${themeClasses.textSecondary}`}>MicroHood.ai on X</p>
+                <h2 id="project-x-card-title" className="mt-1 text-base font-semibold">Follow the project and research updates</h2>
+                <p className={`mt-1 max-w-2xl text-sm leading-6 ${themeClasses.textMuted}`}>Public-read market monitoring, benchmark releases, and project notes from <span className={themeClasses.linkText}>@microhood_ai</span>.</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 sm:shrink-0">
+              <a href={PROJECT_X_URL} target="_blank" rel="noreferrer" className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold transition ${themeClasses.accentText} ${themeClasses.bgTertiary} ${themeClasses.accentHover}`} aria-label="Follow MicroHood.ai on X"><XBrandIcon size={15} /> Follow on X <ArrowUpRight size={14} /></a>
+              <a href={PROJECT_REPO_URL} target="_blank" rel="noreferrer" className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold transition ${themeClasses.textSecondary} ${themeClasses.bgTertiary} ${themeClasses.hoverText}`} aria-label="Open MicroHood.ai GitHub repository"><Github size={15} /> GitHub <ArrowUpRight size={14} /></a>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
@@ -1086,16 +1114,18 @@ const MicroHood = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Portfolio Value */}
             <div>
+              {PUBLIC_READONLY && <p className={themeClasses.textSecondary}>MSFT · observed quote midpoint (USD)</p>}
               <div className="flex items-baseline gap-3">
                 <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-                  {formatCurrency(portfolioValue)}
+                  {PUBLIC_READONLY ? (robinhoodMsftQuote ? formatCurrency(robinhoodMsftQuote.currentPrice) : "—") : formatCurrency(portfolioValue)}
                 </h1>
               </div>
-              <div className={`flex items-center gap-2 mt-2 text-lg ${portfolioChange >= 0 ? themeClasses.accentText : themeClasses.negativeText}`}>
+              {!PUBLIC_READONLY && <div className={`flex items-center gap-2 mt-2 text-lg ${portfolioChange >= 0 ? themeClasses.accentText : themeClasses.negativeText}`}>
                 {portfolioChange >= 0 ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
                 <span className="font-medium">{formatChange(portfolioChange, portfolioChangePercent)}</span>
                 <span className={themeClasses.textMuted}>Today</span>
-              </div>
+              </div>}
+              {PUBLIC_READONLY && <p role="status" className={`mt-2 text-sm ${themeClasses.textSecondary}`}>{quoteError ?? "Observed during this visit. Historical performance is not available."}</p>}
             </div>
 
             {/* Chart */}
@@ -1110,7 +1140,7 @@ const MicroHood = () => {
                     key={tf}
                     onClick={() => handleTimeframeChange(tf)}
                     className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-colors ${
-                      selectedTimeframe === tf
+                      (isRobinhoodMsft || selectedTimeframe === tf)
                         ? "bg-[#00C805] text-black"
                         : `${themeClasses.textSecondary} ${themeClasses.hoverText} ${themeClasses.bgHoverSecondary}`
                     }`}
@@ -1131,21 +1161,21 @@ const MicroHood = () => {
                 <span className={`text-sm ${themeClasses.textSecondary}`}>{isRobinhoodMsft ? "Observe" : "Invest"}</span>
               </button>
               <button
-                onClick={() => setShowTransferModal(true)}
+                onClick={() => PUBLIC_READONLY ? showToast("Transfers are not available") : setShowTransferModal(true)}
                 className={`flex flex-col items-center gap-2 p-4 ${themeClasses.bgSecondary} rounded-xl ${themeClasses.bgHoverSecondary} transition-colors`}
               >
                 <Repeat size={24} className={themeClasses.textSecondary} />
                 <span className={`text-sm ${themeClasses.textSecondary}`}>Transfer</span>
               </button>
               <button
-                onClick={() => setShowRewardsModal(true)}
+                onClick={() => PUBLIC_READONLY ? showToast("Rewards are not available") : setShowRewardsModal(true)}
                 className={`flex flex-col items-center gap-2 p-4 ${themeClasses.bgSecondary} rounded-xl ${themeClasses.bgHoverSecondary} transition-colors`}
               >
                 <Gift size={24} className={themeClasses.textSecondary} />
                 <span className={`text-sm ${themeClasses.textSecondary}`}>Rewards</span>
               </button>
               <button
-                onClick={() => setShowCardModal(true)}
+                onClick={() => PUBLIC_READONLY ? showToast("Cards are not available") : setShowCardModal(true)}
                 className={`flex flex-col items-center gap-2 p-4 ${themeClasses.bgSecondary} rounded-xl ${themeClasses.bgHoverSecondary} transition-colors`}
               >
                 <CreditCard size={24} className={themeClasses.textSecondary} />
@@ -1155,13 +1185,13 @@ const MicroHood = () => {
 
             {/* Buying Power */}
             <button
-              onClick={() => setBuyingPowerExpanded(!buyingPowerExpanded)}
+              onClick={() => !PUBLIC_READONLY && setBuyingPowerExpanded(!buyingPowerExpanded)}
               className={`w-full ${themeClasses.bgSecondary} rounded-xl p-5 text-left ${themeClasses.bgHoverSecondary} transition-colors`}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className={`${themeClasses.textSecondary} text-sm`}>Buying Power</p>
-                  <p className={`text-2xl font-bold mt-1 ${themeClasses.text}`}>{formatCurrency(buyingPower)}</p>
+                  <p className={`${themeClasses.textSecondary} text-sm`}>{PUBLIC_READONLY ? "Trading and deposits are not available" : "Buying Power"}</p>
+                  <p className={`text-2xl font-bold mt-1 ${themeClasses.text}`}>{PUBLIC_READONLY ? "Read-only preview" : formatCurrency(buyingPower)}</p>
                 </div>
                 <ChevronDown size={24} className={`${themeClasses.textMuted} transition-transform ${buyingPowerExpanded ? "rotate-180" : ""}`} />
               </div>
@@ -1386,7 +1416,7 @@ const MicroHood = () => {
                 <div className="flex items-baseline gap-2 mb-1">
                   <span className="text-3xl font-bold">
                     {isRobinhoodMsft && !robinhoodMsftQuote
-                      ? "Resolving…"
+                      ? (quoteError ? "Unavailable" : "Resolving…")
                       : formatCurrency(liveSelectedStock?.price || currentPrice)}
                   </span>
                 </div>
@@ -1396,10 +1426,11 @@ const MicroHood = () => {
                       <>
                         <span>Bid {formatCurrency(robinhoodMsftQuote.bid)}</span>
                         <span>Ask {formatCurrency(robinhoodMsftQuote.ask)}</span>
-                        <span className={themeClasses.accentText}>Live · public read</span>
+                        <span className={themeClasses.textSecondary}>{quoteError ?? (robinhoodMsftQuote.isTradingHalt ? "Trading halted" : "Public quote")}</span>
+                        <span>Source time: {robinhoodMsftQuote.generatedAt}</span>
                       </>
                     ) : (
-                      <span>Waiting for the public Robinhood quote…</span>
+                      <span>{quoteError ?? "Waiting for the public Robinhood quote…"}</span>
                     )}
                   </div>
                 ) : (
@@ -1658,10 +1689,9 @@ const MicroHood = () => {
             <div className={`${themeClasses.bgSecondary} rounded-xl p-5`}>
               <h3 className={`font-bold mb-3 ${themeClasses.text}`}>About</h3>
               <p className={`text-sm ${themeClasses.textSecondary} leading-relaxed`}>
-                MicroSystems Corp develops and supports software, services, devices, and solutions worldwide.
-                The company operates through Enterprise Solutions, Cloud Infrastructure, and Consumer Technology segments.
+                Independent MicroHood application based on the open-source SentinelBench research environment. The project token is separate from the MSFT Stock Token. Microsoft and Robinhood endorsement is not claimed.
               </p>
-              <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+              {!PUBLIC_READONLY && <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
                 <div>
                   <p className={themeClasses.textMuted}>Headquarters</p>
                   <p className={themeClasses.textSecondary}>Redmond, WA</p>
@@ -1670,9 +1700,10 @@ const MicroHood = () => {
                   <p className={themeClasses.textMuted}>Employees</p>
                   <p className={themeClasses.textSecondary}>221,000</p>
                 </div>
-              </div>
+              </div>}
             </div>
 
+            {!PUBLIC_READONLY && <>
             {/* People Also Own */}
             <div className={`${themeClasses.bgSecondary} rounded-xl p-5`}>
               <h3 className={`font-bold mb-4 ${themeClasses.text}`}>People Also Own</h3>
@@ -1716,6 +1747,7 @@ const MicroHood = () => {
                 </div>
               </div>
             </div>
+            </>}
           </div>
         </div>
       </main>

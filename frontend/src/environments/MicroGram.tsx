@@ -1145,7 +1145,7 @@ const MicroGram = () => {
           </div>
         )}
 
-        {/* Reels (placeholder) */}
+        {/* Reels empty state (no reel catalog is seeded for this environment) */}
         {profileTab === "reels" && (
           <div className="py-16 text-center text-gray-500">
             <Film size={48} className="mx-auto mb-4 text-gray-300" />

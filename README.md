@@ -4,7 +4,6 @@
 
 *A benchmark for evaluating AI agents on long-horizon monitoring tasks.*
 
-<!-- TODO: replace placeholder arXiv and blog URLs before public release -->
 <a href="https://microhood.ai"><img src="https://img.shields.io/badge/Website-microhood.ai-0078D4" alt="Website"></a> <a href="https://x.com/microhood_ai"><img src="https://img.shields.io/badge/X-%40microhood__ai-111111" alt="X @microhood_ai"></a> <a href="https://arxiv.org/abs/2606.05342"><img src="https://img.shields.io/badge/Paper-arXiv-b31b1b" alt="Paper"></a> <a href="https://www.microsoft.com/en-us/research/articles/sentinelbench-a-benchmark-for-long-running-monitoring-agents/"><img src="https://img.shields.io/badge/Blog-Post-6f42c1" alt="Blog"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue" alt="License"></a>
 
 <img src="figures/collage-mosaic.gif" alt="Collage mosaic of Sentinel Environments" width="600">
@@ -250,7 +249,6 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Citation
 
-<!-- TODO: replace with the published citation on release -->
 ```bibtex
 @misc{maldaner2026sentinelbenchbenchmarklongrunningmonitoring,
       title={SentinelBench: A Benchmark for Long-Running Monitoring Agents}, 

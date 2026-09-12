@@ -35,6 +35,9 @@ function ConfiguredPrivyAccountButton({ className = "" }: PrivyAccountButtonProp
 }
 
 export default function PrivyAccountButton({ className = "", onUnavailable }: PrivyAccountButtonProps) {
+  if (import.meta.env.VITE_PUBLIC_READONLY === "true" && import.meta.env.VITE_PRIVY_ENABLED !== "true") {
+    return <button type="button" disabled className={`${className} opacity-60`} title="Account login is not available yet">Login coming soon</button>;
+  }
   if (!PRIVY_APP_ID) {
     return (
       <button

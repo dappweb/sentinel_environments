@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ApiSelfUser } from "../types/selfUser";
 
+export const PUBLIC_READONLY = import.meta.env.VITE_PUBLIC_READONLY === "true";
+
 export interface ApiStock {
   symbol: string;
   name: string;
@@ -80,6 +82,7 @@ export function useMicrohoodData() {
   const [robinhoodMsftPriceHistory, setRobinhoodMsftPriceHistory] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
 
   const configLoaded = useRef(false);
   const sessionInitAttempted = useRef(false);
@@ -99,8 +102,8 @@ export function useMicrohoodData() {
 
   const fetchRobinhoodMsftQuote = useCallback(async () => {
     try {
-      const response = await fetch("/api/chain/robinhood/prices/MSFT", { cache: "no-store" });
-      if (!response.ok) return;
+      const response = await fetch("/api/chain/robinhood/prices/MSFT", { cache: "no-store", signal: AbortSignal.timeout(10000) });
+      if (!response.ok) throw new Error("Quote unavailable");
       const payload = await response.json() as {
         quotes?: Array<{
           tokenSymbol?: string;
@@ -114,14 +117,17 @@ export function useMicrohoodData() {
         }>;
       };
       const quote = payload.quotes?.find((item) => item.tokenSymbol?.toUpperCase() === "MSFT");
-      if (!quote) return;
+      if (!quote) throw new Error("Quote unavailable");
 
       const bid = Number(quote.bid);
       const ask = Number(quote.ask);
       const currentPrice = Number(((bid + ask) / 2).toFixed(2));
-      if (![bid, ask, currentPrice].every(Number.isFinite) || bid <= 0 || ask <= 0) return;
+      if (![bid, ask, currentPrice].every(Number.isFinite) || bid <= 0 || ask < bid) throw new Error("Invalid quote");
 
       const deployment = quote.deployments?.find((item) => item.chainId === 4663);
+      if (deployment?.contractAddress?.toLowerCase() !== "0xe93237c50d904957cf27e7b1133b510c669c2e74") throw new Error("Unverified asset");
+      const timestamp = Date.parse(quote.generatedAt ?? "");
+      if (!Number.isFinite(timestamp) || Date.now() - timestamp > 120000 || timestamp - Date.now() > 60000) throw new Error("Quote timestamp is stale or invalid");
       const dailyHigh = Number(quote.dailyHigh);
       const dailyLow = Number(quote.dailyLow);
       const nextQuote: RobinhoodMsftQuote = {
@@ -137,12 +143,12 @@ export function useMicrohoodData() {
         isTradingHalt: quote.isTradingHalt ?? false,
       };
       setRobinhoodMsftQuote(nextQuote);
+      setQuoteError(null);
       setRobinhoodMsftPriceHistory((previous) => {
-        if (previous[previous.length - 1] === currentPrice) return previous;
         return [...previous, currentPrice].slice(-80);
       });
     } catch {
-      // The selected MSFT card keeps its last confirmed quote on transient errors.
+      setQuoteError("Quote unavailable or stale — last successful sample shown");
     }
   }, []);
 
@@ -159,6 +165,7 @@ export function useMicrohoodData() {
   }, [fetchRobinhoodMsftQuote]);
 
   const fetchData = useCallback(() => {
+    if (PUBLIC_READONLY) { setIsLoading(false); return; }
     if (mismatch.current) return;
 
     // Retry config until loaded
@@ -253,6 +260,7 @@ export function useMicrohoodData() {
       type: "market" | "limit" = "market",
       limitPrice?: number
     ): Promise<{ success: boolean; error?: string }> => {
+      if (PUBLIC_READONLY) return { success: false, error: "Trading is not available" };
       const res = await fetch(`/api/data/microhood-stocks/${symbol}/order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -274,6 +282,7 @@ export function useMicrohoodData() {
   );
 
   const toggleWatchlist = useCallback(async (symbol: string) => {
+    if (PUBLIC_READONLY) return;
     await fetch(`/api/data/microhood-watchlist/${symbol}/toggle`, {
       method: "POST",
     }).catch(() => {});
@@ -290,6 +299,7 @@ export function useMicrohoodData() {
     robinhoodMsftPriceHistory,
     isLoading,
     error,
+    quoteError,
     placeOrder,
     toggleWatchlist,
   };

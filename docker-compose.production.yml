@@ -7,6 +7,7 @@ services:
     environment:
       ROBINHOOD_CHAIN_NETWORK: ${ROBINHOOD_CHAIN_NETWORK:-testnet}
       ROBINHOOD_CHAIN_TIMEOUT_SECONDS: ${ROBINHOOD_CHAIN_TIMEOUT_SECONDS:-5}
+      ROBINHOOD_CHAIN_PRICE_FEEDS_JSON: ${ROBINHOOD_CHAIN_PRICE_FEEDS_JSON:-}
     expose:
       - "8000"
     healthcheck:
@@ -27,12 +28,23 @@ services:
       dockerfile: deploy/Dockerfile.web
       args:
         VITE_PRIVY_APP_ID: ${VITE_PRIVY_APP_ID:-}
+        VITE_PRIVY_ENABLED: ${VITE_PRIVY_ENABLED:-false}
     restart: unless-stopped
     depends_on:
       api:
         condition: service_healthy
     ports:
       - "80:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   cloudflared:
     image: cloudflare/cloudflared:2026.6.1

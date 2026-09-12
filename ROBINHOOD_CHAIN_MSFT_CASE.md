@@ -21,7 +21,7 @@ Robinhood Chain mainnet RPC on 2026-09-12:
 | API current multiplier | `1.000412952576205964` |
 | On-chain `uiMultiplier()` | `1000412952576205964` |
 | API/on-chain multiplier check | `true` |
-| Price-feed readiness | `unconfigured` until an operator supplies the current feed map |
+| Price-feed readiness | Chainlink `Robinhood MSFT / USD` feed proxy `0x45C3C877C15E6BA2EBB19eA114Ea508d14C1Af2E` (8 decimals, heartbeat `86400`s) |
 
 The canonical asset registry is authoritative for the official Stock Token
 deployment. A different contract address with the same ticker must not be
@@ -75,3 +75,4 @@ Authoritative references:
 - [Robinhood Chain documentation](https://docs.robinhood.com/chain/)
 - [Stock Token APIs](https://docs.robinhood.com/chain/stock-token-apis)
 - [Token contracts](https://docs.robinhood.com/chain/contracts)
+- [Robinhood Chain price feeds (Chainlink)](https://docs.chain.link/data-feeds/price-feeds/addresses?network=robinhood)

@@ -626,8 +626,7 @@ const Desktop = () => {
     }
 
     if (icon.baseTask === PAPER_ICON_ID) {
-      // TODO: Open paper PDF or link when available
-      window.open("https://arxiv.org/", "_blank", "noopener,noreferrer");
+      window.open("https://arxiv.org/abs/2606.05342", "_blank", "noopener,noreferrer");
       return;
     }
 
