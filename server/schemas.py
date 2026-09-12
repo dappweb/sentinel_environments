@@ -45,6 +45,14 @@ class AccountWatchlistRequest(BaseModel):
     symbol: str
 
 
+class AccountOrderIntentRequest(BaseModel):
+    symbol: str
+    side: str
+    quantity: float
+    order_type: str = "market"
+    limit_price: float | None = None
+
+
 # ---------------------------------------------------------------------------
 # Shared
 # ---------------------------------------------------------------------------

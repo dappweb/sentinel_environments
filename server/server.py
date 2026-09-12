@@ -15,6 +15,7 @@ import json
 import os
 import sqlite3
 import time
+import uuid
 from pathlib import Path
 from typing import Optional
 
@@ -43,6 +44,7 @@ from server.schemas import (
 
     AccountWalletRequest,
     AccountWatchlistRequest,
+    AccountOrderIntentRequest,
     CommentResponse,
     ConfigResponse,
     CreateEventResponse,
@@ -728,6 +730,46 @@ async def account_portfolio(claims: dict = Depends(require_privy_user)) -> JSONR
         account = get_or_create_account(connection, claims["sub"])
         positions = list_positions(connection, account.id)
         return JSONResponse(content={"positions": [{"symbol": p.symbol, "shares": p.shares, "avg_cost": p.avg_cost} for p in positions]})
+    finally:
+        connection.close()
+
+
+@app.post("/account/orders/intent", status_code=201)
+async def account_order_intent(payload: AccountOrderIntentRequest, claims: dict = Depends(require_privy_user)) -> JSONResponse:
+    symbol = payload.symbol.strip().upper()
+    side = payload.side.strip().lower()
+    order_type = payload.order_type.strip().lower()
+    if not symbol or len(symbol) > 16 or not symbol.isalnum():
+        raise HTTPException(status_code=422, detail="symbol must be 1-16 alphanumeric characters")
+    if side not in {"buy", "sell"}:
+        raise HTTPException(status_code=422, detail="side must be buy or sell")
+    if order_type not in {"market", "limit"}:
+        raise HTTPException(status_code=422, detail="order_type must be market or limit")
+    if payload.quantity <= 0 or payload.quantity > 1_000_000:
+        raise HTTPException(status_code=422, detail="quantity must be greater than 0 and at most 1000000")
+    if order_type == "limit" and (payload.limit_price is None or payload.limit_price <= 0):
+        raise HTTPException(status_code=422, detail="limit orders require a positive limit_price")
+    connection = _account_connection()
+    try:
+        account = get_or_create_account(connection, claims["sub"])
+        client_order_id = uuid.uuid4().hex
+        connection.execute(
+            "INSERT INTO orders (account_id, client_order_id, symbol, side, quantity, status) VALUES (?, ?, ?, ?, ?, 'pending')",
+            (account.id, client_order_id, symbol, side, payload.quantity),
+        )
+        connection.commit()
+        return JSONResponse(status_code=201, content={
+            "client_order_id": client_order_id,
+            "symbol": symbol,
+            "side": side,
+            "quantity": payload.quantity,
+            "order_type": order_type,
+            "limit_price": payload.limit_price,
+            "status": "pending_signature",
+            "network": "testnet",
+            "chain_id": 46630,
+            "broadcast": False,
+        })
     finally:
         connection.close()
 
