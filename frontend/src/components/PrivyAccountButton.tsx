@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useLogin, usePrivy } from "@privy-io/react-auth";
 
 const PRIVY_APP_ID = import.meta.env.VITE_PRIVY_APP_ID as string | undefined;
@@ -8,8 +9,23 @@ interface PrivyAccountButtonProps {
 }
 
 function ConfiguredPrivyAccountButton({ className = "" }: PrivyAccountButtonProps) {
-  const { ready, authenticated, logout } = usePrivy();
+  const { ready, authenticated, logout, getAccessToken } = usePrivy();
   const { login } = useLogin();
+
+  useEffect(() => {
+    if (!ready || !authenticated) return;
+    let cancelled = false;
+    void getAccessToken().then((token) => {
+      if (cancelled || !token) return;
+      return fetch("/api/account/me", {
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: "same-origin",
+      });
+    }).catch(() => {
+      // Account sync is best-effort here; the authenticated UI remains usable.
+    });
+    return () => { cancelled = true; };
+  }, [authenticated, getAccessToken, ready]);
 
   if (!ready) {
     return (
