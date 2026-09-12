@@ -27,6 +27,7 @@ services:
       context: .
       dockerfile: deploy/Dockerfile.web
       args:
+        RELEASE_REVISION: ${RELEASE_REVISION:-unknown}
         VITE_PRIVY_APP_ID: ${VITE_PRIVY_APP_ID:-}
         VITE_PRIVY_ENABLED: ${VITE_PRIVY_ENABLED:-true}
     restart: unless-stopped

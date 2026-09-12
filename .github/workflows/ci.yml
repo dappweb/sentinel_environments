@@ -18,7 +18,11 @@
 
 name: CI
 
+permissions:
+  contents: read
+
 on:
+  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
@@ -97,6 +101,9 @@ jobs:
         # needed -- TestClient spins up the app inside the pytest process.
         # Guards the wall-clock vs sim-clock scaling math in server/timing.py.
         run: pytest tests/test_speed_factor.py -v
+
+      - name: Validate public chain boundary
+        run: pytest tests/test_robinhood_chain.py -v
 
       - name: Run microscholar search tests
         # In-process unit tests for the fuzzy-match shingling algorithm used

@@ -1,0 +1,50 @@
+name: Deploy production
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: microhood-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      vars.PRODUCTION_DEPLOY_ENABLED == 'true' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - name: Configure deployment transport
+        env:
+          SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.PRODUCTION_KNOWN_HOSTS }}
+        run: |
+          test -n "$SSH_KEY" && test -n "$KNOWN_HOSTS"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Deploy tested commit
+        env:
+          TARGET: ${{ vars.PRODUCTION_SSH_TARGET }}
+          REVISION: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          test -n "$TARGET"
+          [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$TARGET" \
+            "bash -s -- '$REVISION'" < deploy/release.sh
+          printf 'Deployed commit: `%s`\n' "$REVISION" >> "$GITHUB_STEP_SUMMARY"
