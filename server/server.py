@@ -41,6 +41,7 @@ from server.handlers import microscholar as microscholar_handler
 from server.handlers import microtube as microtube_handler
 from server.schemas import (
 
+    AccountWalletRequest,
     CommentResponse,
     ConfigResponse,
     CreateEventResponse,
@@ -157,7 +158,7 @@ from server.robinhood_chain import (
     RobinhoodChainError,
     get_robinhood_chain_client,
 )
-from server.account_store import get_or_create_account, initialize as initialize_account_store
+from server.account_store import add_wallet, get_or_create_account, initialize as initialize_account_store, list_wallets
 from server.privy_auth import require_privy_user
 
 _SHARED_DB = Path(__file__).parent / "shared.db"
@@ -636,6 +637,41 @@ async def account_me(claims: dict = Depends(require_privy_user)) -> JSONResponse
         initialize_account_store(connection)
         account = get_or_create_account(connection, claims["sub"])
         return JSONResponse(content={"id": account.id, "privy_subject": account.privy_subject})
+    finally:
+        connection.close()
+
+
+def _account_connection() -> sqlite3.Connection:
+    db_path = Path(os.getenv("MICROHOOD_ACCOUNT_DB", "/data/microhood-accounts.sqlite3"))
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(db_path)
+    initialize_account_store(connection)
+    return connection
+
+
+@app.get("/account/wallets")
+async def account_wallets(claims: dict = Depends(require_privy_user)) -> JSONResponse:
+    connection = _account_connection()
+    try:
+        account = get_or_create_account(connection, claims["sub"])
+        wallets = list_wallets(connection, account.id)
+        return JSONResponse(content={"wallets": [{"chain_id": w.chain_id, "address": w.address} for w in wallets]})
+    finally:
+        connection.close()
+
+
+@app.post("/account/wallets", status_code=201)
+async def account_wallet_add(payload: AccountWalletRequest, claims: dict = Depends(require_privy_user)) -> JSONResponse:
+    connection = _account_connection()
+    try:
+        account = get_or_create_account(connection, claims["sub"])
+        try:
+            add_wallet(connection, account.id, payload.chain_id, payload.address)
+        except sqlite3.IntegrityError as exc:
+            raise HTTPException(status_code=409, detail="wallet is already bound to another account or this account") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return JSONResponse(status_code=201, content={"chain_id": payload.chain_id, "address": payload.address.strip().lower()})
     finally:
         connection.close()
 

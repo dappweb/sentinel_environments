@@ -36,6 +36,11 @@ class InitPayload(BaseModel):
         return validate_speed_factor(v)
 
 
+class AccountWalletRequest(BaseModel):
+    chain_id: int
+    address: str
+
+
 # ---------------------------------------------------------------------------
 # Shared
 # ---------------------------------------------------------------------------
