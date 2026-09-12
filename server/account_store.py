@@ -67,6 +67,13 @@ class Wallet:
     address: str
 
 
+@dataclass(frozen=True)
+class Position:
+    symbol: str
+    shares: float
+    avg_cost: float
+
+
 def initialize(connection: sqlite3.Connection) -> None:
     connection.executescript(SCHEMA)
     connection.commit()
@@ -133,3 +140,11 @@ def list_watchlist_symbols(connection: sqlite3.Connection, account_id: int) -> l
         "SELECT symbol FROM watchlist WHERE account_id = ? ORDER BY symbol", (account_id,)
     ).fetchall()
     return [row[0] for row in rows]
+
+
+def list_positions(connection: sqlite3.Connection, account_id: int) -> list[Position]:
+    rows = connection.execute(
+        "SELECT symbol, shares, avg_cost FROM positions WHERE account_id = ? AND shares > 0 ORDER BY symbol",
+        (account_id,),
+    ).fetchall()
+    return [Position(symbol=row[0], shares=row[1], avg_cost=row[2]) for row in rows]
