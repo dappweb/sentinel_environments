@@ -1,4 +1,5 @@
-import { useLogin, usePrivy } from "@privy-io/react-auth";
+import { useLogin, usePrivy, useWallets } from "@privy-io/react-auth";
+import { useEffect, useState } from "react";
 
 const PRIVY_APP_ID = import.meta.env.VITE_PRIVY_APP_ID as string | undefined;
 
@@ -8,8 +9,36 @@ interface PrivyAccountButtonProps {
 }
 
 function ConfiguredPrivyAccountButton({ className = "" }: PrivyAccountButtonProps) {
-  const { ready, authenticated, logout } = usePrivy();
+  const { ready, authenticated, logout, getAccessToken } = usePrivy();
   const { login } = useLogin();
+  const { wallets } = useWallets();
+  const [walletStatus, setWalletStatus] = useState<"idle" | "syncing" | "synced" | "error">("idle");
+
+  useEffect(() => {
+    if (!authenticated || wallets.length === 0) {
+      setWalletStatus("idle");
+      return;
+    }
+    let cancelled = false;
+    setWalletStatus("syncing");
+    void (async () => {
+      const token = await getAccessToken();
+      if (!token || cancelled) {
+        if (!cancelled) setWalletStatus("error");
+        return;
+      }
+      const wallet = wallets[0];
+      const chainId = Number(wallet.chainId?.split(":").pop() ?? 0);
+      const response = await fetch("/api/account/wallets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        credentials: "same-origin",
+        body: JSON.stringify({ address: wallet.address, chain_id: chainId }),
+      }).catch(() => null);
+      if (!cancelled) setWalletStatus(response?.ok ? "synced" : "error");
+    })();
+    return () => { cancelled = true; };
+  }, [authenticated, wallets, getAccessToken]);
 
   if (!ready) {
     return (
@@ -21,9 +50,14 @@ function ConfiguredPrivyAccountButton({ className = "" }: PrivyAccountButtonProp
 
   if (authenticated) {
     return (
-      <button type="button" onClick={() => void logout()} className={className}>
-        Log out
-      </button>
+      <span className="inline-flex items-center gap-2">
+        {wallets.length > 0 && (
+          <span className="hidden text-xs opacity-70 md:inline" title={wallets[0].address}>
+            {walletStatus === "error" ? "Wallet sync failed" : walletStatus === "syncing" ? "Syncing wallet…" : "Wallet bound"}
+          </span>
+        )}
+        <button type="button" onClick={() => void logout()} className={className}>Log out</button>
+      </span>
     );
   }
 
