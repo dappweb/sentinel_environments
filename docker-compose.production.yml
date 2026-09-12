@@ -28,7 +28,7 @@ services:
       dockerfile: deploy/Dockerfile.web
       args:
         VITE_PRIVY_APP_ID: ${VITE_PRIVY_APP_ID:-}
-        VITE_PRIVY_ENABLED: ${VITE_PRIVY_ENABLED:-false}
+        VITE_PRIVY_ENABLED: ${VITE_PRIVY_ENABLED:-true}
     restart: unless-stopped
     depends_on:
       api:
