@@ -4,6 +4,8 @@ services:
       context: .
       dockerfile: deploy/Dockerfile.api
     restart: unless-stopped
+    volumes:
+      - microhood-account-data:/data
     environment:
       ROBINHOOD_CHAIN_NETWORK: ${ROBINHOOD_CHAIN_NETWORK:-testnet}
       ROBINHOOD_CHAIN_TIMEOUT_SECONDS: ${ROBINHOOD_CHAIN_TIMEOUT_SECONDS:-5}
@@ -59,3 +61,6 @@ services:
       - run
       - --token
       - ${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN is required}
+
+volumes:
+  microhood-account-data:
