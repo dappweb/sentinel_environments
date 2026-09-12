@@ -397,7 +397,7 @@ const MicroHood = () => {
       "1Y":  generatePriceHistory(p * 0.75,  50, v * 4.5, p, base + 6),
       "ALL": generatePriceHistory(p * 0.55,  50, v * 7,   p, base + 7),
     };
-  }, [liveSelectedStock, isRobinhoodMsft, robinhoodMsftQuote, robinhoodMsftPriceHistory]);
+  }, [liveSelectedStock, isRobinhoodMsft, robinhoodMsftPriceHistory]);
 
   const priceHistoryRef = useRef<number[]>([]);
   const lastSymbolRef = useRef<string>("");
