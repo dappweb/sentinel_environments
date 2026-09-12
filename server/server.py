@@ -15,6 +15,7 @@ import json
 import os
 import sqlite3
 import time
+import uuid
 from pathlib import Path
 from typing import Optional
 
@@ -41,6 +42,9 @@ from server.handlers import microscholar as microscholar_handler
 from server.handlers import microtube as microtube_handler
 from server.schemas import (
 
+    AccountWalletRequest,
+    AccountWatchlistRequest,
+    AccountOrderIntentRequest,
     CommentResponse,
     ConfigResponse,
     CreateEventResponse,
@@ -157,7 +161,16 @@ from server.robinhood_chain import (
     RobinhoodChainError,
     get_robinhood_chain_client,
 )
-from server.account_store import get_or_create_account, initialize as initialize_account_store
+from server.account_store import (
+    add_watchlist_symbol,
+    add_wallet,
+    get_or_create_account,
+    initialize as initialize_account_store,
+    list_wallets,
+    list_positions,
+    list_watchlist_symbols,
+    remove_watchlist_symbol,
+)
 from server.privy_auth import require_privy_user
 
 _SHARED_DB = Path(__file__).parent / "shared.db"
@@ -636,6 +649,127 @@ async def account_me(claims: dict = Depends(require_privy_user)) -> JSONResponse
         initialize_account_store(connection)
         account = get_or_create_account(connection, claims["sub"])
         return JSONResponse(content={"id": account.id, "privy_subject": account.privy_subject})
+    finally:
+        connection.close()
+
+
+def _account_connection() -> sqlite3.Connection:
+    db_path = Path(os.getenv("MICROHOOD_ACCOUNT_DB", "/data/microhood-accounts.sqlite3"))
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(db_path)
+    initialize_account_store(connection)
+    return connection
+
+
+@app.get("/account/wallets")
+async def account_wallets(claims: dict = Depends(require_privy_user)) -> JSONResponse:
+    connection = _account_connection()
+    try:
+        account = get_or_create_account(connection, claims["sub"])
+        wallets = list_wallets(connection, account.id)
+        return JSONResponse(content={"wallets": [{"chain_id": w.chain_id, "address": w.address} for w in wallets]})
+    finally:
+        connection.close()
+
+
+@app.post("/account/wallets", status_code=201)
+async def account_wallet_add(payload: AccountWalletRequest, claims: dict = Depends(require_privy_user)) -> JSONResponse:
+    connection = _account_connection()
+    try:
+        account = get_or_create_account(connection, claims["sub"])
+        try:
+            add_wallet(connection, account.id, payload.chain_id, payload.address)
+        except sqlite3.IntegrityError as exc:
+            raise HTTPException(status_code=409, detail="wallet is already bound to another account or this account") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return JSONResponse(status_code=201, content={"chain_id": payload.chain_id, "address": payload.address.strip().lower()})
+    finally:
+        connection.close()
+
+
+@app.get("/account/watchlist")
+async def account_watchlist(claims: dict = Depends(require_privy_user)) -> JSONResponse:
+    connection = _account_connection()
+    try:
+        account = get_or_create_account(connection, claims["sub"])
+        return JSONResponse(content={"symbols": list_watchlist_symbols(connection, account.id)})
+    finally:
+        connection.close()
+
+
+@app.post("/account/watchlist", status_code=201)
+async def account_watchlist_add(payload: AccountWatchlistRequest, claims: dict = Depends(require_privy_user)) -> JSONResponse:
+    connection = _account_connection()
+    try:
+        account = get_or_create_account(connection, claims["sub"])
+        try:
+            add_watchlist_symbol(connection, account.id, payload.symbol)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return JSONResponse(status_code=201, content={"symbol": payload.symbol.strip().upper()})
+    finally:
+        connection.close()
+
+
+@app.delete("/account/watchlist/{symbol}", status_code=204)
+async def account_watchlist_remove(symbol: str, claims: dict = Depends(require_privy_user)) -> Response:
+    connection = _account_connection()
+    try:
+        account = get_or_create_account(connection, claims["sub"])
+        remove_watchlist_symbol(connection, account.id, symbol)
+        return Response(status_code=204)
+    finally:
+        connection.close()
+
+
+@app.get("/account/portfolio")
+async def account_portfolio(claims: dict = Depends(require_privy_user)) -> JSONResponse:
+    connection = _account_connection()
+    try:
+        account = get_or_create_account(connection, claims["sub"])
+        positions = list_positions(connection, account.id)
+        return JSONResponse(content={"positions": [{"symbol": p.symbol, "shares": p.shares, "avg_cost": p.avg_cost} for p in positions]})
+    finally:
+        connection.close()
+
+
+@app.post("/account/orders/intent", status_code=201)
+async def account_order_intent(payload: AccountOrderIntentRequest, claims: dict = Depends(require_privy_user)) -> JSONResponse:
+    symbol = payload.symbol.strip().upper()
+    side = payload.side.strip().lower()
+    order_type = payload.order_type.strip().lower()
+    if not symbol or len(symbol) > 16 or not symbol.isalnum():
+        raise HTTPException(status_code=422, detail="symbol must be 1-16 alphanumeric characters")
+    if side not in {"buy", "sell"}:
+        raise HTTPException(status_code=422, detail="side must be buy or sell")
+    if order_type not in {"market", "limit"}:
+        raise HTTPException(status_code=422, detail="order_type must be market or limit")
+    if payload.quantity <= 0 or payload.quantity > 1_000_000:
+        raise HTTPException(status_code=422, detail="quantity must be greater than 0 and at most 1000000")
+    if order_type == "limit" and (payload.limit_price is None or payload.limit_price <= 0):
+        raise HTTPException(status_code=422, detail="limit orders require a positive limit_price")
+    connection = _account_connection()
+    try:
+        account = get_or_create_account(connection, claims["sub"])
+        client_order_id = uuid.uuid4().hex
+        connection.execute(
+            "INSERT INTO orders (account_id, client_order_id, symbol, side, quantity, status) VALUES (?, ?, ?, ?, ?, 'pending')",
+            (account.id, client_order_id, symbol, side, payload.quantity),
+        )
+        connection.commit()
+        return JSONResponse(status_code=201, content={
+            "client_order_id": client_order_id,
+            "symbol": symbol,
+            "side": side,
+            "quantity": payload.quantity,
+            "order_type": order_type,
+            "limit_price": payload.limit_price,
+            "status": "pending_signature",
+            "network": "testnet",
+            "chain_id": 46630,
+            "broadcast": False,
+        })
     finally:
         connection.close()
 

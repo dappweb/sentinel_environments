@@ -61,6 +61,19 @@ class Account:
     privy_subject: str
 
 
+@dataclass(frozen=True)
+class Wallet:
+    chain_id: int
+    address: str
+
+
+@dataclass(frozen=True)
+class Position:
+    symbol: str
+    shares: float
+    avg_cost: float
+
+
 def initialize(connection: sqlite3.Connection) -> None:
     connection.executescript(SCHEMA)
     connection.commit()
@@ -84,10 +97,54 @@ def get_or_create_account(connection: sqlite3.Connection, privy_subject: str) ->
 
 def add_wallet(connection: sqlite3.Connection, account_id: int, chain_id: int, address: str) -> None:
     normalized = address.strip().lower()
-    if not normalized or not normalized.startswith("0x"):
-        raise ValueError("wallet address must be a hexadecimal address")
+    if chain_id <= 0 or len(normalized) != 42 or not normalized.startswith("0x"):
+        raise ValueError("wallet must include a positive chain_id and 20-byte hexadecimal address")
+    try:
+        int(normalized[2:], 16)
+    except ValueError as exc:
+        raise ValueError("wallet address must be a hexadecimal address") from exc
     connection.execute(
         "INSERT INTO account_wallets (account_id, chain_id, address) VALUES (?, ?, ?)",
         (account_id, chain_id, normalized),
     )
     connection.commit()
+
+
+def list_wallets(connection: sqlite3.Connection, account_id: int) -> list[Wallet]:
+    rows = connection.execute(
+        "SELECT chain_id, address FROM account_wallets WHERE account_id = ? ORDER BY chain_id, address",
+        (account_id,),
+    ).fetchall()
+    return [Wallet(chain_id=row[0], address=row[1]) for row in rows]
+
+
+def add_watchlist_symbol(connection: sqlite3.Connection, account_id: int, symbol: str) -> None:
+    normalized = symbol.strip().upper()
+    if not normalized or len(normalized) > 16 or not normalized.isalnum():
+        raise ValueError("symbol must be 1-16 alphanumeric characters")
+    connection.execute(
+        "INSERT INTO watchlist (account_id, symbol) VALUES (?, ?) ON CONFLICT(account_id, symbol) DO NOTHING",
+        (account_id, normalized),
+    )
+    connection.commit()
+
+
+def remove_watchlist_symbol(connection: sqlite3.Connection, account_id: int, symbol: str) -> None:
+    normalized = symbol.strip().upper()
+    connection.execute("DELETE FROM watchlist WHERE account_id = ? AND symbol = ?", (account_id, normalized))
+    connection.commit()
+
+
+def list_watchlist_symbols(connection: sqlite3.Connection, account_id: int) -> list[str]:
+    rows = connection.execute(
+        "SELECT symbol FROM watchlist WHERE account_id = ? ORDER BY symbol", (account_id,)
+    ).fetchall()
+    return [row[0] for row in rows]
+
+
+def list_positions(connection: sqlite3.Connection, account_id: int) -> list[Position]:
+    rows = connection.execute(
+        "SELECT symbol, shares, avg_cost FROM positions WHERE account_id = ? AND shares > 0 ORDER BY symbol",
+        (account_id,),
+    ).fetchall()
+    return [Position(symbol=row[0], shares=row[1], avg_cost=row[2]) for row in rows]

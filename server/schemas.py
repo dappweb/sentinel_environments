@@ -36,6 +36,23 @@ class InitPayload(BaseModel):
         return validate_speed_factor(v)
 
 
+class AccountWalletRequest(BaseModel):
+    chain_id: int
+    address: str
+
+
+class AccountWatchlistRequest(BaseModel):
+    symbol: str
+
+
+class AccountOrderIntentRequest(BaseModel):
+    symbol: str
+    side: str
+    quantity: float
+    order_type: str = "market"
+    limit_price: float | None = None
+
+
 # ---------------------------------------------------------------------------
 # Shared
 # ---------------------------------------------------------------------------
