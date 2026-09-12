@@ -321,6 +321,25 @@ const Landing = () => {
         </div></div>
       </section>
 
+      <section className="relative border-b" style={{ background: "#102235", borderColor: "rgba(255,255,255,0.08)" }}>
+        <div className="mx-auto max-w-[1440px] px-5 py-10 sm:px-8 sm:py-12 lg:px-12">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-12">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border text-xl font-semibold text-white" style={{ borderColor: "rgba(255,255,255,0.22)", background: "rgba(255,255,255,0.08)" }} aria-hidden="true">𝕏</div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em]" style={{ color: "#7ABEF0" }}>Follow the project</p>
+                <h2 className="mt-2 text-[clamp(1.5rem,3vw,2.35rem)] font-semibold leading-tight tracking-[-0.04em] text-white" style={{ fontFamily: DISPLAY_FONT }}>Signals, releases, and research notes.</h2>
+                <p className="mt-3 max-w-2xl text-[14px] leading-[1.7]" style={{ color: "rgba(255,255,255,0.68)" }}>Follow <span className="font-semibold text-white">@microhood_ai</span> for MicroHood.ai updates, benchmark context, and public-read research. The project is independent and makes no investment or profit claims.</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 lg:justify-end">
+              <a href={PROJECT_X_URL} target="_blank" rel="noreferrer" aria-label="Follow MicroHood.ai on X" className="inline-flex min-h-11 items-center gap-2 rounded-md px-4 text-[11px] font-semibold uppercase tracking-[0.12em] transition hover:-translate-y-0.5 hover:bg-white/15" style={{ background: "#FFFFFF", color: INK }}>Follow on X <ArrowUpRight className="h-3.5 w-3.5" /></a>
+              <a href={PROJECT_REPO_URL} target="_blank" rel="noreferrer" aria-label="Open MicroHood.ai GitHub repository" className="inline-flex min-h-11 items-center gap-2 rounded-md border px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-white/10" style={{ borderColor: "rgba(255,255,255,0.24)" }}><Github className="h-3.5 w-3.5" /> GitHub <ArrowUpRight className="h-3.5 w-3.5" /></a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="relative" style={{ background: CANVAS }}>
         <div className="mx-auto max-w-[1440px] px-5 pb-20 pt-16 sm:px-8 lg:px-12 lg:pb-28 lg:pt-24">
           <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">

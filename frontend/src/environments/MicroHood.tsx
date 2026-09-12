@@ -912,6 +912,26 @@ const MicroHood = () => {
         </div>
       </div>
 
+      {/* X introduction card: persistent project context for every MicroHood view. */}
+      <section className={`${themeClasses.bgSecondary} border-b ${themeClasses.border}`} aria-labelledby="project-x-card-title">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:py-5">
+          <div className={`flex flex-col gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5 ${themeClasses.borderSecondary}`}>
+            <div className="flex items-start gap-3">
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${themeClasses.bgTertiary} ${themeClasses.text}`} aria-hidden="true"><XBrandIcon size={18} /></div>
+              <div>
+                <p className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${themeClasses.textSecondary}`}>MicroHood.ai on X</p>
+                <h2 id="project-x-card-title" className="mt-1 text-base font-semibold">Follow the project and research updates</h2>
+                <p className={`mt-1 max-w-2xl text-sm leading-6 ${themeClasses.textMuted}`}>Public-read market monitoring, benchmark releases, and project notes from <span className={themeClasses.linkText}>@microhood_ai</span>.</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 sm:shrink-0">
+              <a href={PROJECT_X_URL} target="_blank" rel="noreferrer" className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold transition ${themeClasses.accentText} ${themeClasses.bgTertiary} ${themeClasses.accentHover}`} aria-label="Follow MicroHood.ai on X"><XBrandIcon size={15} /> Follow on X <ArrowUpRight size={14} /></a>
+              <a href={PROJECT_REPO_URL} target="_blank" rel="noreferrer" className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold transition ${themeClasses.textSecondary} ${themeClasses.bgTertiary} ${themeClasses.hoverText}`} aria-label="Open MicroHood.ai GitHub repository"><Github size={15} /> GitHub <ArrowUpRight size={14} /></a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className={`md:hidden fixed inset-0 ${themeClasses.bg} z-50 pt-16`}>
