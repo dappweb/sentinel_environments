@@ -165,6 +165,7 @@ from server.account_store import (
     get_or_create_account,
     initialize as initialize_account_store,
     list_wallets,
+    list_positions,
     list_watchlist_symbols,
     remove_watchlist_symbol,
 )
@@ -716,6 +717,17 @@ async def account_watchlist_remove(symbol: str, claims: dict = Depends(require_p
         account = get_or_create_account(connection, claims["sub"])
         remove_watchlist_symbol(connection, account.id, symbol)
         return Response(status_code=204)
+    finally:
+        connection.close()
+
+
+@app.get("/account/portfolio")
+async def account_portfolio(claims: dict = Depends(require_privy_user)) -> JSONResponse:
+    connection = _account_connection()
+    try:
+        account = get_or_create_account(connection, claims["sub"])
+        positions = list_positions(connection, account.id)
+        return JSONResponse(content={"positions": [{"symbol": p.symbol, "shares": p.shares, "avg_cost": p.avg_cost} for p in positions]})
     finally:
         connection.close()
 
