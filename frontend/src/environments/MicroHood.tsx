@@ -908,6 +908,13 @@ const MicroHood = () => {
             >
               {copiedAddress === MICROHOOD_PROJECT_TOKEN_ADDRESS ? <Check size={15} /> : <Copy size={15} />}
             </button>
+            <a
+              href="/landing"
+              title="Open the SentinelBench overview page"
+              className={`shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] ${themeClasses.linkText} transition ${themeClasses.hoverText}`}
+            >
+              Overview
+            </a>
           </div>
         </div>
       </div>

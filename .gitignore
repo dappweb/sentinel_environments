@@ -212,4 +212,5 @@ data_generation/_generated/
 .codex/
 .gemini/
 .mcp.json
+.playwright-mcp/
 .workbuddy/
