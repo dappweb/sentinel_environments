@@ -450,7 +450,6 @@ const MicroHood = () => {
   const [iraBalance, setIraBalance] = useState(7500.00);
   const [notifications, setNotifications] = useState([
     { id: 1, type: "price", title: "MCRO is up 5%", desc: "MicroSystems Corp reached $472.50", time: "2m ago", unread: true },
-    { id: 2, type: "order", title: "Order filled", desc: "Bought 1 share of MCRO at $450.00", time: "1h ago", unread: true },
     { id: 3, type: "news", title: "Breaking News", desc: "Tech stocks rally on strong earnings", time: "2h ago", unread: false },
     { id: 4, type: "alert", title: "Price alert", desc: "PEAR crossed your $180 target", time: "3h ago", unread: false },
     { id: 5, type: "dividend", title: "Dividend received", desc: "$12.50 from CHIP", time: "1d ago", unread: false },
